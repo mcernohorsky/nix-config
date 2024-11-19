@@ -35,7 +35,7 @@
 
   homebrew = {
     enable = true;
-    # homebrew.onActivation.cleanup = "zap";
+    homebrew.onActivation.cleanup = "zap";
     onActivation.autoUpdate= true;
     casks = [
       "aerospace"
@@ -64,8 +64,8 @@
       # "tableplus"
       # "qbittorrent"
       # "warp"
-      "zed"
-      "zen-browser"
+      # "zed"
+      # "zen-browser"
     ];
 
     masApps = {

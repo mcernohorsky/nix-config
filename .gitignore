@@ -1,0 +1,16 @@
+# Nix specific
+result
+result-*
+.direnv/
+
+# macOS specific
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.log
+.tmp/
