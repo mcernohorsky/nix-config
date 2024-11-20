@@ -1,27 +1,12 @@
 { pkgs, ... }:
 {
-
   system.stateVersion = 5;
 
   services.nix-daemon.enable = true;
-
   nix = {
     settings.experimental-features = "nix-command flakes";
     optimise.automatic = true;
   };
-  
-  # System-wide keyboard settings
-  system.keyboard = {
-    enableKeyMapping = true;
-    remapCapsLockToEscape = true;
-  };
-
-  # Removed user shell configurations as they're now in home-manager
-  
-  environment.systemPackages = with pkgs; [
-    # Keeping minimal system-wide packages here
-    # User packages moved to home-manager
-  ];
 
   fonts = {
     packages = with pkgs; [
@@ -35,9 +20,12 @@
 
   homebrew = {
     enable = true;
-    onActivation.cleanup = "zap";
-    onActivation.autoUpdate= true;
-    onActivation.upgrade = true;
+    onActivation = {
+      autoUpdate = true;
+      cleanup = "zap";
+      upgrade = true;
+    };
+
     casks = [
       "aerospace"
       # "android-studio"
@@ -71,16 +59,16 @@
 
     masApps = {
       "Color Picker" = 1545870783;
-      "Klack" = 6446206067;
-      "Xcode" = 497799835;
       "Dropover" = 1355679052;
+      "Kindle" = 302584613;
+      "Klack" = 6446206067;
       "Microsoft Excel" = 462058435;
       "Microsoft Word" = 462054704;
-      "Kindle" = 302584613;
       "Perplexity" = 6714467650;
+      "Xcode" = 497799835;
       # "Pages" = 409201541;
     };
-    
+
     # Manually Installed Apps:
     # BatFi
     # rcmd
@@ -93,29 +81,39 @@
       autohide = true;
       autohide-delay = 0.0;
       autohide-time-modifier = 0.0;
+      mru-spaces = false;
       orientation = "right";
       show-recents = false;
       static-only = true;
-      mru-spaces = false;
     };
+
     finder = {
-      FXPreferredViewStyle = "Nlsv";  # Use list view
       FXDefaultSearchScope = "SCcf"; # Search the current folder
-      ShowPathbar = true;
       FXEnableExtensionChangeWarning = false;
+      FXPreferredViewStyle = "Nlsv";  # Use list view
       NewWindowTarget = "iCloud Drive";
+      ShowPathbar = true;
     };
-    NSGlobalDomain.KeyRepeat = 2;
-    NSGlobalDomain.InitialKeyRepeat = 15;
-    NSGlobalDomain.AppleShowAllExtensions = true;
+
+    NSGlobalDomain = {
+      AppleShowAllExtensions = true;
+      InitialKeyRepeat = 15;
+      KeyRepeat = 2;
+    };
   };
 
+  system.keyboard = {
+    enableKeyMapping = true;
+    remapCapsLockToEscape = true;
+  };
+
+  # Rosetta installation
   system.activationScripts.extraActivation.text = ''
     if ! pkgutil --pkgs | grep -q "com.apple.pkg.RosettaUpdateAuto"; then
       softwareupdate --install-rosetta --agree-to-license
     fi
   '';
 
+  # Touch ID for sudo
   security.pam.enableSudoTouchIdAuth = true;
-  
 }
