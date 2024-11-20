@@ -35,8 +35,9 @@
 
   homebrew = {
     enable = true;
-    homebrew.onActivation.cleanup = "zap";
+    onActivation.cleanup = "zap";
     onActivation.autoUpdate= true;
+    onActivation.upgrade = true;
     casks = [
       "aerospace"
       # "android-studio"
@@ -88,9 +89,10 @@
   };
 
   system.defaults = {
-    NSGlobalDomain.AppleInterfaceStyle = "Dark";
     dock = {
       autohide = true;
+      autohide-delay = 0.0;
+      autohide-time-modifier = 0.0;
       orientation = "right";
       show-recents = false;
       static-only = true;
@@ -98,13 +100,21 @@
     };
     finder = {
       FXPreferredViewStyle = "Nlsv";  # Use list view
-      AppleShowAllExtensions = true;
+      FXDefaultSearchScope = "SCcf"; # Search the current folder
       ShowPathbar = true;
       FXEnableExtensionChangeWarning = false;
+      NewWindowTarget = "iCloud Drive";
     };
     NSGlobalDomain.KeyRepeat = 2;
     NSGlobalDomain.InitialKeyRepeat = 15;
+    NSGlobalDomain.AppleShowAllExtensions = true;
   };
+
+  system.activationScripts.extraActivation.text = ''
+    if ! pkgutil --pkgs | grep -q "com.apple.pkg.RosettaUpdateAuto"; then
+      softwareupdate --install-rosetta --agree-to-license
+    fi
+  '';
 
   security.pam.enableSudoTouchIdAuth = true;
   
