@@ -11,24 +11,22 @@ This repository contains my personal Nix configuration for macOS using nix-darwi
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-2. Enable Flakes:
+2. Rename Computer:
 ```bash
-mkdir -p ~/.config/nix
-echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+sudo scutil --set ComputerName "macbook-pro-m2"
+sudo scutil --set LocalHostName "macbook-pro-m2"
 ```
 
 ### Installation
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/nix-config.git ~/.config/nix-config
+git clone https://github.com/mcernohorsky/nix-config.git ~/.config/nix-config
 ```
 
 2. Build and switch to the configuration:
 ```bash
-cd ~/.config/nix-config
-nix build .#darwinConfigurations.macbook-pro-m2.system
-./result/sw/bin/darwin-rebuild switch --flake .#macbook-pro-m2
+nix run nix-darwin -- switch --flake ~/.config/nix-config
 ```
 
 ## Structure
@@ -40,18 +38,10 @@ nix build .#darwinConfigurations.macbook-pro-m2.system
 - `home/`: User-specific configurations
   - `neovim/`: Neovim configuration
 
-## Features
-
-- Terminal: Ghostty with custom configuration
-- Shell: Fish and Zsh (configurable)
-- Editor: Neovim
-- Package Management: Mix of Nix packages and Homebrew casks
-- System Preferences: Custom macOS settings
-
 ## Updating
 
 To update the system:
 ```bash
 nix flake update
-darwin-rebuild switch --flake .#macbook-pro-m2
+darwin-rebuild switch --flake ~/.config/nix-config
 ```
