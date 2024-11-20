@@ -107,11 +107,14 @@
     remapCapsLockToEscape = true;
   };
 
-  # Rosetta installation
   system.activationScripts.extraActivation.text = ''
+    # Install Rosetta
     if ! pkgutil --pkgs | grep -q "com.apple.pkg.RosettaUpdateAuto"; then
       softwareupdate --install-rosetta --agree-to-license
     fi
+
+    # Set battery brightness behavior
+    sudo pmset -b lessbright 0
   '';
 
   # Touch ID for sudo
