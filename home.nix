@@ -40,24 +40,6 @@
     fish = {
       enable = true;
       interactiveShellInit = "set fish_greeting";
-      shellInit = ''
-      # Nix setup (required for Darwin)
-      if test -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
-        source '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
-      end
-
-      # Homebrew setup for Apple Silicon
-      if test (uname -m) = arm64
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-      end
-
-      # Add nix paths
-      fish_add_path --prepend --global \
-        "$HOME/.nix-profile/bin" \
-        /etc/profiles/per-user/$USER/bin \
-        /run/current-system/sw/bin \
-        /nix/var/nix/profiles/default/bin
-      '';
     };
 
     zsh = {
@@ -90,6 +72,15 @@
     # CLI Tools
     starship = {
       enable = true;
+    };
+
+    nix-index = {
+      enable = true;
+    };
+    
+    direnv = {
+      enable = true;
+      nix-direnv.enable = true;
     };
 
     fzf = {

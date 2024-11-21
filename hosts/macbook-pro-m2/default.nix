@@ -4,9 +4,17 @@
 
   services.nix-daemon.enable = true;
   nix = {
-    settings.experimental-features = "nix-command flakes";
+    settings.experimental-features = [ "nix-command" "flakes" ];
     optimise.automatic = true;
+    gc = {
+      automatic = true;
+      interval = { Weekday = 0; Hour = 0; Minute = 0; };
+      options = "--delete-older-than 30d";
+    };
   };
+
+  # Fish shell integration is enabled in home manager and nix-darwin to make sure the PATH is set correctly for fish.
+  programs.fish.enable = true;
 
   fonts = {
     packages = with pkgs; [
@@ -41,6 +49,7 @@
       "inkscape"
       "itsycal"
       "keka"
+      # "kicad"
       "maccy"
       "monodraw"
       "orbstack"
