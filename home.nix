@@ -13,6 +13,11 @@
       lazydocker
       tree
     ];
+    
+    shellAliases = {
+      lg = "lazygit";
+      ld = "lazydocker";
+    };
   };
 
   # Core System Programs
