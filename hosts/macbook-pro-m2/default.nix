@@ -46,7 +46,7 @@
     ];
 
     casks = [
-      "aerospace"
+      # "aerospace"
       # "android-studio"
       # "arc"
       "betterdisplay"
@@ -65,7 +65,7 @@
       "monodraw"
       "orbstack"
       "raycast"
-      # "rectangle"
+      "rectangle"
       "shottr"
       "stats"
       "steam"

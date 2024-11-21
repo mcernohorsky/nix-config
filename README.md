@@ -21,7 +21,7 @@ sudo scutil --set LocalHostName "macbook-pro-m2"
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/mcernohorsky/nix-config.git ~/.config/nix-config
+git clone git@github.com:mcernohorsky/nix-config.git ~/.config/nix-config
 ```
 
 2. Build and switch to the configuration:
