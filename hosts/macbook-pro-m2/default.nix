@@ -13,6 +13,10 @@
     };
   };
 
+  users.users.matt = {
+    home = /Users/matt;
+  };
+
   # Fish shell integration is enabled in home manager and nix-darwin to make sure the PATH is set correctly for fish.
   programs.fish.enable = true;
 
@@ -33,6 +37,13 @@
       cleanup = "zap";
       upgrade = true;
     };
+
+    taps = [
+      "homebrew/core"
+      "homebrew/cask"
+      "homebrew/bundle"
+      "nikitabobko/tap"
+    ];
 
     casks = [
       "aerospace"

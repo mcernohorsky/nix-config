@@ -4,8 +4,10 @@
   # User Configuration
   home = {
     username = "matt";
-    homeDirectory = pkgs.lib.mkForce "/Users/matt";
+    homeDirectory = /Users/matt;
     stateVersion = "23.11";
+    
+    file.".hushlogin".text = ""; # Disable login messages in the terminal
     
     packages = with pkgs; [
       lazydocker
