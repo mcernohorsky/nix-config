@@ -7,7 +7,15 @@
     homeDirectory = /Users/matt;
     stateVersion = "23.11";
     
-    file.".hushlogin".text = ""; # Disable login messages in the terminal
+    # Add ghostty command to the PATH. This will probably be handled by Home Manager after Ghostty public release.
+    sessionVariables = {
+      PATH = "\${GHOSTTY_BIN_DIR:-}:\$PATH";
+    };
+    
+    file = {
+      ".hushlogin".text = ""; # Disable login messages in the terminal
+      "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
+    };
     
     packages = with pkgs; [
       lazydocker

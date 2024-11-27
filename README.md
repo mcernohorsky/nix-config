@@ -37,11 +37,12 @@ nix run nix-darwin -- switch --flake ~/.config/nix-config
   - `macbook-pro-m2/`: Configuration specific to MacBook Pro M2
 - `home/`: User-specific configurations
   - `neovim/`: Neovim configuration
+  - `RectangleConfig.json`: Rectangle configuration (import manually)
 
 ## Updating
 
 To update the system:
 ```bash
-nix flake update
+nix flake update --flake ~/.config/nix-config
 darwin-rebuild switch --flake ~/.config/nix-config
 ```
