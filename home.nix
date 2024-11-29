@@ -15,11 +15,22 @@
     file = {
       ".hushlogin".text = ""; # Disable login messages in the terminal
       "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
+      ".local/bin/dev" = {
+        source = ./home/bin/dev;
+        executable = true;
+      };
     };
     
     packages = with pkgs; [
       lazydocker
       tree
+
+      # fonts
+      jetbrains-mono
+      nerd-fonts.jetbrains-mono
+      inter
+      merriweather
+      roboto
     ];
     
     shellAliases = {
@@ -39,6 +50,42 @@
       vimAlias = true;
       
       extraLuaConfig = builtins.readFile ./home/neovim/init.lua;
+    };
+
+    helix = {
+      enable = true;
+    };
+
+    zed-editor = {
+      enable = true;
+      extensions = [
+        "html"
+        "toml"
+        "dockerfile"
+        "docker-compose"
+        "sql"
+        "nix"
+        "zig"
+        "gleam"
+        "haskell"
+        "typst"
+      ];
+      userSettings = {
+        vim_mode = true;
+        theme = "Rosé Pine Moon";
+        buffer_font_family = "JetBrainsMono Nerd Font"; 
+        ui_font_family = "JetBrainsMono Nerd Font";
+        telemetry = {
+          diagnostics = false;
+          metrics = false;
+        };
+        load_direnv = "shell_hook";
+        terminal = {
+          shell = {
+            program = "fish";
+          };
+        };
+      };
     };
 
     git = {
@@ -81,6 +128,8 @@
         custom-shader-animation = true;
         window-vsync = true;
         command = "${pkgs.fish}/bin/fish";
+        auto-update = "download";
+        window-save-state = "always";
       };
     };
 

@@ -20,16 +20,6 @@
   # Fish shell integration is enabled in home manager and nix-darwin to make sure the PATH is set correctly for fish.
   programs.fish.enable = true;
 
-  fonts = {
-    packages = with pkgs; [
-      inter
-      jetbrains-mono
-      merriweather
-      roboto
-      (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
-    ];
-  };
-
   homebrew = {
     enable = true;
     onActivation = {
@@ -48,12 +38,13 @@
     casks = [
       # "aerospace"
       # "android-studio"
-      # "arc"
+      "arc"
       "betterdisplay"
       # "bettertouchtool"
       "blender"
       # "dbngin"
       "discord"
+      "gzdoom"
       # "hammerspoon"
       "iina"
       "imageoptim"

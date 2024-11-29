@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SUPPORTED_LANGUAGES="zig go rust python haskell typst react-native"
+NIX_CONFIG_PATH="/Users/matt/.config/nix-config"
+
+usage() {
+    echo "Usage: dev <language>"
+    echo "Supported languages: ${SUPPORTED_LANGUAGES}"
+    exit 1
+}
+
+if [ $# -ne 1 ]; then
+    usage
+fi
+
+language="$1"
+
+# Check if language is supported
+if ! echo "${SUPPORTED_LANGUAGES}" | grep -qw "${language}"; then
+    echo "Error: Unsupported language '${language}'"
+    usage
+fi
+
+# Check if directory is empty
+if [ "$(ls -A .)" ]; then
+    echo "Error: Current directory is not empty"
+    exit 1
+fi
+
+# Initialize from template
+if ! nix flake init -t "${NIX_CONFIG_PATH}#${language}"; then
+    echo "Error: Failed to initialize template"
+    exit 1
+fi
+
+# Allow direnv
+if ! direnv allow; then
+    echo "Error: Failed to allow direnv"
+    exit 1
+fi
+
+echo "Successfully initialized ${language} development environment"

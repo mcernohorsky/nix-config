@@ -91,5 +91,36 @@
         }
       ];
     };
+
+    templates = {
+      zig = {
+        path = ./templates/zig;
+        description = "Zig development environment";
+      };
+      go = {
+        path = ./templates/go;
+        description = "Go development environment";
+      };
+      rust = {
+        path = ./templates/rust;
+        description = "Rust development environment";
+      };
+      python = {
+        path = ./templates/python;
+        description = "Python development environment";
+      };
+      haskell = {
+        path = ./templates/haskell;
+        description = "Haskell development environment";
+      };
+      typst = {
+        path = ./templates/typst;
+        description = "Typst development environment";
+      };
+      react-native = {
+        path = ./templates/react-native;
+        description = "React Native development environment";
+      };
+    };
   };
 }
