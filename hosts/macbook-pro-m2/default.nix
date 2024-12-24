@@ -44,7 +44,6 @@
       "blender"
       # "dbngin"
       "discord"
-      "gzdoom"
       # "hammerspoon"
       "iina"
       "imageoptim"
@@ -53,6 +52,7 @@
       "keka"
       # "kicad"
       "maccy"
+      "magicavoxel"
       "monodraw"
       "orbstack"
       "raycast"
@@ -63,7 +63,6 @@
       # "surfshark"
       # "tableplus"
       # "qbittorrent"
-      # "warp"
       # "zed"
       # "zen-browser"
     ];
@@ -73,8 +72,8 @@
       "Dropover" = 1355679052;
       "Kindle" = 302584613;
       "Klack" = 6446206067;
-      "Microsoft Excel" = 462058435;
-      "Microsoft Word" = 462054704;
+      # "Microsoft Excel" = 462058435;
+      # "Microsoft Word" = 462054704;
       "Perplexity" = 6714467650;
       "Xcode" = 497799835;
       # "Pages" = 409201541;
@@ -85,6 +84,8 @@
     # rcmd
     # Windsurf
     # Ghostty
+    # Excel
+    # Word
   };
 
   system.defaults = {
@@ -110,6 +111,7 @@
       AppleShowAllExtensions = true;
       InitialKeyRepeat = 15;
       KeyRepeat = 2;
+      NSWindowShouldDragOnGesture = true;
     };
   };
 

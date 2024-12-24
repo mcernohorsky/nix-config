@@ -1,49 +1,39 @@
 {
-  description = "Go development environment";
+  description = "Go Development Environment";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    gomod2nix = {
+      url = "github:nix-community/gomod2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, gomod2nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        gomod2nixPkgs = gomod2nix.legacyPackages.${system};
       in
       {
+        packages.default = pkgs.buildGoModule {
+          pname = "my-go-project";
+          version = "0.1.0";
+          pwd = ./.;
+          src = ./.;
+          modules = ./gomod2nix.toml;
+        };
+
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # Go tools
+          nativeBuildInputs = with pkgs; [
             go
             gopls
-            golangci-lint
             delve
             go-tools
-            
-            # Common tools
-            git
+            gomod2nixPkgs.gomod2nix
           ];
-
-          nativeBuildInputs = with pkgs; lib.optionals stdenv.isDarwin [
-            darwin.apple_sdk.frameworks.Security
-            darwin.apple_sdk.frameworks.SystemConfiguration
-          ];
-
-          shellHook = ''
-            echo "🦫 Go development environment activated!"
-            echo "Available tools:"
-            echo "  - go: $(go version)"
-            echo "  - gopls: Language server ready"
-            echo "  - golangci-lint: $(golangci-lint --version)"
-            echo "  - delve: Debugger ready"
-            echo ""
-            echo "Quick start:"
-            echo "  go mod init my-project"
-            echo "  go mod tidy"
-            echo "  go run ."
-            echo "  go test ./..."
-          '';
         };
       });
 }
