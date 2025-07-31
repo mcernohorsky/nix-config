@@ -1,24 +1,44 @@
 { pkgs, ... }:
 {
-  system.stateVersion = 5;
+  system = {
+    stateVersion = 5;
+    primaryUser = "matt";
+  };
 
-  services.nix-daemon.enable = true;
   nix = {
-    settings.experimental-features = [ "nix-command" "flakes" ];
+    enable = true;
+    settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      trusted-users = [
+        "root"
+        "@admin"
+        "matt"
+      ];
+    };
     optimise.automatic = true;
     gc = {
       automatic = true;
-      interval = { Weekday = 0; Hour = 0; Minute = 0; };
+      interval = {
+        Weekday = 0;
+        Hour = 0;
+        Minute = 0;
+      };
       options = "--delete-older-than 30d";
     };
   };
 
+  nixpkgs.config.allowUnfree = true;
+
   users.users.matt = {
-    home = /Users/matt;
+    home = "/Users/matt";
   };
 
-  # Fish shell integration is enabled in home manager and nix-darwin to make sure the PATH is set correctly for fish.
   programs.fish.enable = true;
+  programs.zsh.enable = true;
+  programs.bash.enable = true;
 
   homebrew = {
     enable = true;
@@ -32,18 +52,18 @@
       "homebrew/core"
       "homebrew/cask"
       "homebrew/bundle"
-      "nikitabobko/tap"
     ];
 
     casks = [
-      # "aerospace"
       # "android-studio"
       "arc"
       "betterdisplay"
       # "bettertouchtool"
       "blender"
       # "dbngin"
+      "cursor"
       "discord"
+      "ghostty"
       # "hammerspoon"
       "iina"
       "imageoptim"
@@ -55,16 +75,17 @@
       "magicavoxel"
       "monodraw"
       "orbstack"
+      "qbittorrent"
       "raycast"
       "rectangle"
       "shottr"
       "stats"
       "steam"
-      # "surfshark"
+      "surfshark"
       # "tableplus"
-      # "qbittorrent"
+      # "windsurf"
       # "zed"
-      # "zen-browser"
+      "zen-browser"
     ];
 
     masApps = {
@@ -74,16 +95,13 @@
       "Klack" = 6446206067;
       # "Microsoft Excel" = 462058435;
       # "Microsoft Word" = 462054704;
-      "Perplexity" = 6714467650;
+      # "Perplexity" = 6714467650;
       "Xcode" = 497799835;
       # "Pages" = 409201541;
     };
 
     # Manually Installed Apps:
     # BatFi
-    # rcmd
-    # Windsurf
-    # Ghostty
     # Excel
     # Word
   };
@@ -102,7 +120,7 @@
     finder = {
       FXDefaultSearchScope = "SCcf"; # Search the current folder
       FXEnableExtensionChangeWarning = false;
-      FXPreferredViewStyle = "Nlsv";  # Use list view
+      FXPreferredViewStyle = "Nlsv"; # Use list view
       NewWindowTarget = "iCloud Drive";
       ShowPathbar = true;
     };
@@ -111,7 +129,10 @@
       AppleShowAllExtensions = true;
       InitialKeyRepeat = 15;
       KeyRepeat = 2;
+      NSAutomaticCapitalizationEnabled = false;
       NSWindowShouldDragOnGesture = true;
+      NSNavPanelExpandedStateForSaveMode = true;
+      NSNavPanelExpandedStateForSaveMode2 = true;
     };
   };
 
@@ -131,5 +152,5 @@
   '';
 
   # Touch ID for sudo
-  security.pam.enableSudoTouchIdAuth = true;
+  security.pam.services.sudo_local.touchIdAuth = true;
 }

@@ -1,16 +1,18 @@
-{pkgs, ...}: {
+{ pkgs, inputs, ... }:
+{
+  # disabledModules = [ "programs/ghostty.nix" ];
   imports = [ ];
 
   # User Configuration
   home = {
     username = "matt";
-    homeDirectory = /Users/matt;
+    homeDirectory = "/Users/matt";
     stateVersion = "23.11";
 
-    # Add ghostty command to the PATH.
-    # This will probably be handled by Home Manager after Ghostty public release.
+    # Add scripts to the PATH.
+    sessionPath = [ "$HOME/.local/bin" ];
     sessionVariables = {
-      PATH = "\$HOME/.local/bin:\${GHOSTTY_BIN_DIR:-}:\$PATH";
+      DIRENV_WARN_TIMEOUT = "0";
     };
 
     file = {
@@ -21,19 +23,26 @@
         executable = true;
       };
       # Make the helix background transparent.
-      ".config/helix/themes/custom.toml".text =
-        ''
-          inherits = "gruvbox_dark_hard"
-          # inherits = "catppuccin_mocha"
-          "ui.background" = {}
-        '';
+      ".config/helix/themes/custom.toml".text = ''
+        inherits = "gruvbox_dark_hard"
+        # inherits = "catppuccin_mocha"
+        "ui.background" = {}
+      '';
       ".config/zellij/config.kdl".source = ./home/config.kdl;
     };
 
     packages = with pkgs; [
+      claude-code
+      gemini-cli
       lazydocker
       tree
-      nixd  # Nix language server
+      nushell
+
+      tailscale
+      bitwarden-desktop
+
+      nixd
+      nixfmt-rfc-style
 
       # fonts
       jetbrains-mono
@@ -50,23 +59,25 @@
     };
   };
 
-  # Core System Programs
   programs.home-manager.enable = true;
 
-  # Development Tools
   programs = {
     helix = {
       enable = true;
+      package = inputs.helix-master.packages.${pkgs.system}.default;
       defaultEditor = true;
       settings = {
         theme = "custom";
         editor = {
           scrolloff = 10;
-          shell = ["fish" "-c"];
+          shell = [
+            "fish"
+            "-c"
+          ];
           line-number = "relative";
           cursorline = true;
           true-color = true;
-          rulers = [100];
+          rulers = [ 100 ];
           bufferline = "multiple";
           color-modes = true;
           text-width = 100;
@@ -110,10 +121,23 @@
             "x" = "select_line_below";
             "X" = "select_line_above";
             "A-x" = "extend_to_line_bounds";
-            "D" = ["ensure_selections_forward" "extend_to_line_end" "delete_selection"];
-            "A-j" = ["extend_to_line_bounds" "delete_selection" "move_line_down" "paste_before"];
-            "A-k" = ["extend_to_line_bounds" "delete_selection" "move_line_up" "paste_before"];
-            "ret" = ["move_line_down" "goto_first_nonwhitespace"];
+            "D" = [
+              "ensure_selections_forward"
+              "extend_to_line_end"
+              "delete_selection"
+            ];
+            "C-j" = [
+              "extend_to_line_bounds"
+              "delete_selection"
+              "move_line_down"
+              "paste_before"
+            ];
+            "C-k" = [
+              "extend_to_line_bounds"
+              "delete_selection"
+              "move_line_up"
+              "paste_before"
+            ];
             space = {
               l = ":toggle lsp.display-inlay-hints";
               x = ":toggle whitespace.render all none";
@@ -130,6 +154,19 @@
               "." = "file_picker_in_current_buffer_directory";
             };
           };
+        };
+      };
+      languages = {
+        language = [
+          {
+            name = "nix";
+            auto-format = true;
+            formatter.command = "nixfmt";
+            language-servers = [ "nixd" ];
+          }
+        ];
+        language-server = {
+          nixd.command = "nixd";
         };
       };
     };
@@ -150,22 +187,26 @@
       interactiveShellInit = "set fish_greeting";
     };
 
-    zsh = {
-      enable = true;
-    };
+    zsh.enable = true;
 
-    bash = {
-      enable = true;
-    };
+    bash.enable = true;
 
-    # Terminal Emulator
+    nushell.enable = true;
+
     ghostty = {
       enable = true;
+      package = null;
+      # Enable these for the official hm module when it's fixed.
+      enableBashIntegration = true;
+      enableZshIntegration = true;
+      enableFishIntegration = true;
       settings = {
+        auto-update = "off";
+        shell-integration = "none";
         # theme = "light:GruvboxLight,dark:catppuccin-mocha";
         theme = "light:GruvboxLight,dark:GruvboxDarkHard";
         background = "#1d2021"; # Add a little blue.
-        background-opacity = 0.93;
+        background-opacity = 0.95;
         background-blur-radius = 20;
         macos-option-as-alt = "left";
         mouse-hide-while-typing = true;
@@ -173,6 +214,8 @@
         window-save-state = "always";
         keybind = "global:opt+ =toggle_quick_terminal";
         quick-terminal-animation-duration = 0;
+        macos-non-native-fullscreen = true;
+        # macos-icon = "retro";
       };
     };
 
@@ -219,6 +262,10 @@
     };
 
     ripgrep = {
+      enable = true;
+    };
+
+    opencode = {
       enable = true;
     };
   };
