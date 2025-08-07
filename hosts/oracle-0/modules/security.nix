@@ -18,9 +18,11 @@
         enabled = true;
         filter = "caddy"; # packaged filter covers common 4xx abuse
         logpath = "/var/log/caddy/access.log";
-        maxretry = 10;
-        findtime = "10m";
-        bantime = "1h";
+        settings = {
+          maxretry = 10;
+          findtime = "10m";
+          bantime = "1h";
+        };
       };
     };
   };
