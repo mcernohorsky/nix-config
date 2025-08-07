@@ -14,11 +14,13 @@
     maxretry = 5;
     jails = {
       sshd.settings.enabled = true;
+      # Caddy jail: use packaged filter; read logs via journald (Caddy logs to journal by default on NixOS)
       caddy = {
         enabled = true;
-        filter = "caddy"; # packaged filter covers common 4xx abuse
-        logpath = "/var/log/caddy/access.log";
+        filter = "caddy";
         settings = {
+          backend = "systemd";
+          journalmatch = "_SYSTEMD_UNIT=caddy.service";
           maxretry = 10;
           findtime = "10m";
           bantime = "1h";

@@ -16,6 +16,7 @@ in
     exporters.node = {
       enable = true;
       port = 3021;
+      listenAddress = "127.0.0.1";
       enabledCollectors = [ "systemd" ];
     };
     # Scrape targets
@@ -27,12 +28,6 @@ in
       {
         job_name = "prometheus";
         static_configs = [{ targets = [ "127.0.0.1:${toString prometheusPort}" ]; }];
-      }
-      {
-        job_name = "caddy";
-        metrics_path = "/metrics";
-        static_configs = [{ targets = [ "127.0.0.1:2019" ]; }]; # Caddy metrics if admin metrics enabled
-        honor_labels = true;
       }
     ];
   };
@@ -57,15 +52,18 @@ in
     };
     provision = {
       enable = true;
-      datasources = [
-        {
-          name = "Prometheus";
-          type = "prometheus";
-          access = "proxy";
-          url = "http://127.0.0.1:${toString prometheusPort}";
-          isDefault = true;
-        }
-      ];
+      datasources.settings = {
+        apiVersion = 1;
+        datasources = [
+          {
+            name = "Prometheus";
+            type = "prometheus";
+            access = "proxy";
+            url = "http://127.0.0.1:${toString prometheusPort}";
+            isDefault = true;
+          }
+        ];
+      };
     };
   };
 
