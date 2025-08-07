@@ -16,6 +16,9 @@
     }/module.nix"
     ./disk-config.nix
     inputs.repertoire-builder.nixosModules.container
+    ./modules/networking.nix
+    ./modules/monitoring.nix
+    ./modules/security.nix
   ];
 
   nix.settings.experimental-features = [
@@ -36,82 +39,8 @@
 
   systemd.targets.multi-user.enable = true;
 
-  networking = {
-    hostName = "oracle-0";
-    # Enable systemd-networkd for proper container networking
-    useNetworkd = true;
-    useDHCP = false;
-    networkmanager.enable = false;
-    
-    # NAT configuration for containers
-    nat = {
-      enable = true;
-      internalInterfaces = [ "br-containers" "ve-+" ];
-      externalInterface = "enp0s6";
-    };
-  };
+  networking.hostName = "oracle-0";
 
-  # systemd-networkd configuration
-  systemd.network = {
-    enable = true;
-    
-    # Main interface (Oracle Cloud)
-    networks."10-main" = {
-      matchConfig.Name = "enp0s6";
-      networkConfig = {
-        DHCP = "ipv4";
-        IPv4Forwarding = true;
-      };
-      # Keep Oracle's DNS configuration from DHCP
-      dhcpV4Config = {
-        UseDNS = true;  # Use Oracle's metadata service DNS
-        UseDomains = true;
-        UseRoutes = true;
-      };
-      linkConfig.RequiredForOnline = "routable";
-    };
-    
-    # Container bridge
-    netdevs."20-br-containers" = {
-      netdevConfig = {
-        Kind = "bridge";
-        Name = "br-containers";
-      };
-    };
-    
-    networks."20-br-containers" = {
-      matchConfig.Name = "br-containers";
-      networkConfig = {
-        IPv4Forwarding = true;
-        IPMasquerade = "ipv4";
-        DHCPServer = true;
-      };
-      addresses = [{ Address = "192.168.100.1/24"; }];
-      dhcpServerConfig = {
-        PoolOffset = 10;
-        PoolSize = 100;
-      };
-    };
-    
-    # Container veth interfaces
-    networks."30-container-ve" = {
-      matchConfig.Name = "ve-* vb-*";
-      networkConfig = {
-        Bridge = "br-containers";
-        IPv4Forwarding = true;
-      };
-    };
-  };
-
-  # DNS resolution
-  services.resolved = {
-    enable = true;
-    fallbackDns = [ "1.1.1.1" "1.0.0.1" ];
-  };
-
-  # Enable container hostname resolution via nss-mymachines
-  system.nssModules = [ pkgs.systemd ];
-  system.nssDatabases.hosts = lib.mkBefore [ "mymachines" ];
 
   time.timeZone = "America/Edmonton";
   i18n.defaultLocale = "en_CA.UTF-8";
@@ -157,18 +86,7 @@
     };
   };
 
-  services.netdata = {
-    enable = true;
-    config = {
-      web = {
-        "bind to" = "unix:/run/netdata/netdata.sock 127.0.0.1:19999";
-        "socket user" = "netdata";
-        "socket group" = "netdata";
-        "web files owner" = "root";
-        "web files group" = "root";
-      };
-    };
-  };
+  # Netdata removed; see modules/monitoring.nix for Prometheus+Grafana
 
   services.caddy = {
     enable = true;
@@ -178,11 +96,7 @@
           respond "Matt's website will be here someday." 200
         '';
       };
-      "stats.cernohorsky.ca" = {
-        extraConfig = ''
-          reverse_proxy 127.0.0.1:19999
-        '';
-      };
+      # stats.* removed; use metrics.cernohorsky.ca for Grafana
       "chess.cernohorsky.ca" = {
         extraConfig = ''
           reverse_proxy repertoire-builder:8090
@@ -201,7 +115,7 @@
     };
   };
 
-  users.users.caddy.extraGroups = [ "netdata" ];
+  # no extra groups needed for caddy now
 
   # Configure nix for deployment
   nix.settings.trusted-users = [ "@wheel" ];
@@ -209,15 +123,7 @@
   # Disable autologin.
   services.getty.autologinUser = null;
 
-  # Open ports in the firewall.
-  networking.firewall = {
-    allowedTCPPorts = [
-      22
-      80
-      443
-    ];
-    trustedInterfaces = [ "br-containers" ];
-  };
+  # Firewall moved to modules/security.nix
 
   # Additional container networking will be configured in repertoire-builder-container.nix
 
