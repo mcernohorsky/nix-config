@@ -19,7 +19,7 @@
       ".hushlogin".text = ""; # Disable login messages in the terminal.
       "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
       ".local/bin/dev" = {
-        source = ./home/bin/dev;
+        source = ./bin/dev;
         executable = true;
       };
       # Make the helix background transparent.
@@ -28,7 +28,7 @@
         # inherits = "catppuccin_mocha"
         "ui.background" = {}
       '';
-      ".config/zellij/config.kdl".source = ./home/config.kdl;
+      ".config/zellij/config.kdl".source = ./config.kdl;
     };
 
     packages = with pkgs; [
@@ -231,6 +231,9 @@
     direnv = {
       enable = true;
       nix-direnv.enable = true;
+      config = {
+        warn_timeout = 0;
+      };
     };
 
     fzf = {

@@ -13,6 +13,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Deployment
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Homebrew
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
     homebrew-core = {
@@ -31,6 +37,12 @@
     # Additional packages
     helix-master.url = "github:helix-editor/helix";
     # ghostty.url = "github:clo4/ghostty-hm-module";
+
+    # Repertoire Builder (using HTTPS with token)
+    repertoire-builder = {
+      url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -41,7 +53,7 @@
         specialArgs = { inherit inputs; };
         modules = [
           # System configuration
-          ./hosts/macbook-pro-m2/default.nix
+          ./hosts/macbook-pro-m2/configuration.nix
 
           # Home Manager configuration
           inputs.home-manager.darwinModules.home-manager
@@ -51,7 +63,7 @@
               useUserPackages = true;
               extraSpecialArgs = { inherit inputs; };
               users.matt.imports = [
-                ./home.nix
+                ./hosts/macbook-pro-m2/home/home.nix
                 # inputs.ghostty.homeModules.default
               ];
             };
@@ -75,6 +87,49 @@
           }
         ];
       };
+
+      nixosConfigurations.oracle-0 = inputs.nixpkgs.lib.nixosSystem {
+        system = "aarch64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          ./hosts/oracle-0/configuration.nix
+        ];
+      };
+
+      # Deploy-rs configuration
+      deploy.nodes.oracle-0 = {
+        hostname = "161.153.41.243";
+        sshUser = "matt";
+        profiles.system = {
+          user = "root";
+          path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;
+        };
+      };
+
+      # Deploy-rs checks
+      checks.aarch64-linux = inputs.deploy-rs.lib.aarch64-linux.deployChecks inputs.self.deploy;
+
+      # Development shells
+      devShells = inputs.nixpkgs.lib.genAttrs [ "aarch64-linux" "x86_64-linux" "aarch64-darwin" ] (
+        system:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              inputs.deploy-rs.packages.${system}.deploy-rs
+              just
+              git
+              ssh-to-age
+            ];
+            shellHook = ''
+              echo "🚀 NixOS deployment environment ready!"
+              echo "Use 'deploy .#oracle-0' to deploy to your Oracle VPS"
+            '';
+          };
+        }
+      );
 
       templates = {
         zig = {

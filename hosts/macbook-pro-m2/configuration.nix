@@ -17,6 +17,7 @@
         "@admin"
         "matt"
       ];
+      download-buffer-size = 524288000; # 500 MiB
     };
     optimise.automatic = true;
     gc = {
