@@ -37,9 +37,8 @@
     home = "/Users/matt";
   };
 
-  programs.fish.enable = true;
-  programs.zsh.enable = true;
   programs.bash.enable = true;
+  programs.zsh.enable = true;
 
   homebrew = {
     enable = true;
@@ -57,11 +56,8 @@
 
     casks = [
       # "android-studio"
-      "arc"
       "betterdisplay"
-      # "bettertouchtool"
       "blender"
-      # "dbngin"
       "cursor"
       "discord"
       "ghostty"
@@ -83,10 +79,7 @@
       "stats"
       "steam"
       "surfshark"
-      # "tableplus"
-      # "windsurf"
-      # "zed"
-      "zen-browser"
+      "zen"
     ];
 
     masApps = {

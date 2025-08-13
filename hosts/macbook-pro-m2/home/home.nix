@@ -36,7 +36,10 @@
       gemini-cli
       lazydocker
       tree
-      nushell
+      ripgrep
+      eza
+      fd
+      bottom
 
       tailscale
       bitwarden-desktop
@@ -71,7 +74,7 @@
         editor = {
           scrolloff = 10;
           shell = [
-            "fish"
+            "nu"
             "-c"
           ];
           line-number = "relative";
@@ -181,37 +184,28 @@
       };
     };
 
-    # Shell and Terminal
-    fish = {
-      enable = true;
-      interactiveShellInit = "set fish_greeting";
-    };
-
     zsh.enable = true;
-
     bash.enable = true;
-
-    nushell.enable = true;
+    nushell = {
+      enable = true;
+      settings = {
+        show_banner = false;
+      };
+    };
 
     ghostty = {
       enable = true;
       package = null;
-      # Enable these for the official hm module when it's fixed.
-      enableBashIntegration = true;
-      enableZshIntegration = true;
-      enableFishIntegration = true;
       settings = {
         auto-update = "off";
-        shell-integration = "none";
         # theme = "light:GruvboxLight,dark:catppuccin-mocha";
         theme = "light:GruvboxLight,dark:GruvboxDarkHard";
         background = "#1d2021"; # Add a little blue.
         background-opacity = 0.95;
-        background-blur-radius = 20;
+        background-blur = 10;
         macos-option-as-alt = "left";
         mouse-hide-while-typing = true;
-        command = "${pkgs.fish}/bin/fish";
-        window-save-state = "always";
+        command = "${pkgs.bashInteractive}/bin/bash -i -l -c 'exec nu'";
         keybind = "global:opt+ =toggle_quick_terminal";
         quick-terminal-animation-duration = 0;
         macos-non-native-fullscreen = true;
@@ -220,7 +214,12 @@
     };
 
     # CLI Tools
-    starship = {
+    oh-my-posh = {
+      enable = true;
+      useTheme = "agnoster";
+    };
+
+    atuin = {
       enable = true;
     };
 

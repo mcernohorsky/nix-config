@@ -115,6 +115,10 @@
     };
   };
 
+  # Provide built frontend to the repertoire-builder container module
+  services.repertoire-builder.webDist =
+    inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
+
   # no extra groups needed for caddy now
 
   # Configure nix for deployment
