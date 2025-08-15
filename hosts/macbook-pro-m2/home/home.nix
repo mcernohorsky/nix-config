@@ -213,10 +213,14 @@
     };
 
     # CLI Tools
-    oh-my-posh = {
+    starship = {
       enable = true;
-      useTheme = "agnoster";
     };
+
+    # oh-my-posh = {
+    #   enable = true;
+    #   useTheme = "agnoster";
+    # };
 
     atuin = {
       enable = true;
