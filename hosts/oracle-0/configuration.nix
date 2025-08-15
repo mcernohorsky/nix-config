@@ -119,7 +119,6 @@
   services.repertoire-builder.webDist =
     inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
 
-  # no extra groups needed for caddy now
 
   # Configure nix for deployment
   nix.settings.trusted-users = [ "@wheel" ];

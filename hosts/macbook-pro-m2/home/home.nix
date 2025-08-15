@@ -36,10 +36,9 @@
       gemini-cli
       lazydocker
       tree
-      ripgrep
-      eza
       fd
       bottom
+      hyperfine
 
       tailscale
       bitwarden-desktop
