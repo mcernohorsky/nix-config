@@ -18,6 +18,16 @@
         "matt"
       ];
       download-buffer-size = 524288000; # 500 MiB
+
+      # Binary caches for faster builds
+      extra-substituters = [
+        "https://helix.cachix.org"
+        "https://cache.numtide.com" # nix-ai-tools (amp, claude-code, opencode, etc.)
+      ];
+      extra-trusted-public-keys = [
+        "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
+        "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+      ];
     };
     optimise.automatic = true;
     gc = {
@@ -55,20 +65,22 @@
     ];
 
     casks = [
+      "affinity"
       # "android-studio"
       "betterdisplay"
       "blender"
       "cursor"
       "discord"
       "ghostty"
+      "handy"
       # "hammerspoon"
+      "helium-browser"
       "iina"
       "imageoptim"
       "inkscape"
       "itsycal"
       "keka"
       # "kicad"
-      "maccy"
       "magicavoxel"
       "monodraw"
       "orbstack"
@@ -80,6 +92,9 @@
       "steam"
       "surfshark"
       "zen"
+      "orion"
+      "readest"
+      "raindropio"
     ];
 
     masApps = {
@@ -87,10 +102,9 @@
       "Dropover" = 1355679052;
       "Kindle" = 302584613;
       "Klack" = 6446206067;
+      # "Xcode" = 497799835;
       # "Microsoft Excel" = 462058435;
       # "Microsoft Word" = 462054704;
-      # "Perplexity" = 6714467650;
-      "Xcode" = 497799835;
       # "Pages" = 409201541;
     };
 
@@ -123,7 +137,6 @@
       AppleShowAllExtensions = true;
       InitialKeyRepeat = 15;
       KeyRepeat = 2;
-      NSAutomaticCapitalizationEnabled = false;
       NSWindowShouldDragOnGesture = true;
       NSNavPanelExpandedStateForSaveMode = true;
       NSNavPanelExpandedStateForSaveMode2 = true;

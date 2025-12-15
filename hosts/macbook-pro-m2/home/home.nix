@@ -10,9 +10,13 @@
     stateVersion = "23.11";
 
     # Add scripts to the PATH.
-    sessionPath = [ "$HOME/.local/bin" ];
+    sessionPath = [
+      "$HOME/.local/bin"
+      "$HOME/.bun/bin" # For bun global packages (opencode plugins, etc.)
+    ];
     sessionVariables = {
       DIRENV_WARN_TIMEOUT = "0";
+      NODE_PATH = "$HOME/.bun/install/global/node_modules"; # For opencode plugin resolution
     };
 
     file = {
@@ -29,30 +33,48 @@
         "ui.background" = {}
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
+      # mgrep tool for opencode (replaces `mgrep install-opencode`)
+      ".config/opencode/tool/mgrep.ts".source = ./mgrep.ts;
     };
 
-    packages = with pkgs; [
-      claude-code
-      gemini-cli
-      lazydocker
-      tree
-      fd
-      bottom
-      hyperfine
+    packages =
+      with pkgs;
+      [
+        lazydocker
+        tree
+        fd
+        bottom
+        hyperfine
+        gh
 
-      tailscale
-      bitwarden-desktop
+        tailscale
+        bitwarden-desktop
 
-      nixd
-      nixfmt-rfc-style
+        nixd
+        nixfmt-rfc-style
 
-      # fonts
-      jetbrains-mono
-      nerd-fonts.jetbrains-mono
-      inter
-      merriweather
-      roboto
-    ];
+        bun # for npm tools: bun i -g opencode-google-antigravity-auth @mixedbread/mgrep @opencode-ai/plugin
+
+        # fonts
+        jetbrains-mono
+        nerd-fonts.jetbrains-mono
+        inter
+        merriweather
+        roboto
+      ]
+      ++ (
+        let
+          ai-tools = inputs.nix-ai-tools.packages.${pkgs.stdenv.hostPlatform.system};
+        in
+        [
+          # AI Coding Tools
+          ai-tools.amp
+          ai-tools.codex
+          ai-tools.claude-code
+          ai-tools.gemini-cli
+          ai-tools.opencode
+        ]
+      );
 
     shellAliases = {
       lg = "lazygit";
@@ -66,7 +88,7 @@
   programs = {
     helix = {
       enable = true;
-      package = inputs.helix-master.packages.${pkgs.system}.default;
+      package = inputs.helix-master.packages.${pkgs.stdenv.hostPlatform.system}.default;
       defaultEditor = true;
       settings = {
         theme = "custom";
@@ -175,9 +197,9 @@
 
     git = {
       enable = true;
-      userName = "Matt Cernohorsky";
-      userEmail = "matt@cernohorsky.ca";
-      extraConfig = {
+      settings = {
+        user.name = "Matt Cernohorsky";
+        user.email = "matt@cernohorsky.ca";
         github.user = "mcernohorsky";
         init.defaultBranch = "main";
       };
@@ -198,14 +220,13 @@
       settings = {
         auto-update = "off";
         # theme = "light:GruvboxLight,dark:catppuccin-mocha";
-        theme = "light:GruvboxLight,dark:GruvboxDarkHard";
-        background = "#1d2021"; # Add a little blue.
+        theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
         background-opacity = 0.95;
         background-blur = 10;
         macos-option-as-alt = "left";
         mouse-hide-while-typing = true;
         command = "${pkgs.bashInteractive}/bin/bash -i -l -c 'exec nu'";
-        keybind = "global:opt+ =toggle_quick_terminal";
+        # keybind = "global:opt+ =toggle_quick_terminal";
         quick-terminal-animation-duration = 0;
         macos-non-native-fullscreen = true;
         # macos-icon = "retro";
@@ -216,11 +237,6 @@
     starship = {
       enable = true;
     };
-
-    # oh-my-posh = {
-    #   enable = true;
-    #   useTheme = "agnoster";
-    # };
 
     atuin = {
       enable = true;
@@ -270,8 +286,29 @@
       enable = true;
     };
 
+    # AI coding assistant - package from nix-ai-tools, config via home-manager
+    # Run once after rebuild:
+    #   bun i -g opencode-google-antigravity-auth @mixedbread/mgrep @opencode-ai/plugin
+    #   mgrep login
+    #   opencode auth login
     opencode = {
       enable = true;
+      package = null; # Use package from nix-ai-tools instead
+      settings = {
+        plugin = [
+          "opencode-google-antigravity-auth"
+        ];
+        mcp = {
+          mgrep = {
+            type = "local";
+            command = [
+              "mgrep"
+              "mcp"
+            ];
+            enabled = true;
+          };
+        };
+      };
     };
   };
 }

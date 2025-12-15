@@ -43,6 +43,9 @@
       url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # AI Coding Tools
+    nix-ai-tools.url = "github:numtide/nix-ai-tools";
   };
 
   outputs =
