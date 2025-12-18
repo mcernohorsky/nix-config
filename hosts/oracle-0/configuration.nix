@@ -96,21 +96,25 @@
 
   services.caddy = {
     enable = true;
+    globalConfig = ''
+      auto_https off
+    '';
     virtualHosts = {
-      "cernohorsky.ca" = {
+      "http://cernohorsky.ca" = {
+        listenAddresses = [ "127.0.0.1" ];
         extraConfig = ''
           respond "Matt's website will be here someday." 200
         '';
       };
       # stats.* removed; use metrics.cernohorsky.ca for Grafana
-      "chess.cernohorsky.ca" = {
+      "http://chess.cernohorsky.ca" = {
+        listenAddresses = [ "127.0.0.1" ];
         extraConfig = ''
           reverse_proxy repertoire-builder:8090
 
           encode gzip
 
           header {
-            Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
             X-Content-Type-Options "nosniff"
             X-Frame-Options "DENY"
             X-XSS-Protection "1; mode=block"

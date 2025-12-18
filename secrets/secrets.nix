@@ -17,4 +17,7 @@ in
 {
   # Tailscale OAuth client secret (used as auth key)
   "tailscale-authkey.age".publicKeys = all;
+
+  # Cloudflare Tunnel token for oracle-0
+  "cloudflared-token.age".publicKeys = all;
 }
