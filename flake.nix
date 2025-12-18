@@ -135,7 +135,7 @@
 
       # Deploy-rs configuration (using Tailscale MagicDNS hostnames)
       deploy.nodes.oracle-0 = {
-        hostname = "oracle-0";
+        hostname = "oracle-0.tailc41cf5.ts.net";
         sshUser = "matt";
         profiles.system = {
           user = "root";
@@ -144,7 +144,7 @@
       };
 
       deploy.nodes.matt-desktop = {
-        hostname = "matt-desktop";
+        hostname = "matt-desktop.tailc41cf5.ts.net";
         sshUser = "root";
         profiles.system = {
           user = "root";

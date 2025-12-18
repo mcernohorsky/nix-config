@@ -52,6 +52,7 @@ deploy-verbose:
         -v ~/.ssh:/root/.ssh:ro \
         -w /workspace \
         --network host \
+        --dns 100.100.100.100 \
         nixos/nix:latest \
         nix --experimental-features 'nix-command flakes' run github:serokell/deploy-rs -- --skip-checks .#oracle-0 --debug-logs
 
