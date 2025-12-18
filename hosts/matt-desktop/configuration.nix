@@ -38,6 +38,7 @@
 
   services.openssh = {
     enable = true;
+    openFirewall = false; # Only allow SSH over Tailscale
     settings = {
       PasswordAuthentication = false;
       PermitRootLogin = "prohibit-password";
@@ -50,9 +51,13 @@
   # Tailscale VPN
   services.tailscale = {
     enable = true;
+    openFirewall = true; # Allow UDP 41641 for direct connections
     authKeyFile = config.age.secrets.tailscale-authkey.path;
     extraUpFlags = [ "--advertise-tags=tag:trusted" ];
   };
+
+  # Firewall: trust Tailscale interface for SSH access
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 22 ];
 
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];

@@ -75,6 +75,7 @@
   # Enable the OpenSSH daemon.
   services.openssh = {
     enable = true;
+    openFirewall = false; # Only allow SSH over Tailscale
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;

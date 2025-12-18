@@ -31,8 +31,8 @@
 
   # Firewall
   networking.firewall = {
-    allowedTCPPorts = [ 22 80 443 ];
-    trustedInterfaces = [ "br-containers" ];
+    allowedTCPPorts = [ 80 443 ]; # HTTP/HTTPS for Caddy (SSH only via Tailscale)
+    trustedInterfaces = [ "tailscale0" "br-containers" ];
   };
 }
 
