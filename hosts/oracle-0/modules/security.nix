@@ -7,16 +7,6 @@
     openFirewall = true;
   };
 
-  # Fail2ban (protect SSH/Caddy)
-  services.fail2ban = {
-    enable = true;
-    bantime = "1h";
-    maxretry = 5;
-    jails = {
-      sshd.settings.enabled = true;
-    };
-  };
-
   # Firewall - all ports closed; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
   networking.firewall = {
     allowedTCPPorts = [ ]; # No public ports; Cloudflare Tunnel handles HTTP traffic
