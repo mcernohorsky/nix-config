@@ -53,7 +53,13 @@
     };
 
     # AI Coding Tools
-    nix-ai-tools.url = "github:numtide/nix-ai-tools";
+    llm-agents.url = "github:numtide/llm-agents.nix";
+
+    # Secrets management
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -103,6 +109,7 @@
         system = "aarch64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          inputs.agenix.nixosModules.default
           ./hosts/oracle-0/configuration.nix
         ];
       };
@@ -111,6 +118,7 @@
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          inputs.agenix.nixosModules.default
           inputs.disko.nixosModules.disko
           inputs.omarchy-nix.nixosModules.default
           inputs.home-manager.nixosModules.home-manager
@@ -137,7 +145,7 @@
 
       deploy.nodes.matt-desktop = {
         hostname = "10.0.0.100";
-        sshUser = "matt";
+        sshUser = "root";
         profiles.system = {
           user = "root";
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos inputs.self.nixosConfigurations.matt-desktop;

@@ -81,6 +81,16 @@
     };
   };
 
+  # Secrets management
+  age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
+
+  # Tailscale VPN
+  services.tailscale = {
+    enable = true;
+    authKeyFile = config.age.secrets.tailscale-authkey.path;
+    extraUpFlags = [ "--advertise-tags=tag:trusted" ];
+  };
+
   # Netdata removed; see modules/monitoring.nix for Prometheus+Grafana
 
   services.caddy = {
