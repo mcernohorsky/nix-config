@@ -6,8 +6,8 @@ This guide explains how to deploy the repertoire-builder application to your Ora
 
 The deployment consists of:
 - A native NixOS container running your repertoire-builder PocketBase application
-- Container configuration defined in the repertoire-builder project itself
-- Deploy-rs for automated deployments
+- Tailscale for secure, private access (SSH is restricted to Tailscale only)
+- Deploy-rs for automated deployments via Tailscale MagicDNS
 - Proper networking and firewall configuration
 - Persistent data storage
 
@@ -15,24 +15,22 @@ The deployment consists of:
 
 - **Project-level configuration**: The container configuration is defined in `container.nix` within the repertoire-builder project
 - **Infrastructure loading**: The Oracle VPS configuration imports the container module from the repertoire-builder flake
-- **Separation of concerns**: The project defines how it should be containerized, infrastructure just loads it
+- **Secrets Management**: Tailscale auth keys are managed via `agenix` in the `secrets/` directory.
 
 ## Prerequisites
 
-1. Oracle Cloud VPS running NixOS (already configured)
-2. SSH access to the VPS with your SSH key
-3. The VPS user (`matt`) has sudo access
+1. Oracle Cloud VPS running NixOS
+2. Tailscale installed and authenticated on your local machine
+3. SSH public keys added to `secrets/secrets.nix` for agenix encryption
 4. Nix with flakes enabled on your local machine
 
 ## Setup Steps
 
-### 1. Update VPS Hostname
+### 1. Tailscale Connectivity
 
-First, update the hostname in your flake.nix:
-
-```nix
-# In flake.nix, line ~101
-hostname = "YOUR_ACTUAL_VPS_IP_OR_HOSTNAME"; # Replace with your VPS IP
+Ensure you can reach the VPS via Tailscale:
+```bash
+ping oracle-0.tailc41cf5.ts.net
 ```
 
 ### 2. Update Flake Inputs
@@ -53,20 +51,11 @@ Or use just commands:
 # Check configuration
 just check
 
-# Deploy to VPS
-just deploy
-```
+# Deploy to Oracle VPS
+just deploy-oracle
 
-### 4. Verify Deployment
-
-Check that the container is running:
-```bash
-just container-status YOUR_VPS_IP
-```
-
-Check application logs:
-```bash
-just container-logs YOUR_VPS_IP
+# Deploy to Desktop
+just deploy-desktop
 ```
 
 ## Container Details
@@ -82,91 +71,48 @@ The repertoire-builder runs in a native NixOS container with:
 
 ## Accessing the Application
 
-Once deployed, you can access your repertoire-builder at:
-- External: `http://YOUR_VPS_IP:8090`
-- PocketBase Admin: `http://YOUR_VPS_IP:8090/_/`
+Once deployed, you can access your repertoire-builder via Tailscale:
+- External: `http://oracle-0:8090`
+- PocketBase Admin: `http://oracle-0:8090/_/`
 
 ## Container Management
 
+The `justfile` provides wrappers for container management using MagicDNS hostnames.
+
 ### Check Container Status
 ```bash
-ssh matt@YOUR_VPS_IP "sudo machinectl list"
+just container-status oracle-0
 ```
 
 ### View Container Logs
 ```bash
-ssh matt@YOUR_VPS_IP "sudo journalctl -M repertoire-builder -f"
+just container-logs oracle-0
 ```
 
 ### Restart Container
 ```bash
-ssh matt@YOUR_VPS_IP "sudo machinectl restart repertoire-builder"
+just container-restart oracle-0
 ```
 
 ### Enter Container Shell
 ```bash
-ssh matt@YOUR_VPS_IP "sudo machinectl shell repertoire-builder"
+just ssh-container oracle-0
 ```
-
-## Troubleshooting
-
-### Container Won't Start
-1. Check system logs: `sudo journalctl -u systemd-nspawn@repertoire-builder`
-2. Check container config: `sudo systemctl status systemd-nspawn@repertoire-builder`
-3. Verify data directory exists: `ls -la /var/lib/containers/repertoire-builder/`
-
-### Network Issues
-1. Check firewall: `sudo iptables -L -n`
-2. Verify NAT rules: `sudo iptables -t nat -L -n`
-3. Check container network: `sudo machinectl status repertoire-builder`
-
-### Application Issues
-1. Check service status inside container: `sudo machinectl shell repertoire-builder systemctl status repertoire-builder`
-2. View application logs: `sudo journalctl -M repertoire-builder -u repertoire-builder`
-
-### Build Failures
-If you get hash mismatch errors, you may need to:
-1. Update the repertoire-builder flake input
-2. Clear Nix cache: `nix store gc`
-3. Rebuild with `--rebuild-flake`
-
-## Updating the Application
-
-To update to a newer version of repertoire-builder:
-
-1. Update the flake input:
-   ```bash
-   nix flake lock --update-input repertoire-builder
-   ```
-
-2. Deploy the update:
-   ```bash
-   just deploy
-   ```
-
-The container will be rebuilt with the new version automatically.
 
 ## Security Notes
 
-- The container runs with limited privileges
-- Data is stored outside the container for persistence
-- Firewall rules restrict access to necessary ports only
-- Application runs as non-root user inside container
+- **SSH is restricted to Tailscale only**: Port 22 is closed on public interfaces.
+- **Direct Connections**: Open UDP port 41641 inbound in the Oracle Cloud security list for optimal performance.
+- **Agenix**: Secrets are encrypted using SSH host keys.
 
-## Backup
+## Troubleshooting
 
-To backup your PocketBase data:
+### Host Key Verification Failed
+If you change hostnames or IPs, you may need to clear old host keys:
 ```bash
-# On the VPS
-sudo tar -czf repertoire-backup-$(date +%Y%m%d).tar.gz -C /var/lib/containers/repertoire-builder/data .
+ssh-keygen -R oracle-0.tailc41cf5.ts.net
+ssh-keyscan -H oracle-0.tailc41cf5.ts.net >> ~/.ssh/known_hosts
 ```
 
-To restore:
-```bash
-# Stop container first
-sudo machinectl stop repertoire-builder
-# Restore data
-sudo tar -xzf repertoire-backup-YYYYMMDD.tar.gz -C /var/lib/containers/repertoire-builder/data
-# Start container
-sudo machinectl start repertoire-builder
-```
+### Deployment Timeout
+If deployment times out during activation, it usually means the Tailscale connection was interrupted. Magic rollback will revert the changes automatically.

@@ -32,17 +32,30 @@ nix run nix-darwin -- switch --flake ~/.config/nix-config
 ## Structure
 
 - `flake.nix`: Main entry point and dependency declarations
-- `home.nix`: Home-manager configuration
 - `hosts/`: Host-specific configurations
-  - `macbook-pro-m2/`: Configuration specific to MacBook Pro M2
-- `home/`: User-specific configurations
-  - `neovim/`: Neovim configuration
-  - `RectangleConfig.json`: Rectangle configuration (import manually)
+  - `macbook-pro-m2/`: macOS configuration
+  - `matt-desktop/`: Linux desktop configuration
+  - `oracle-0/`: Oracle Cloud NixOS VPS configuration
+- `secrets/`: Encrypted secrets managed by `agenix`
+- `templates/`: Nix flake templates for various languages
+- `justfile`: Common commands for deployment and management
 
-## Updating
+## Deployment
 
-To update the system:
+Deployments are handled via `deploy-rs` over Tailscale.
+
 ```bash
-nix flake update --flake ~/.config/nix-config
-darwin-rebuild switch --flake ~/.config/nix-config
+# Deploy to desktop
+just deploy-desktop
+
+# Deploy to Oracle VPS (via Docker)
+just deploy-oracle
+```
+
+## Secrets
+
+Secrets are stored in `secrets/*.age` and defined in `secrets/secrets.nix`.
+To edit secrets:
+```bash
+agenix -e secrets/tailscale-authkey.age
 ```

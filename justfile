@@ -20,10 +20,9 @@ dev:
 build-oracle:
     nix build .#nixosConfigurations.oracle-0.config.system.build.toplevel
 
-# Deploy to Oracle VPS (replace YOUR_VPS_IP_OR_HOSTNAME in flake.nix first)
+# Deploy to Oracle VPS using NixOS Docker container
 deploy-oracle:
     @echo "🚀 Deploying to Oracle VPS using NixOS Docker container..."
-    @echo "Make sure you've updated the hostname in flake.nix!"
     @echo "Container config is loaded from repertoire-builder project"
     docker run --rm \
         --platform linux/arm64 \
@@ -42,40 +41,25 @@ deploy-desktop:
     @echo "🚀 Deploying to Matt-Desktop..."
     deploy .#matt-desktop --skip-checks
 
-# Deploy with verbose output
-deploy-verbose:
-    @echo "🚀 Deploying to Oracle VPS with verbose output using NixOS Docker container..."
-    docker run --rm \
-        --security-opt seccomp=unconfined \
-        -v $(pwd):/workspace \
-        -v nix-config-store:/nix/store \
-        -v ~/.ssh:/root/.ssh:ro \
-        -w /workspace \
-        --network host \
-        --dns 100.100.100.100 \
-        nixos/nix:latest \
-        nix --experimental-features 'nix-command flakes' run github:serokell/deploy-rs -- --skip-checks .#oracle-0 --debug-logs
+# Deploy everything
+deploy-all: deploy-desktop deploy-oracle
 
-# Check deployment configuration
-check:
-    nix flake check
-
-# Show container status on remote server (requires SSH access)
-container-status IP:
-    ssh matt@{{IP}} "sudo machinectl list"
+# Show container status on remote server
+container-status HOST='oracle-0':
+    ssh matt@{{HOST}} "sudo machinectl list"
 
 # Check container logs on remote server
-container-logs IP:
-    ssh matt@{{IP}} "sudo journalctl -M repertoire-builder -f"
+container-logs HOST='oracle-0':
+    ssh matt@{{HOST}} "sudo journalctl -M repertoire-builder -f"
 
 # Restart repertoire-builder container on remote server
-container-restart IP:
-    ssh matt@{{IP}} "sudo machinectl restart repertoire-builder"
+container-restart HOST='oracle-0':
+    ssh matt@{{HOST}} "sudo machinectl restart repertoire-builder"
 
-# SSH into the Oracle VPS
-ssh IP:
-    ssh matt@{{IP}}
+# SSH into the host
+ssh HOST='oracle-0':
+    ssh matt@{{HOST}}
 
 # SSH into the repertoire-builder container
-ssh-container IP:
-    ssh matt@{{IP}} "sudo machinectl shell repertoire-builder"
+ssh-container HOST='oracle-0':
+    ssh matt@{{HOST}} "sudo machinectl shell repertoire-builder"
