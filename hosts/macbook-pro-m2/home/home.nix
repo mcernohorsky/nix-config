@@ -12,11 +12,11 @@
     # Add scripts to the PATH.
     sessionPath = [
       "$HOME/.local/bin"
-      "$HOME/.bun/bin" # For bun global packages (opencode plugins, etc.)
+      #"$HOME/.bun/bin" # For bun global packages (opencode plugins, etc.)
     ];
     sessionVariables = {
       DIRENV_WARN_TIMEOUT = "0";
-      NODE_PATH = "$HOME/.bun/install/global/node_modules"; # For opencode plugin resolution
+      #NODE_PATH = "$HOME/.bun/install/global/node_modules"; # For opencode plugin resolution
     };
 
     file = {
@@ -33,8 +33,6 @@
         "ui.background" = {}
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
-      # mgrep tool for opencode (replaces `mgrep install-opencode`)
-      ".config/opencode/tool/mgrep.ts".source = ./mgrep.ts;
     };
 
     packages =
@@ -54,6 +52,7 @@
         nixfmt-rfc-style
 
         bun # for npm tools: bun i -g opencode-google-antigravity-auth @mixedbread/mgrep @opencode-ai/plugin
+        nodejs # needed for running globally installed npm packages (they use #!/usr/bin/env node)
 
         # fonts
         jetbrains-mono
@@ -64,7 +63,7 @@
       ]
       ++ (
         let
-          ai-tools = inputs.nix-ai-tools.packages.${pkgs.stdenv.hostPlatform.system};
+          ai-tools = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
         in
         [
           # AI Coding Tools
@@ -72,7 +71,7 @@
           ai-tools.codex
           ai-tools.claude-code
           ai-tools.gemini-cli
-          ai-tools.opencode
+          # opencode is managed via programs.opencode
         ]
       );
 
@@ -289,23 +288,59 @@
     # AI coding assistant - package from nix-ai-tools, config via home-manager
     # Run once after rebuild:
     #   bun i -g opencode-google-antigravity-auth @mixedbread/mgrep @opencode-ai/plugin
-    #   mgrep login
     #   opencode auth login
+    #   mgrep install-opencode
     opencode = {
       enable = true;
-      package = null; # Use package from nix-ai-tools instead
+      package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
       settings = {
         plugin = [
           "opencode-google-antigravity-auth"
         ];
-        mcp = {
-          mgrep = {
-            type = "local";
-            command = [
-              "mgrep"
-              "mcp"
-            ];
-            enabled = true;
+        provider = {
+          google = {
+            npm = "@ai-sdk/google";
+            models = {
+              "gemini-claude-opus-4-5-thinking-high" = {
+                id = "gemini-claude-opus-4-5-thinking";
+                name = "Claude Opus 4.5 (High Thinking)";
+                release_date = "2025-11-24";
+                reasoning = true;
+                limit = {
+                  context = 200000;
+                  output = 64000;
+                };
+                cost = {
+                  input = 5;
+                  output = 25;
+                  cache_read = 0.5;
+                };
+                modalities = {
+                  input = [
+                    "text"
+                    "image"
+                    "pdf"
+                  ];
+                  output = [ "text" ];
+                };
+                options = {
+                  thinkingConfig = {
+                    thinkingBudget = 32000;
+                    includeThoughts = true;
+                  };
+                };
+              };
+              "gemini-3-flash-high" = {
+                id = "gemini-3-flash";
+                name = "Gemini 3 Flash (High Thinking)";
+                options = {
+                  thinkingConfig = {
+                    thinkingLevel = "high";
+                    includeThoughts = true;
+                  };
+                };
+              };
+            };
           };
         };
       };

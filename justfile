@@ -21,7 +21,7 @@ build-oracle:
     nix build .#nixosConfigurations.oracle-0.config.system.build.toplevel
 
 # Deploy to Oracle VPS (replace YOUR_VPS_IP_OR_HOSTNAME in flake.nix first)
-deploy:
+deploy-oracle:
     @echo "🚀 Deploying to Oracle VPS using NixOS Docker container..."
     @echo "Make sure you've updated the hostname in flake.nix!"
     @echo "Container config is loaded from repertoire-builder project"
@@ -36,6 +36,11 @@ deploy:
         -e NIX_CONFIG="experimental-features = nix-command flakes" \
         nixos/nix:latest \
         nix --experimental-features 'nix-command flakes' run github:serokell/deploy-rs -- --skip-checks .#oracle-0
+
+# Deploy to Linux Desktop
+deploy-desktop:
+    @echo "🚀 Deploying to Matt-Desktop..."
+    deploy .#matt-desktop --skip-checks
 
 # Deploy with verbose output
 deploy-verbose:

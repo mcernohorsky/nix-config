@@ -12,6 +12,14 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    omarchy-nix = {
+      url = "github:henrysipp/omarchy-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Deployment
     deploy-rs = {
@@ -99,6 +107,24 @@
         ];
       };
 
+      nixosConfigurations.matt-desktop = inputs.nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = { inherit inputs; };
+        modules = [
+          inputs.disko.nixosModules.disko
+          inputs.omarchy-nix.nixosModules.default
+          inputs.home-manager.nixosModules.home-manager
+          ./hosts/matt-desktop/configuration.nix
+          {
+            home-manager = {
+              useGlobalPkgs = true;
+              useUserPackages = true;
+              extraSpecialArgs = { inherit inputs; };
+            };
+          }
+        ];
+      };
+
       # Deploy-rs configuration
       deploy.nodes.oracle-0 = {
         hostname = "161.153.41.243";
@@ -109,8 +135,18 @@
         };
       };
 
+      deploy.nodes.matt-desktop = {
+        hostname = "10.0.0.100";
+        sshUser = "matt";
+        profiles.system = {
+          user = "root";
+          path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos inputs.self.nixosConfigurations.matt-desktop;
+        };
+      };
+
       # Deploy-rs checks
       checks.aarch64-linux = inputs.deploy-rs.lib.aarch64-linux.deployChecks inputs.self.deploy;
+      checks.x86_64-linux = inputs.deploy-rs.lib.x86_64-linux.deployChecks inputs.self.deploy;
 
       # Development shells
       devShells = inputs.nixpkgs.lib.genAttrs [ "aarch64-linux" "x86_64-linux" "aarch64-darwin" ] (
