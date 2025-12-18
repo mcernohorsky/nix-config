@@ -133,9 +133,9 @@
         ];
       };
 
-      # Deploy-rs configuration (using Tailscale IPs for SSH-over-Tailscale)
+      # Deploy-rs configuration (using Tailscale MagicDNS hostnames)
       deploy.nodes.oracle-0 = {
-        hostname = "100.72.102.100"; # Tailscale IP
+        hostname = "oracle-0";
         sshUser = "matt";
         profiles.system = {
           user = "root";
@@ -144,7 +144,7 @@
       };
 
       deploy.nodes.matt-desktop = {
-        hostname = "100.76.6.39"; # Tailscale IP
+        hostname = "matt-desktop";
         sshUser = "root";
         profiles.system = {
           user = "root";
