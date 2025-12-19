@@ -1,6 +1,20 @@
 {
   description = "nix-darwin and home-manager configuration by Matt Cernohorsky";
 
+  # Binary caches for faster builds (applies during nix build/deploy)
+  nixConfig = {
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+      "https://hyprland.cachix.org"
+      "https://deploy-rs.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+      "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
+    ];
+  };
+
   inputs = {
     # Core
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
@@ -149,6 +163,7 @@
       deploy.nodes.matt-desktop = {
         hostname = "matt-desktop.tailc41cf5.ts.net";
         sshUser = "root";
+        remoteBuild = true;
         profiles.system = {
           user = "root";
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos inputs.self.nixosConfigurations.matt-desktop;
