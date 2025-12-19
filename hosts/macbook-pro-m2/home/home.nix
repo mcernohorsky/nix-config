@@ -12,11 +12,11 @@
     # Add scripts to the PATH.
     sessionPath = [
       "$HOME/.local/bin"
-      #"$HOME/.bun/bin" # For bun global packages (opencode plugins, etc.)
+      "$HOME/.bun/bin" # For bun global packages (opencode plugins, etc.)
     ];
     sessionVariables = {
       DIRENV_WARN_TIMEOUT = "0";
-      #NODE_PATH = "$HOME/.bun/install/global/node_modules"; # For opencode plugin resolution
+      NODE_PATH = "$HOME/.bun/install/global/node_modules"; # For opencode plugin resolution
     };
 
     file = {
@@ -294,6 +294,7 @@
       enable = true;
       package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
       settings = {
+        small_model = "opencode/grok-code";
         plugin = [
           "opencode-google-antigravity-auth"
         ];

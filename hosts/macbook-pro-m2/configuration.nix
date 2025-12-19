@@ -22,7 +22,7 @@
       # Binary caches for faster builds
       extra-substituters = [
         "https://helix.cachix.org"
-        "https://cache.numtide.com" # nix-ai-tools (amp, claude-code, opencode, etc.)
+        "https://cache.numtide.com" # llm-agents (amp, claude-code, opencode, etc.)
       ];
       extra-trusted-public-keys = [
         "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
@@ -160,6 +160,9 @@
 
   # Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
+
+  networking.hostName = "macbook-pro-m2";
+  networking.computerName = "macbook-pro-m2";
 
   services.tailscale.enable = true;
 }

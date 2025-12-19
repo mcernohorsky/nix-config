@@ -16,10 +16,19 @@
     ./modules/security.nix
   ];
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix.settings = {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+    # Binary caches for faster builds
+    extra-substituters = [
+      "https://deploy-rs.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
+    ];
+  };
 
   boot = {
     loader = {

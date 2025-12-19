@@ -4,35 +4,78 @@
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
+    ./modules/core.nix
+    ./modules/nvidia.nix
+    ./modules/hyprland.nix
+    ./modules/gaming.nix
+    ./modules/media.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.timeout = 2; # Faster boot menu
 
   networking.hostName = "matt-desktop";
+
+  # Fix slow shutdown
+  systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
 
   nixpkgs.config.allowUnfree = true;
 
   users.users.matt = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ];
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" "input" ];
     openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca" ];
   };
 
-  omarchy = {
-    full_name = "Matt Cernohorsky";
-    email_address = "matt@cernohorsky.ca";
-    theme = "gruvbox";
-    exclude_packages = with pkgs; [
-      vscode
-    ];
-  };
+  # Stylix system-wide theming
+  stylix = {
+    enable = true;
+    autoEnable = true;
+    polarity = "dark";
+    # Gruvbox dark palette
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
+    # Generate a simple gruvbox-colored wallpaper
+    image = pkgs.runCommand "gruvbox-wallpaper.png" {
+      nativeBuildInputs = [ pkgs.imagemagick ];
+    } ''
+      magick -size 3840x2160 \
+        -define gradient:angle=135 \
+        gradient:'#1d2021-#282828' \
+        -blur 0x2 \
+        $out
+    '';
 
-  home-manager = {
-    users.matt = {
-      imports = [ inputs.omarchy-nix.homeManagerModules.default ];
-      home.stateVersion = "25.05";
-      nixpkgs.config.allowUnfree = true;
+    # Fonts (Using JetBrains Mono for everything)
+    fonts = {
+      monospace = {
+        package = pkgs.jetbrains-mono;
+        name = "JetBrains Mono";
+      };
+      sansSerif = {
+        package = pkgs.jetbrains-mono;
+        name = "JetBrains Mono";
+      };
+      serif = {
+        package = pkgs.jetbrains-mono;
+        name = "JetBrains Mono";
+      };
+      emoji = {
+        package = pkgs.noto-fonts-color-emoji;
+        name = "Noto Color Emoji";
+      };
+      sizes = {
+        terminal = 13;
+        applications = 11;
+        desktop = 11;
+        popups = 11;
+      };
+    };
+    cursor = {
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 32;
     };
   };
 
@@ -56,7 +99,7 @@
     extraUpFlags = [ "--advertise-tags=tag:trusted" ];
   };
 
-  # Firewall: trust Tailscale interface for SSH access
+  # Firewall: SSH only via Tailscale
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 22 ];
 
   nix.settings = {
@@ -65,13 +108,19 @@
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://hyprland.cachix.org"
+      "https://deploy-rs.cachix.org"
     ];
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+      "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
     ];
+    trusted-users = [ "root" "@wheel" ];
   };
+
+  # Fix Tailscale TPM issue after BIOS updates
+  systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
 
   system.stateVersion = "25.05";
 }

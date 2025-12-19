@@ -16,16 +16,9 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    omarchy-nix = {
-      url = "github:henrysipp/omarchy-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
-    # Deployment
-    deploy-rs = {
-      url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Deployment (don't override nixpkgs - use upstream's pinned version for cache hits)
+    deploy-rs.url = "github:serokell/deploy-rs";
 
     # Homebrew
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
@@ -44,7 +37,6 @@
 
     # Additional packages
     helix-master.url = "github:helix-editor/helix";
-    # ghostty.url = "github:clo4/ghostty-hm-module";
 
     # Repertoire Builder (using HTTPS with token)
     repertoire-builder = {
@@ -58,6 +50,17 @@
     # Secrets management
     agenix = {
       url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Desktop-specific inputs
+    zen-browser = {
+      url = "github:youwen5/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    stylix = {
+      url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -81,7 +84,6 @@
               extraSpecialArgs = { inherit inputs; };
               users.matt.imports = [
                 ./hosts/macbook-pro-m2/home/home.nix
-                # inputs.ghostty.homeModules.default
               ];
             };
           }
@@ -120,7 +122,7 @@
         modules = [
           inputs.agenix.nixosModules.default
           inputs.disko.nixosModules.disko
-          inputs.omarchy-nix.nixosModules.default
+          inputs.stylix.nixosModules.stylix
           inputs.home-manager.nixosModules.home-manager
           ./hosts/matt-desktop/configuration.nix
           {
@@ -128,6 +130,7 @@
               useGlobalPkgs = true;
               useUserPackages = true;
               extraSpecialArgs = { inherit inputs; };
+              users.matt = import ./hosts/matt-desktop/home.nix;
             };
           }
         ];
@@ -165,7 +168,7 @@
         {
           default = pkgs.mkShell {
             buildInputs = with pkgs; [
-              inputs.deploy-rs.packages.${system}.deploy-rs
+              deploy-rs
               just
               git
               ssh-to-age
