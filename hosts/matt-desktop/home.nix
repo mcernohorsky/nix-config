@@ -759,10 +759,6 @@
     # Browser
     inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
 
-    # Communication
-    slack
-    vesktop # Better Discord client
-
     # Development
     nushell
     lazygit
@@ -776,7 +772,6 @@
 
     # Media
     playerctl
-    spotify
     imv
     jellyfin-media-player
 

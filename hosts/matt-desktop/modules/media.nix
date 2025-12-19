@@ -16,7 +16,6 @@
 
     # MPV media player
     mpv
-    vlc
 
     # Media codecs
     ffmpeg-full
