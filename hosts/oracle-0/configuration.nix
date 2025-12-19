@@ -79,6 +79,7 @@
     helix
     wget
     ghostty.terminfo
+    tailscale
   ];
 
   # Enable the OpenSSH daemon.

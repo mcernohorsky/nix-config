@@ -165,4 +165,6 @@
   networking.computerName = "macbook-pro-m2";
 
   services.tailscale.enable = true;
+
+  environment.systemPackages = [ pkgs.tailscale ];
 }

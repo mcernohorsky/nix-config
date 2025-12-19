@@ -150,6 +150,12 @@
   # UPower for power management info
   services.upower.enable = true;
 
+  # Udisks2 for automounting removable drives
+  services.udisks2.enable = true;
+
+  # GVFS for Nautilus to see/mount drives
+  services.gvfs.enable = true;
+
   # Smartd for disk health monitoring
   services.smartd = {
     enable = true;

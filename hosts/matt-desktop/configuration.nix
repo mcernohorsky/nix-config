@@ -99,6 +99,9 @@
     extraUpFlags = [ "--advertise-tags=tag:trusted" ];
   };
 
+  # Make tailscale CLI available
+  environment.systemPackages = [ pkgs.tailscale ];
+
   # Firewall: SSH only via Tailscale
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 22 ];
 

@@ -13,6 +13,13 @@
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 
+  # HDD (NTFS) - always mounted
+  fileSystems."/mnt/hdd" = {
+    device = "/dev/disk/by-uuid/6A8A6FF58A6FBC67";
+    fsType = "ntfs-3g";
+    options = [ "rw" "uid=1000" "gid=100" "dmask=022" "fmask=133" "nofail" ];
+  };
+
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
   # (the default) this is the recommended approach. When using systemd-networkd it's
   # still possible to use this option, but it's recommended to use it in conjunction
