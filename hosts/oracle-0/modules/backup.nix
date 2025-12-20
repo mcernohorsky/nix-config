@@ -85,7 +85,7 @@
 
     # Secondary backup to matt-desktop via Restic REST Server
     vaultwarden-desktop = {
-      repository = "rest:http://oracle-0:nix-backup-secure-pass@matt-desktop.tailc41cf5.ts.net:8000/";
+      repository = "rest:http://matt-desktop.tailc41cf5.ts.net:8000/";
       passwordFile = config.age.secrets.restic-password.path;
 
       paths = [

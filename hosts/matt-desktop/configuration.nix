@@ -30,13 +30,13 @@
   };
 
   # Restic REST Server for receiving backups from oracle-0
-  # Note: appendOnly is enabled for extra security against compromise
+  # Security: Tailscale ACLs restrict access to tag:cloud only, appendOnly prevents deletion
   services.restic.server = {
     enable = true;
     dataDir = "/backups/oracle-0/vaultwarden";
     listenAddress = "8000";
     appendOnly = true;
-    htpasswd-file = config.age.secrets.restic-rest-server-htpasswd.path;
+    extraFlags = [ "--no-auth" ];
   };
 
   # Stylix system-wide theming
@@ -111,11 +111,6 @@
   # Secrets management
   age.secrets = {
     tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
-    restic-rest-server-htpasswd = {
-      file = ../../secrets/restic-rest-server-htpasswd.age;
-      owner = "restic";
-      group = "restic";
-    };
   };
 
   # Tailscale VPN

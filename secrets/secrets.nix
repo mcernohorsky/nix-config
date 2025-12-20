@@ -29,6 +29,4 @@ in
 
   # Cloudflare R2 credentials for restic backups
   "restic-r2-credentials.age".publicKeys = all;
-  # Restic REST server htpasswd for matt-desktop
-  "restic-rest-server-htpasswd.age".publicKeys = all;
 }
