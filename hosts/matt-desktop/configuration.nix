@@ -94,9 +94,19 @@
     openFirewall = false; # Only allow SSH over Tailscale
     settings = {
       PasswordAuthentication = false;
-      PermitRootLogin = "prohibit-password";
+      PermitRootLogin = "no";
     };
   };
+
+  # Passwordless sudo for matt (required for deploy-rs)
+  security.sudo.extraRules = [
+    {
+      users = [ "matt" ];
+      commands = [
+        { command = "ALL"; options = [ "NOPASSWD" ]; }
+      ];
+    }
+  ];
 
   # Secrets management
   age.secrets = {

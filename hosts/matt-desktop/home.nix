@@ -778,6 +778,7 @@
     # Media
     playerctl
     imv
+    jellyfin-media-player # for icons and assets
     # Force XWayland for jellyfin-media-player (Qt/Wayland compatibility issue)
     (pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
       exec env QT_QPA_PLATFORM=xcb ${pkgs.jellyfin-media-player}/bin/jellyfinmediaplayer "$@"
@@ -819,6 +820,24 @@
         "video/mp4" = "mpv.desktop";
         "video/x-matroska" = "mpv.desktop";
         "inode/directory" = "org.gnome.Nautilus.desktop";
+      };
+    };
+    desktopEntries = {
+      "org.jellyfin.JellyfinDesktop" = {
+        name = "Jellyfin (Media Player)";
+        exec = "jellyfinmediaplayer";
+        icon = "org.jellyfin.JellyfinDesktop";
+        comment = "Jellyfin Desktop Client (Fixed)";
+        terminal = false;
+        categories = [ "Video" "AudioVideo" "Player" ];
+      };
+      jellyfin-server = {
+        name = "Jellyfin (Server Web UI)";
+        exec = "xdg-open http://localhost:8096";
+        icon = "org.jellyfin.JellyfinDesktop";
+        comment = "Jellyfin Server Administration";
+        terminal = false;
+        categories = [ "Network" "Settings" ];
       };
     };
   };

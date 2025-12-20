@@ -162,7 +162,7 @@
 
       deploy.nodes.matt-desktop = {
         hostname = "matt-desktop.tailc41cf5.ts.net";
-        sshUser = "root";
+        sshUser = "matt";
         remoteBuild = true;
         profiles.system = {
           user = "root";
