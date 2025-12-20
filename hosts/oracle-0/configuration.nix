@@ -128,6 +128,7 @@
 
   services.caddy = {
     enable = true;
+    # Disable auto HTTPS - Cloudflare tunnels terminate TLS, Tailscale uses WireGuard
     globalConfig = ''
       auto_https off
     '';

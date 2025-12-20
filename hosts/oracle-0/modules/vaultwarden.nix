@@ -14,16 +14,18 @@
     enable = true;
     environmentFile = config.age.secrets.vaultwarden-admin-token.path;
     config = {
-      DOMAIN = "https://oracle-0.tailc41cf5.ts.net";
+      DOMAIN = "https://vault.cernohorsky.ca";
       ROCKET_ADDRESS = "127.0.0.1";
       ROCKET_PORT = 8222;
-      SIGNUPS_ALLOWED = true; # Set to false after initial account creation
+      SIGNUPS_ALLOWED = false;
       WEBSOCKET_ENABLED = true;
     };
   };
 
-  # Caddy reverse proxy with Tailscale HTTPS
-  services.caddy.virtualHosts."oracle-0.tailc41cf5.ts.net" = {
+  # Caddy reverse proxy for Vaultwarden
+  # Accessed via Cloudflare Tunnel (vault.cernohorsky.ca -> localhost:8222)
+  services.caddy.virtualHosts."http://vault.cernohorsky.ca" = {
+    listenAddresses = [ "127.0.0.1" ];
     extraConfig = ''
       reverse_proxy localhost:8222
 
