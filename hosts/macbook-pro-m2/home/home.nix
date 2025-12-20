@@ -334,6 +334,14 @@
               "gemini-3-flash-high" = {
                 id = "gemini-3-flash";
                 name = "Gemini 3 Flash (High Thinking)";
+                modalities = {
+                  input = [
+                    "text"
+                    "image"
+                    "pdf"
+                  ];
+                  output = [ "text" ];
+                };
                 options = {
                   thinkingConfig = {
                     thinkingLevel = "high";

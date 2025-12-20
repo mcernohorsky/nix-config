@@ -20,4 +20,15 @@ in
 
   # Cloudflare Tunnel token for oracle-0
   "cloudflared-token.age".publicKeys = all;
+
+  # Vaultwarden admin token (Argon2 hash)
+  "vaultwarden-admin-token.age".publicKeys = all;
+
+  # Restic backup encryption password
+  "restic-password.age".publicKeys = all;
+
+  # Cloudflare R2 credentials for restic backups
+  "restic-r2-credentials.age".publicKeys = all;
+  # Restic REST server htpasswd for matt-desktop
+  "restic-rest-server-htpasswd.age".publicKeys = all;
 }

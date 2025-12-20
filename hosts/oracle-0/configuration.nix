@@ -14,6 +14,8 @@
     ./modules/networking.nix
     ./modules/monitoring.nix
     ./modules/security.nix
+    ./modules/vaultwarden.nix
+    ./modules/backup.nix
   ];
 
   nix.settings = {

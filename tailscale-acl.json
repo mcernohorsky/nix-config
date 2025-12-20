@@ -1,112 +1,107 @@
 {
-  // Tailscale ACL Policy
-  // Apply this in the Tailscale Admin Console: https://login.tailscale.com/admin/acls
-  //
-  // Access model:
-  // - tag:trusted (matt-desktop): Full access to all devices
-  // - tag:cloud (oracle-0): Isolated, can only reach trusted devices on compute ports
-  // - autogroup:member (macbook, phone, iPad): Full access via user identity
-  //
-  // Taildrive: Enabled for trusted devices, user devices, and cloud (share only)
-
-  "tagOwners": {
-    "tag:trusted": ["autogroup:admin"],
-    "tag:cloud": ["autogroup:admin"]
-  },
-
-  "acls": [
-    // User devices + trusted servers have full access everywhere
-    {
-      "action": "accept",
-      "src": ["autogroup:member", "tag:trusted"],
-      "dst": ["*:*"]
-    },
-    // oracle-0 (tag:cloud) can reach matt-desktop (tag:trusted) on compute ports only
-    {
-      "action": "accept",
-      "src": ["tag:cloud"],
-      "dst": ["tag:trusted:8000-9000"]
-    }
-  ],
-
-  "ssh": [
-    // Users can SSH into their own devices
-    {
-      "action": "accept",
-      "src": ["autogroup:member"],
-      "dst": ["autogroup:self"],
-      "users": ["autogroup:nonroot", "root"]
-    },
-    // Users can SSH into trusted servers
-    {
-      "action": "accept",
-      "src": ["autogroup:member"],
-      "dst": ["tag:trusted"],
-      "users": ["autogroup:nonroot", "root"]
-    },
-    // Users can SSH into cloud servers
-    {
-      "action": "accept",
-      "src": ["autogroup:member"],
-      "dst": ["tag:cloud"],
-      "users": ["autogroup:nonroot", "root"]
-    },
-    // Trusted servers can SSH into cloud servers
-    {
-      "action": "accept",
-      "src": ["tag:trusted"],
-      "dst": ["tag:cloud"],
-      "users": ["autogroup:nonroot", "root"]
-    }
-  ],
-
-  "nodeAttrs": [
-    {
-      "target": ["autogroup:member"],
-      "attr": ["drive:share", "drive:access"]
-    },
-    {
-      "target": ["tag:trusted"],
-      "attr": ["drive:share", "drive:access"]
-    },
-    {
-      "target": ["tag:cloud"],
-      "attr": ["drive:share"]
-    }
-  ],
-
-  "grants": [
-    // Users can access their own shares from any of their devices
-    {
-      "src": ["autogroup:member"],
-      "dst": ["autogroup:self"],
-      "app": {
-        "tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}]
-      }
-    },
-    // Users can access shares on trusted servers
-    {
-      "src": ["autogroup:member"],
-      "dst": ["tag:trusted"],
-      "app": {
-        "tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}]
-      }
-    },
-    // Trusted servers can access shares on user devices
-    {
-      "src": ["tag:trusted"],
-      "dst": ["*"],
-      "app": {
-        "tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}]
-      }
-    },
-    // Users can access shares on cloud servers
-    {
-      "src": ["autogroup:member"],
-      "dst": ["tag:cloud"],
-      "app": {
-        "tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}]
-      }
-    }
-  ]
+	// Tailscale ACL Policy
+	// Apply this in the Tailscale Admin Console: https://login.tailscale.com/admin/acls
+	//
+	// Access model:
+	// - tag:trusted (matt-desktop): Full access to all devices
+	// - tag:cloud (oracle-0): Isolated, can only reach trusted devices on compute ports
+	// - autogroup:member (macbook, phone, iPad): Full access via user identity
+	//
+	// Taildrive: Enabled for trusted devices, user devices, and cloud (share only)
+	"tagOwners": {
+		"tag:trusted": ["autogroup:admin"],
+		"tag:cloud":   ["autogroup:admin"],
+	},
+	"acls": [
+		// User devices + trusted servers have full access everywhere
+		{
+			"action": "accept",
+			"src":    ["autogroup:member", "tag:trusted"],
+			"dst":    ["*:*"],
+		},
+		// oracle-0 (tag:cloud) can reach matt-desktop (tag:trusted) on compute ports only
+		{
+			"action": "accept",
+			"src":    ["tag:cloud"],
+			"dst":    ["tag:trusted:8000-9000"],
+		},
+	],
+	"ssh": [
+		// Users can SSH into their own devices
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["autogroup:self"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+		// Users can SSH into trusted servers
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["tag:trusted"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+		// Users can SSH into cloud servers
+		{
+			"action": "accept",
+			"src":    ["autogroup:member"],
+			"dst":    ["tag:cloud"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+		// Trusted servers can SSH into cloud servers
+		{
+			"action": "accept",
+			"src":    ["tag:trusted"],
+			"dst":    ["tag:cloud"],
+			"users":  ["autogroup:nonroot", "root"],
+		},
+	],
+	"nodeAttrs": [
+		{
+			"target": ["autogroup:member"],
+			"attr":   ["drive:share", "drive:access"],
+		},
+		{
+			"target": ["tag:trusted"],
+			"attr":   ["drive:share", "drive:access"],
+		},
+		{
+			"target": ["tag:cloud"],
+			"attr":   ["drive:share"],
+		},
+	],
+	"grants": [
+		// Users can access their own shares from any of their devices
+		{
+			"src": ["autogroup:member"],
+			"dst": ["autogroup:self"],
+			"app": {
+				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
+			},
+		},
+		// Users can access shares on trusted servers
+		{
+			"src": ["autogroup:member"],
+			"dst": ["tag:trusted"],
+			"app": {
+				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
+			},
+		},
+		// Trusted servers can access shares on user devices
+		{
+			"src": ["tag:trusted"],
+			"dst": ["*"],
+			"app": {
+				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
+			},
+		},
+		// Users can access shares on cloud servers
+		{
+			"src": ["autogroup:member"],
+			"dst": ["tag:cloud"],
+			"app": {
+				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
+			},
+		},
+	],
 }

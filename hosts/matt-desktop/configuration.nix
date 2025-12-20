@@ -29,6 +29,16 @@
     openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca" ];
   };
 
+  # Restic REST Server for receiving backups from oracle-0
+  # Note: appendOnly is enabled for extra security against compromise
+  services.restic.server = {
+    enable = true;
+    dataDir = "/backups/oracle-0/vaultwarden";
+    listenAddress = "8000";
+    appendOnly = true;
+    htpasswd-file = config.age.secrets.restic-rest-server-htpasswd.path;
+  };
+
   # Stylix system-wide theming
   stylix = {
     enable = true;
@@ -89,7 +99,14 @@
   };
 
   # Secrets management
-  age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
+  age.secrets = {
+    tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
+    restic-rest-server-htpasswd = {
+      file = ../../secrets/restic-rest-server-htpasswd.age;
+      owner = "restic";
+      group = "restic";
+    };
+  };
 
   # Tailscale VPN
   services.tailscale = {
@@ -120,8 +137,15 @@
     '';
   };
 
-  # Firewall: SSH only via Tailscale
-  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 22 ];
+  # Firewall: SSH and Restic REST Server only via Tailscale
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 22 8000 ];
+
+  # Backup directory for oracle-0 restic backups
+  systemd.tmpfiles.rules = [
+    "d /backups 0755 matt users -"
+    "d /backups/oracle-0 0755 matt users -"
+    "d /backups/oracle-0/vaultwarden 0755 restic-rest-server restic-rest-server -"
+  ];
 
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];

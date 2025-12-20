@@ -58,6 +58,53 @@ just deploy-oracle
 just deploy-desktop
 ```
 
+## Vaultwarden & Backups
+
+Vaultwarden is deployed as a native service on `oracle-0`, accessible only via Tailscale at `https://oracle-0.tailc41cf5.ts.net`.
+
+### Backup Strategy
+Backups are performed every 6 hours using Restic to two locations:
+1. **Cloudflare R2**: Offsite encrypted backup (`oracle-0-backups` bucket).
+2. **matt-desktop**: Local encrypted backup via SFTP to `/backups/oracle-0/vaultwarden`.
+
+Note: If `matt-desktop` is powered off, the local backup job will fail. This is normal and the job will succeed on the next run once the desktop is online.
+
+### Secrets
+The following secrets are required in `secrets/`:
+- `vaultwarden-admin-token.age`: Argon2 hash for the admin panel.
+- `restic-password.age`: Encryption password for the Restic repositories.
+- `restic-r2-credentials.age`: Cloudflare R2 Access Key ID and Secret Access Key.
+
+### Disaster Recovery: Restoring Vaultwarden
+
+If you need to restore Vaultwarden to a new `oracle-0` instance:
+
+1. **Deploy the base system** following the "Disaster Recovery: Rebuilding oracle-0" steps above.
+2. **Stop Vaultwarden**:
+   ```bash
+   ssh matt@oracle-0 "sudo systemctl stop vaultwarden"
+   ```
+3. **Restore from Cloudflare R2**:
+   ```bash
+   ssh matt@oracle-0 << 'EOF'
+   sudo -i
+   export AWS_ACCESS_KEY_ID=$(grep AWS_ACCESS_KEY_ID /run/secrets/restic-r2-credentials | cut -d= -f2)
+   export AWS_SECRET_ACCESS_KEY=$(grep AWS_SECRET_ACCESS_KEY /run/secrets/restic-r2-credentials | cut -d= -f2)
+   export RESTIC_PASSWORD_FILE=/run/secrets/restic-password
+   export RESTIC_REPOSITORY="s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups"
+   
+   # List snapshots to verify connectivity
+   restic snapshots
+   
+   # Restore the latest snapshot to the root filesystem
+   restic restore latest --target /
+   EOF
+   ```
+4. **Restart Vaultwarden**:
+   ```bash
+   ssh matt@oracle-0 "sudo systemctl start vaultwarden"
+   ```
+
 ## Container Details
 
 The repertoire-builder runs in a native NixOS container with:
