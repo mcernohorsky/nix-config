@@ -73,9 +73,9 @@
       };
     };
     cursor = {
-      package = pkgs.bibata-cursors;
-      name = "Bibata-Modern-Classic";
-      size = 32;
+      package = pkgs.phinger-cursors;
+      name = "phinger-cursors-light";
+      size = 24;
     };
   };
 
@@ -97,6 +97,27 @@
     openFirewall = true; # Allow UDP 41641 for direct connections
     authKeyFile = config.age.secrets.tailscale-authkey.path;
     extraUpFlags = [ "--advertise-tags=tag:trusted" ];
+  };
+
+  # Taildrive: Share main drives
+  # Access via http://100.100.100.100:8080/<tailnet>/matt-desktop/<share>
+  systemd.services.taildrive-shares = {
+    description = "Configure Taildrive shares";
+    after = [ "tailscaled.service" ];
+    wants = [ "tailscaled.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      # Wait for Tailscale to be connected
+      while ! ${pkgs.tailscale}/bin/tailscale status --peers=false 2>/dev/null | grep -q "100\."; do
+        sleep 2
+      done
+      ${pkgs.tailscale}/bin/tailscale drive share ssd /
+      ${pkgs.tailscale}/bin/tailscale drive share hdd /mnt/hdd
+    '';
   };
 
   # Firewall: SSH only via Tailscale

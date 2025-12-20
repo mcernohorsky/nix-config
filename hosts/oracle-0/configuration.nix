@@ -95,10 +95,31 @@
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
 
   # Tailscale VPN
+  # Note: tag:cloud is isolated - see tailscale-acl.json for policy
   services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-authkey.path;
-    extraUpFlags = [ "--advertise-tags=tag:trusted" ];
+    extraUpFlags = [ "--advertise-tags=tag:cloud" ];
+  };
+
+  # Taildrive: Share root filesystem
+  # Access via http://100.100.100.100:8080/<tailnet>/oracle-0/root
+  systemd.services.taildrive-shares = {
+    description = "Configure Taildrive shares";
+    after = [ "tailscaled.service" ];
+    wants = [ "tailscaled.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      # Wait for Tailscale to be connected
+      while ! ${pkgs.tailscale}/bin/tailscale status --peers=false 2>/dev/null | grep -q "100\."; do
+        sleep 2
+      done
+      ${pkgs.tailscale}/bin/tailscale drive share root /
+    '';
   };
 
   # Netdata removed; see modules/monitoring.nix for Prometheus+Grafana

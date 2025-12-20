@@ -106,6 +106,33 @@ just ssh-container oracle-0
 - **HTTP via Cloudflare Tunnel**: Outbound-only connection to Cloudflare edge
 - **Agenix**: Secrets (Tailscale auth key, Cloudflare token) encrypted with SSH host keys
 
+### Tailscale ACL Policy
+
+The network uses a tiered trust model defined in `tailscale-acl.json`:
+
+| Tag | Devices | Access |
+|-----|---------|--------|
+| `tag:trusted` | matt-desktop | Full access to all devices |
+| `tag:cloud` | oracle-0 | Isolated; can only reach trusted on compute ports |
+| *(user identity)* | macbook, phone, iPad | Full access via `autogroup:member` |
+
+**Apply the policy:** Copy contents of `tailscale-acl.json` to [Tailscale Admin Console → Access Controls](https://login.tailscale.com/admin/acls)
+
+### Taildrive Setup
+
+Taildrive enables secure file sharing between trusted devices. After applying the ACL policy:
+
+```bash
+# On Linux (matt-desktop), share a directory:
+tailscale drive share my-files /path/to/directory
+
+# Access shares from any trusted device:
+# Linux: mount via WebDAV at http://100.100.100.100:8080/<tailnet>/<machine>/<share>
+# macOS: Finder → Go → Connect to Server → http://100.100.100.100:8080/
+```
+
+Note: oracle-0 has no Taildrive access (intentional isolation).
+
 ### Oracle Cloud Security List (Ingress)
 
 | Type | Port | Purpose |

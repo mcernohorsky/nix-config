@@ -41,8 +41,8 @@
 
       # Environment variables
       env = [
-        "XCURSOR_SIZE,32"
-        "HYPRCURSOR_SIZE,32"
+        "XCURSOR_SIZE,24"
+        "HYPRCURSOR_SIZE,24"
         "GDK_SCALE,1.5"
       ];
 
@@ -363,6 +363,11 @@
         }
         {
           timeout = 900; # 15 min
+          on-timeout = "hyprctl dispatch dpms off";
+          on-resume = "hyprctl dispatch dpms on";
+        }
+        {
+          timeout = 3600; # 1 hour - turn off display even when locked
           on-timeout = "hyprctl dispatch dpms off";
           on-resume = "hyprctl dispatch dpms on";
         }
@@ -773,7 +778,10 @@
     # Media
     playerctl
     imv
-    jellyfin-media-player
+    # Force XWayland for jellyfin-media-player (Qt/Wayland compatibility issue)
+    (pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
+      exec env QT_QPA_PLATFORM=xcb ${pkgs.jellyfin-media-player}/bin/jellyfinmediaplayer "$@"
+    '')
 
     # GUI file manager (backup)
     nautilus
