@@ -300,6 +300,89 @@ Fall back to manual kexec method:
 
 ---
 
+## matt-desktop BIOS Configuration
+
+Reference settings for the AMD Ryzen 7 5700X3D workstation. These settings were optimized for stability and performance on the ASUS ROG STRIX B450-F GAMING motherboard with 64GB (2x32GB) DDR4 RAM.
+
+**Last updated**: December 2025 (BIOS version 5901)
+
+### Hardware Summary
+
+| Component | Details |
+|-----------|---------|
+| CPU | AMD Ryzen 7 5700X3D (8-core, 96MB L3 V-Cache) |
+| Motherboard | ASUS ROG STRIX B450-F GAMING |
+| RAM | Corsair Vengeance LPX 64GB (2x32GB) DDR4-3200 CL16 (CMK64GX4M2E3200C16) |
+| RAM Slots | DIMM_A2 + DIMM_B2 (optimal for dual-channel) |
+| GPU | NVIDIA GeForce RTX 2070 8GB |
+
+### Ai Tweaker Tab
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Ai Overclock Tuner | Manual | DOCP fails with 64GB dual-rank on B450 |
+| Memory Frequency | DDR4-3200MHz | |
+| FCLK Frequency | 1600 MHz | 1:1 ratio with memory |
+| DRAM Voltage | 1.365V | Slight bump from 1.35V spec for stability |
+| CPU SOC Voltage | Manual: 1.100V | Feeds memory controller and Infinity Fabric |
+
+### Ai Tweaker → DRAM Timing Control
+
+| Setting | Value |
+|---------|-------|
+| DRAM CAS# Latency (tCL) | 16 |
+| DRAM RAS# to CAS# Read Delay (tRCDrd) | 20 |
+| DRAM RAS# to CAS# Write Delay (tRCDwr) | 20 |
+| DRAM RAS# PRE Time (tRP) | 20 |
+| DRAM RAS# ACT Time (tRAS) | 38 |
+| Cmd2T (Command Rate) | 2T |
+
+### Advanced → AMD CBS → NBIO Common Options → XFR Enhancement
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Precision Boost Overdrive | Enabled | Allows optimal CPU boost using motherboard limits |
+
+Note: Curve Optimizer is not available for 5700X3D on this BIOS.
+
+### Boot Tab
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Fast Boot | Disabled | Ensures full memory training on each boot |
+| CSM | Disabled | Required for Resizable BAR |
+
+### Advanced → PCI Subsystem Settings
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Above 4G Decoding | Enabled | Required for Resizable BAR |
+| Re-Size BAR Support | Enabled | ~5-10% GPU performance in supported games |
+
+### Thermal Performance
+
+Verified stable under load:
+- Idle: ~37°C
+- Full 16-thread stress: ~49°C peak
+
+### Why These Settings?
+
+- **Manual RAM config**: DOCP/XMP fails to train with 64GB dual-rank on B450 due to signal integrity limits
+- **2T Command Rate**: Required for stability with high-density dual-rank DIMMs
+- **3200 MT/s (not higher)**: The 5700X3D's 96MB L3 cache masks RAM speed differences; gains from 3600+ are <1.5% but stability risks are high
+- **PBO limits**: Conservative values protect B450 VRMs while allowing full CPU boost
+- **Fast Boot disabled**: Ensures proper memory training; critical for 64GB on B450
+
+### Recovery
+
+If system fails to POST after changes:
+1. Power off, switch off PSU
+2. Wait 30 seconds
+3. Power on — board should auto-recover to safe mode (C.P.R. feature)
+4. Re-enter BIOS and adjust settings
+
+---
+
 ## Troubleshooting
 
 ### Host Key Verification Failed

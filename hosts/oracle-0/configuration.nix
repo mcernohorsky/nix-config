@@ -83,10 +83,10 @@
     ghostty.terminfo
   ];
 
-  # Enable the OpenSSH daemon.
+  # OpenSSH: Keep enabled for agenix host keys, but prefer Tailscale SSH for access
   services.openssh = {
     enable = true;
-    openFirewall = false; # Only allow SSH over Tailscale
+    openFirewall = false; # Not exposed to internet, Tailscale SSH preferred
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;
@@ -101,7 +101,7 @@
   services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-authkey.path;
-    extraUpFlags = [ "--advertise-tags=tag:cloud" ];
+    extraUpFlags = [ "--advertise-tags=tag:cloud" "--ssh" ];
   };
 
   # Taildrive: Share root filesystem
@@ -109,8 +109,9 @@
   systemd.services.taildrive-shares = {
     description = "Configure Taildrive shares";
     after = [ "tailscaled.service" ];
-    wants = [ "tailscaled.service" ];
+    requires = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
+    partOf = [ "tailscaled.service" ]; # Restart when tailscaled restarts
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

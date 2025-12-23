@@ -45,8 +45,18 @@ deploy-desktop:
     @echo "🚀 Deploying to matt-desktop..."
     nix run nixpkgs#deploy-rs -- .#matt-desktop --skip-checks
 
-# Deploy everything
-deploy-all: deploy-oracle deploy-desktop
+# Deploy to macbook (this machine)
+deploy-mac:
+    @echo "🚀 Deploying to macbook-pro-m2..."
+    darwin-rebuild switch --flake .
+
+# Deploy everything (parallel)
+deploy-all:
+    just deploy-oracle &
+    just deploy-desktop &
+    just deploy-mac
+    @wait
+    @echo "✅ All deployments complete"
 
 # Show container status on remote server
 container-status host=oracle_host:

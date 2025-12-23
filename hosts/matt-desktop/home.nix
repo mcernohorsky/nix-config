@@ -1,6 +1,15 @@
 # Home Manager configuration for matt
 { config, pkgs, inputs, lib, ... }:
 
+let
+  # Fixed wrapper for Jellyfin Media Player (Forces XWayland and Fusion style to avoid crashes)
+  jellyfin-wrapped = pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
+    export QT_QPA_PLATFORM=xcb
+    export QT_STYLE_OVERRIDE=Fusion
+    unset QT_QPA_PLATFORMTHEME
+    exec ${pkgs.jellyfin-media-player}/bin/jellyfin-desktop "$@"
+  '';
+in
 {
   home.username = "matt";
   home.homeDirectory = "/home/matt";
@@ -778,11 +787,6 @@
     # Media
     playerctl
     imv
-    jellyfin-media-player # for icons and assets
-    # Force XWayland for jellyfin-media-player (Qt/Wayland compatibility issue)
-    (pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
-      exec env QT_QPA_PLATFORM=xcb ${pkgs.jellyfin-media-player}/bin/jellyfinmediaplayer "$@"
-    '')
 
     # GUI file manager (backup)
     nautilus
@@ -824,15 +828,15 @@
     };
     desktopEntries = {
       "org.jellyfin.JellyfinDesktop" = {
-        name = "Jellyfin (Media Player)";
-        exec = "jellyfinmediaplayer";
+        name = "Jellyfin Media Player";
+        exec = "${jellyfin-wrapped}/bin/jellyfinmediaplayer";
         icon = "org.jellyfin.JellyfinDesktop";
         comment = "Jellyfin Desktop Client (Fixed)";
         terminal = false;
         categories = [ "Video" "AudioVideo" "Player" ];
       };
       jellyfin-server = {
-        name = "Jellyfin (Server Web UI)";
+        name = "Jellyfin Server Dashboard";
         exec = "xdg-open http://localhost:8096";
         icon = "org.jellyfin.JellyfinDesktop";
         comment = "Jellyfin Server Administration";

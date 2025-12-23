@@ -89,9 +89,10 @@
     };
   };
 
+  # OpenSSH: Keep enabled for agenix host keys, but prefer Tailscale SSH for access
   services.openssh = {
     enable = true;
-    openFirewall = false; # Only allow SSH over Tailscale
+    openFirewall = false; # Not exposed to internet, Tailscale SSH preferred
     settings = {
       PasswordAuthentication = false;
       PermitRootLogin = "no";
@@ -118,7 +119,7 @@
     enable = true;
     openFirewall = true; # Allow UDP 41641 for direct connections
     authKeyFile = config.age.secrets.tailscale-authkey.path;
-    extraUpFlags = [ "--advertise-tags=tag:trusted" ];
+    extraUpFlags = [ "--advertise-tags=tag:trusted" "--ssh" ];
   };
 
   # Taildrive: Share main drives
@@ -126,8 +127,9 @@
   systemd.services.taildrive-shares = {
     description = "Configure Taildrive shares";
     after = [ "tailscaled.service" ];
-    wants = [ "tailscaled.service" ];
+    requires = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
+    partOf = [ "tailscaled.service" ]; # Restart when tailscaled restarts
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
@@ -142,8 +144,8 @@
     '';
   };
 
-  # Firewall: SSH and Restic REST Server only via Tailscale
-  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 22 8000 ];
+  # Firewall: Restic REST Server only via Tailscale (SSH handled by Tailscale SSH)
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8000 ];
 
   # Backup directory for oracle-0 restic backups
   systemd.tmpfiles.rules = [

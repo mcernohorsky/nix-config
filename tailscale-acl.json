@@ -6,8 +6,6 @@
 	// - tag:trusted (matt-desktop): Full access to all devices
 	// - tag:cloud (oracle-0): Isolated, can only reach trusted devices on compute ports
 	// - autogroup:member (macbook, phone, iPad): Full access via user identity
-	//
-	// Taildrive: Enabled for trusted devices, user devices, and cloud (share only)
 	"tagOwners": {
 		"tag:trusted": ["autogroup:admin"],
 		"tag:cloud":   ["autogroup:admin"],
@@ -27,25 +25,11 @@
 		},
 	],
 	"ssh": [
-		// Users can SSH into their own devices
+		// Users can SSH into their own devices, trusted servers, and cloud servers
 		{
 			"action": "accept",
 			"src":    ["autogroup:member"],
-			"dst":    ["autogroup:self"],
-			"users":  ["autogroup:nonroot", "root"],
-		},
-		// Users can SSH into trusted servers
-		{
-			"action": "accept",
-			"src":    ["autogroup:member"],
-			"dst":    ["tag:trusted"],
-			"users":  ["autogroup:nonroot", "root"],
-		},
-		// Users can SSH into cloud servers
-		{
-			"action": "accept",
-			"src":    ["autogroup:member"],
-			"dst":    ["tag:cloud"],
+			"dst":    ["autogroup:self", "tag:trusted", "tag:cloud"],
 			"users":  ["autogroup:nonroot", "root"],
 		},
 		// Trusted servers can SSH into cloud servers
@@ -58,49 +42,17 @@
 	],
 	"nodeAttrs": [
 		{
-			"target": ["autogroup:member"],
+			"target": ["autogroup:member", "tag:trusted", "tag:cloud"],
 			"attr":   ["drive:share", "drive:access"],
-		},
-		{
-			"target": ["tag:trusted"],
-			"attr":   ["drive:share", "drive:access"],
-		},
-		{
-			"target": ["tag:cloud"],
-			"attr":   ["drive:share"],
 		},
 	],
 	"grants": [
-		// Users can access their own shares from any of their devices
+		// Users and trusted servers can access all Taildrive shares
 		{
-			"src": ["autogroup:member"],
-			"dst": ["autogroup:self"],
-			"app": {
-				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
-			},
-		},
-		// Users can access shares on trusted servers
-		{
-			"src": ["autogroup:member"],
-			"dst": ["tag:trusted"],
-			"app": {
-				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
-			},
-		},
-		// Trusted servers can access shares on user devices
-		{
-			"src": ["tag:trusted"],
+			"src": ["autogroup:member", "tag:trusted"],
 			"dst": ["*"],
 			"app": {
-				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
-			},
-		},
-		// Users can access shares on cloud servers
-		{
-			"src": ["autogroup:member"],
-			"dst": ["tag:cloud"],
-			"app": {
-				"tailscale.com/cap/drive": [{"shares": ["*"], "access": "rw"}],
+				"tailscale.com/cap/drive": [{ "shares": ["*"], "access": "rw" }],
 			},
 		},
 	],

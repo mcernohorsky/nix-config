@@ -28,7 +28,6 @@
     NIXOS_OZONE_WL = "1";
     # Nvidia-specific Wayland settings
     LIBVA_DRIVER_NAME = "nvidia";
-    __GLX_VENDOR_LIBRARY_NAME = "nvidia";
     # Hardware video acceleration
     NVD_BACKEND = "direct";
   };

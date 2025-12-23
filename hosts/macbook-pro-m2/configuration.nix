@@ -84,6 +84,7 @@
       "magicavoxel"
       "monodraw"
       "orbstack"
+      "obsidian"
       "qbittorrent"
       "raycast"
       "rectangle"
@@ -165,4 +166,9 @@
   networking.computerName = "macbook-pro-m2";
 
   services.tailscale.enable = true;
+
+  # Enable Tailscale SSH (nix-darwin doesn't have extraUpFlags)
+  system.activationScripts.postActivation.text = ''
+    ${pkgs.tailscale}/bin/tailscale up --ssh
+  '';
 }
