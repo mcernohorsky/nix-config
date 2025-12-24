@@ -61,7 +61,7 @@ in
         gaps_out = 10;
         border_size = 2;
         layout = "dwindle";
-        allow_tearing = false;
+        allow_tearing = true;
       };
 
       # Render settings for lower latency
