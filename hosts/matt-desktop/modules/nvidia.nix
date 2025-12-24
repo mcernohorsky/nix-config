@@ -12,14 +12,14 @@
     # Modesetting is required for Wayland
     modesetting.enable = true;
 
-    # Use open kernel modules (RTX 2070 is Turing, fully supported)
-    open = true;
+    # Use proprietary kernel modules (open modules have memory bugs)
+    open = false;
 
     # Enable power management (fixes suspend/resume)
     powerManagement.enable = true;
 
-    # Use 570 driver (580 has known bugs with memory allocation)
-    package = config.boot.kernelPackages.nvidiaPackages.dc_570;
+    # Use production drivers
+    package = config.boot.kernelPackages.nvidiaPackages.production;
   };
 
   # Environment variables for Wayland + Nvidia
