@@ -22,6 +22,7 @@
   systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
 
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.nvidia.acceptLicense = true;
 
   users.users.matt = {
     isNormalUser = true;
