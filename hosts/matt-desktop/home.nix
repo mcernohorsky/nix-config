@@ -61,7 +61,7 @@ in
         gaps_out = 10;
         border_size = 2;
         layout = "dwindle";
-        allow_tearing = true;  # Reduces input lag for games
+        allow_tearing = false;
       };
 
       # Render settings for lower latency
