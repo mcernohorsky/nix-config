@@ -61,7 +61,12 @@ in
         gaps_out = 10;
         border_size = 2;
         layout = "dwindle";
-        allow_tearing = false;
+        allow_tearing = true;  # Reduces input lag for games
+      };
+
+      # Render settings for lower latency
+      render = {
+        direct_scanout = true;  # Bypass compositor for fullscreen games
       };
 
       # Decorations (colors handled by Stylix)
