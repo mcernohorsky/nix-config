@@ -18,8 +18,8 @@
     # Enable power management (fixes suspend/resume)
     powerManagement.enable = true;
 
-    # Use production drivers (555+ for explicit sync)
-    package = config.boot.kernelPackages.nvidiaPackages.production;
+    # Use 565 driver (580 has known bugs with memory allocation)
+    package = config.boot.kernelPackages.nvidiaPackages.dc_565;
   };
 
   # Environment variables for Wayland + Nvidia

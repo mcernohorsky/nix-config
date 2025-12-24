@@ -8,19 +8,14 @@
     openFirewall = true;
   };
 
-  # Hardware acceleration packages
+  # Media packages
   environment.systemPackages = with pkgs; [
-    # Jellyfin server utilities
     jellyfin-web
     jellyfin-ffmpeg
-
-    # MPV media player
     mpv
-
-    # Media codecs
     ffmpeg-full
   ];
 
-  # User groups for hardware acceleration
+  # Grant Jellyfin access to GPU for hardware transcoding
   users.users.jellyfin.extraGroups = [ "video" "render" ];
 }

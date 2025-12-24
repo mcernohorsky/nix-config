@@ -48,7 +48,7 @@ deploy-desktop:
 # Deploy to macbook (this machine)
 deploy-mac:
     @echo "🚀 Deploying to macbook-pro-m2..."
-    darwin-rebuild switch --flake .
+    sudo darwin-rebuild switch --flake .
 
 # Deploy everything (parallel)
 deploy-all:
