@@ -9,6 +9,7 @@ let
     unset QT_QPA_PLATFORMTHEME
     exec ${pkgs.jellyfin-media-player}/bin/jellyfin-desktop "$@"
   '';
+
 in
 {
   home.username = "matt";
@@ -55,33 +56,40 @@ in
         "GDK_SCALE,1.5"
       ];
 
-      # General settings (colors handled by Stylix)
+      # General settings
       general = {
         gaps_in = 5;
         gaps_out = 10;
         border_size = 2;
+        "col.active_border" = lib.mkForce "rgb(d79921) rgb(fe8019) 45deg";
+        "col.inactive_border" = lib.mkForce "rgb(3c3836)";
         layout = "dwindle";
         allow_tearing = true;
       };
 
       # Render settings for lower latency
       render = {
-        direct_scanout = true;  # Bypass compositor for fullscreen games
+        direct_scanout = true;
       };
 
-      # Decorations (colors handled by Stylix)
+      # Decorations
       decoration = {
         rounding = 10;
+        active_opacity = 1.0;
+        inactive_opacity = 0.85;
         blur = {
           enabled = true;
-          size = 3;
-          passes = 1;
-          vibrancy = 0.1696;
+          size = 3; 
+          passes = 3;
+          new_optimizations = true;
+          xray = false;
+          ignore_opacity = true;
         };
         shadow = {
           enabled = true;
-          range = 4;
+          range = 12;
           render_power = 3;
+          color = lib.mkForce "rgba(1d202188)";
         };
       };
 
@@ -157,6 +165,8 @@ in
         # Lock screen (use SUPER+Escape to avoid conflict with vim navigation)
         "$mainMod, Escape, exec, hyprlock"
 
+
+
         # Notification center
         "$mainMod, N, exec, swaync-client -t -sw"
 
@@ -166,6 +176,9 @@ in
 
         # Clipboard history
         "$mainMod SHIFT, V, exec, cliphist list | fuzzel -d | cliphist decode | wl-copy"
+
+        # Color picker (copies hex to clipboard)
+        "$mainMod SHIFT, C, exec, hyprpicker -a"
 
         # Move focus with vim keys
         "$mainMod, H, movefocus, l"
@@ -227,20 +240,12 @@ in
         "$mainMod, mouse:273, resizewindow"
       ];
 
-      # Media keys
+      # Media keys - using swayosd for visual feedback
       bindel = [
-        ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
-        ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
-        ", XF86MonBrightnessUp, exec, brightnessctl s 5%+"
-        ", XF86MonBrightnessDown, exec, brightnessctl s 5%-"
-      ];
-
-      bindl = [
-        ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-        ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
-        ", XF86AudioPlay, exec, playerctl play-pause"
-        ", XF86AudioNext, exec, playerctl next"
-        ", XF86AudioPrev, exec, playerctl previous"
+        ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
+        ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
+        ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
+        ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
       ];
 
       # Window rules
@@ -259,14 +264,33 @@ in
         "immediate, class:^(cs2)$"
         "immediate, class:^(steam_app_.*)$"
       ];
+
+      # Layer rules for blur
+      layerrule = [
+        "blur, waybar"
+        "blur, fuzzel"
+        "blur, launcher"
+        "blur, gtk-layer-shell"
+        "blur, logout_dialog"
+        "blur, swaync-control-center"
+        "blur, swaync-notification-window"
+        # ignorealpha is critical - blur only pixels above 50% opacity
+        "ignorealpha 0.5, waybar"
+        "ignorealpha 0.5, fuzzel"
+        "ignorealpha 0.5, launcher"
+        "ignorealpha 0.5, gtk-layer-shell"
+        "ignorealpha 0.5, logout_dialog"
+        "ignorealpha 0.5, swaync-control-center"
+        "ignorealpha 0.5, swaync-notification-window"
+      ];
     };
   };
 
   # ===================
   # Hyprlock Configuration
   # ===================
-  # Disable Stylix's hyprlock theming - we'll configure it ourselves
   stylix.targets.hyprlock.enable = false;
+  stylix.targets.fuzzel.enable = false;
 
   programs.hyprlock = {
     enable = true;
@@ -367,26 +391,32 @@ in
       };
       listener = [
         {
-          timeout = 300; # 5 min
+          timeout = 1500; # 25 min - dim before lock
           on-timeout = "brightnessctl -s set 30%";
           on-resume = "brightnessctl -r";
         }
         {
-          timeout = 600; # 10 min
+          timeout = 1800; # 30 min - lock
           on-timeout = "loginctl lock-session";
         }
-        {
-          timeout = 900; # 15 min
-          on-timeout = "hyprctl dispatch dpms off";
-          on-resume = "hyprctl dispatch dpms on";
-        }
-        {
-          timeout = 3600; # 1 hour - turn off display even when locked
-          on-timeout = "hyprctl dispatch dpms off";
-          on-resume = "hyprctl dispatch dpms on";
-        }
+        # NVIDIA workaround: DPMS off crashes hyprlock, so we skip it.
+        # The monitor will use its own power saving mode.
+        # Uncomment below if hyprlock gets fixed upstream:
+        # {
+        #   timeout = 3600; # 60 min - display off
+        #   on-timeout = "hyprctl dispatch dpms off";
+        #   on-resume = "hyprctl dispatch dpms on";
+        # }
       ];
     };
+  };
+
+  # ===================
+  # SwayOSD (on-screen display for volume/brightness)
+  # ===================
+  services.swayosd = {
+    enable = true;
+    topMargin = 0.9;  # Show near bottom of screen
   };
 
   # ===================
@@ -416,6 +446,91 @@ in
       hide-on-action = true;
       script-fail-notify = true;
     };
+    style = ''
+      * {
+        font-family: "JetBrains Mono";
+        font-size: 13px;
+      }
+
+      .notification-row {
+        outline: none;
+      }
+
+      .notification {
+        background-color: #282828;
+        border: 1px solid #3c3836;
+        border-radius: 10px;
+        margin: 6px;
+      }
+
+      .notification-content {
+        padding: 10px;
+      }
+
+      .summary {
+        color: #ebdbb2;
+        font-weight: bold;
+      }
+
+      .body {
+        color: #d5c4a1;
+      }
+
+      .control-center {
+        background-color: #282828;
+        border: 1px solid #d79921;
+        border-radius: 10px;
+      }
+
+      .control-center-list {
+        background: transparent;
+      }
+
+      .widget-title {
+        color: #ebdbb2;
+        font-weight: bold;
+      }
+
+      .widget-title > button {
+        background: #3c3836;
+        border-radius: 6px;
+        color: #ebdbb2;
+        padding: 4px 10px;
+      }
+
+      .widget-title > button:hover {
+        background: #504945;
+      }
+
+      .widget-dnd > switch {
+        background: #3c3836;
+        border-radius: 6px;
+      }
+
+      .widget-dnd > switch:checked {
+        background: #d79921;
+      }
+
+      .notification-action {
+        background: #3c3836;
+        border-radius: 6px;
+        color: #ebdbb2;
+        margin: 4px;
+        padding: 6px;
+      }
+
+      .notification-action:hover {
+        background: #504945;
+      }
+
+      .close-button {
+        background: #fb4934;
+        border-radius: 6px;
+        color: #282828;
+        margin: 4px;
+        padding: 2px 6px;
+      }
+    '';
   };
 
   # ===================
@@ -427,15 +542,15 @@ in
       mainBar = {
         layer = "top";
         position = "top";
-        height = 30;
+        height = 38;
         spacing = 4;
 
         modules-left = [ "hyprland/workspaces" "hyprland/window" ];
         modules-center = [ "clock" ];
-        modules-right = [ "tray" "custom/notification" "pulseaudio" "network" "cpu" "memory" ];
+        modules-right = [ "tray" "custom/notification" "pulseaudio" "custom/sep" "cpu" "memory" "custom/gpu" ];
 
         "hyprland/workspaces" = {
-          format = "{icon}";
+          format = "{name}";
           on-click = "activate";
           sort-by-number = true;
         };
@@ -451,28 +566,43 @@ in
         };
 
         cpu = {
-          format = " {usage}%";
+          format = "CPU {usage}%";
           tooltip = true;
         };
 
         memory = {
-          format = " {}%";
+          format = "RAM {}%";
+        };
+
+        "custom/gpu" = {
+          exec = "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits";
+          format = "GPU {}%";
+          interval = 5;
+          tooltip = false;
         };
 
         network = {
           format-wifi = " {signalStrength}%";
-          format-ethernet = "󰈀 {ifname}";
+          format-ethernet = "󰈀";
           format-disconnected = "󰖪 Disconnected";
           tooltip-format = "{ifname}: {ipaddr}";
         };
 
         pulseaudio = {
           format = "{icon} {volume}%";
-          format-muted = "󰝟";
+          format-muted = "󰝟 muted";
           format-icons = {
-            default = [ "" "" "" ];
+            default = [ "󰕿" "󰖀" "󰕾" ];
           };
           on-click = "pwvucontrol";
+          on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+          on-scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+          tooltip = false;
+        };
+
+        "custom/sep" = {
+          format = "|";
+          tooltip = false;
         };
 
         "custom/notification" = {
@@ -496,10 +626,61 @@ in
         };
       };
     };
+    style = ''
+      * {
+        font-family: "JetBrains Mono";
+        font-size: 13px;
+      }
+
+      window#waybar {
+        background-color: #282828;
+        color: #ebdbb2;
+      }
+
+      #workspaces button {
+        color: #a89984;
+        padding: 0 6px;
+      }
+
+      #workspaces button.active {
+        color: #ebdbb2;
+      }
+
+      #workspaces button:hover {
+        background-color: #3c3836;
+      }
+
+      /* Right-side modules spacing */
+      #tray,
+      #custom-notification,
+      #pulseaudio,
+      #custom-gpu,
+      #cpu,
+      #memory {
+        padding: 0 5px;
+      }
+
+      /* Fixed width for percentage modules */
+      #cpu,
+      #memory,
+      #custom-gpu {
+        min-width: 65px;
+      }
+
+      #pulseaudio {
+        min-width: 55px;
+      }
+
+      /* Separator */
+      #custom-sep {
+        color: #504945;
+        padding: 0 2px;
+      }
+    '';
   };
 
   # ===================
-  # Fuzzel Launcher (theming/fonts handled by Stylix)
+  # Fuzzel Launcher (Stylix disabled - manual theming)
   # ===================
   programs.fuzzel = {
     enable = true;
@@ -511,10 +692,23 @@ in
         lines = 15;
         horizontal-pad = 20;
         vertical-pad = 10;
+        dpi-aware = "auto";
+        icons-enabled = true;
+        layer = "overlay";
       };
       border = {
         width = 2;
         radius = 10;
+      };
+      colors = {
+        # Gruvbox with more transparency for visible blur (aa = 67% opacity)
+        background = "282828aa";
+        text = "ebdbb2ff";
+        match = "fabd2fff";
+        selection = "3c3836dd";
+        selection-text = "ebdbb2ff";
+        selection-match = "fe8019ff";
+        border = "d79921ff";
       };
     };
   };
@@ -736,8 +930,8 @@ in
       light = false;
       side-by-side = true;
       line-numbers = true;
+      };
     };
-  };
 
   # ===================
   # Modern CLI Tools (theming handled by Stylix)

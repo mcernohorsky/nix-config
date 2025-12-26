@@ -64,12 +64,15 @@
         systemctl start vaultwarden-backup-prepare.service
       '';
 
-      # Cleanup old backups
+      # Cleanup old backups (GFS retention policy)
+      # hourly: 6 days of granular recovery (24 × 6hr intervals)
+      # daily: 2 weeks, weekly: 2 months, monthly: 1 year, yearly: 2 years
       pruneOpts = [
         "--keep-hourly 24"
-        "--keep-daily 7"
-        "--keep-weekly 4"
-        "--keep-monthly 6"
+        "--keep-daily 14"
+        "--keep-weekly 8"
+        "--keep-monthly 12"
+        "--keep-yearly 2"
       ];
 
       # Initialize repository if it doesn't exist
@@ -109,12 +112,8 @@
         systemctl start vaultwarden-backup-prepare.service
       '';
 
-      pruneOpts = [
-        "--keep-hourly 24"
-        "--keep-daily 7"
-        "--keep-weekly 4"
-        "--keep-monthly 6"
-      ];
+      # No pruneOpts - matt-desktop REST server is append-only
+      # Pruning is handled locally on matt-desktop
 
       initialize = true;
 

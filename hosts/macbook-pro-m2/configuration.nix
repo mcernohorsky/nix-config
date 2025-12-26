@@ -79,6 +79,7 @@
       "imageoptim"
       "inkscape"
       "itsycal"
+      "jellyfin-media-player"
       "keka"
       # "kicad"
       "magicavoxel"

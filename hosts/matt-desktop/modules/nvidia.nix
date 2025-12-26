@@ -6,6 +6,22 @@
   # Load nvidia driver for Xorg and Wayland
   services.xserver.videoDrivers = [ "nvidia" ];
 
+  # ===================
+  # Plymouth/Boot Fix (Strategy B - accept simpledrm, minimize flicker)
+  # ===================
+  # Problem: simpledrm grabs fb0 first, NVIDIA takes over later causing flicker
+  # Strategy B: Let Plymouth use simpledrm immediately with zero timeout
+  # Trade-off: Brief flicker when NVIDIA takes over, but Plymouth always works
+  boot.kernelParams = [
+    "plymouth.use-simpledrm"
+    "nvidia_drm.fbdev=1" # Helps with DPMS/suspend issues
+  ];
+  boot.plymouth.extraConfig = ''
+    DeviceTimeout=0
+    ShowDelay=0
+  '';
+  boot.loader.systemd-boot.consoleMode = "max";
+
   hardware.graphics.enable = true;
 
   hardware.nvidia = {

@@ -20,7 +20,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --time-format '%Y-%m-%d %H:%M' --asterisks --asterisks-char '•' --greeting 'matt-desktop' --width 50 --window-padding 2 --container-padding 2 --remember --remember-session --theme 'border=yellow;greet=yellow;time=gray;prompt=green;action=cyan;button=yellow;input=white' --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
         user = "greeter";
       };
     };
@@ -32,6 +32,9 @@
   # Enable GNOME keyring for password storage
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.greetd.enableGnomeKeyring = true;
+
+  # PAM service for hyprlock (required for authentication)
+  security.pam.services.hyprlock = {};
 
   # Audio via PipeWire
   services.pipewire = {
@@ -84,6 +87,12 @@
 
     # Network manager applet
     networkmanagerapplet
+
+    # OSD for volume/brightness
+    swayosd
+
+    # Color picker
+    hyprpicker
   ];
 
   # Enable dconf for GNOME apps settings

@@ -24,6 +24,9 @@
     # (find printers, chromecast, etc.)
   };
 
+  # Don't wait for network during boot (nothing needs it that early)
+  systemd.services.NetworkManager-wait-online.enable = false;
+
   # Avahi for mDNS
   services.avahi = {
     enable = true;

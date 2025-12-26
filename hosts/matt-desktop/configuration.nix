@@ -47,7 +47,9 @@
     polarity = "dark";
     # Gruvbox dark palette
     base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
-    # Generate a simple gruvbox-colored wallpaper
+    # Wallpaper: Replace with path to your preferred image
+    # Example: image = ./wallpapers/painting.jpg;
+    # For now, using a generated Gruvbox gradient
     image = pkgs.runCommand "gruvbox-wallpaper.png" {
       nativeBuildInputs = [ pkgs.imagemagick ];
     } ''
@@ -148,12 +150,84 @@
   # Firewall: Restic REST Server only via Tailscale (SSH handled by Tailscale SSH)
   networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8000 ];
 
+  # Samba: Share root filesystem over direct ethernet connection
+  # Note: Can't use "bind interfaces only" as smbd crashes if interface missing
+  services.samba = {
+    enable = true;
+    nmbd.enable = false; # Use Avahi instead for macOS discovery
+    winbindd.enable = false; # Not needed for simple file sharing
+    settings = {
+      global = {
+        # Only allow connections from direct ethernet link-local range
+        "hosts allow" = "169.254.";
+        "hosts deny" = "ALL";
+      };
+      root = {
+        path = "/";
+        browseable = "yes";
+        "read only" = "no";
+        "force user" = "matt";
+      };
+    };
+  };
+  networking.firewall.interfaces."enp4s0".allowedTCPPorts = [ 445 ];
+
+  # Avahi: Advertise Samba via mDNS/Bonjour for macOS Finder discovery
+  services.avahi = {
+    enable = true;
+    publish = {
+      enable = true;
+      userServices = true;
+    };
+    extraServiceFiles.smb = ''
+      <?xml version="1.0" standalone='no'?>
+      <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+      <service-group>
+        <name replace-wildcards="yes">%h</name>
+        <service>
+          <type>_smb._tcp</type>
+          <port>445</port>
+        </service>
+      </service-group>
+    '';
+  };
+
   # Backup directory for oracle-0 restic backups
   systemd.tmpfiles.rules = [
     "d /backups 0755 matt users -"
     "d /backups/oracle-0 0755 matt users -"
     "d /backups/oracle-0/vaultwarden 0755 restic-rest-server restic-rest-server -"
   ];
+
+  # Local pruning of oracle-0 backups
+  # oracle-0 can only append (REST server is append-only), matt-desktop prunes locally
+  age.secrets.restic-password = {
+    file = ../../secrets/restic-password.age;
+    owner = "root";
+    group = "root";
+  };
+
+  services.restic.backups.oracle-0-local-prune = {
+    repository = "/backups/oracle-0/vaultwarden";
+    passwordFile = config.age.secrets.restic-password.path;
+    paths = [ ];
+
+    timerConfig = {
+      OnCalendar = "weekly";
+      Persistent = true;
+    };
+
+    # GFS retention policy (must match oracle-0 R2 backup)
+    # hourly: 6 days of granular recovery (24 × 6hr intervals)
+    # daily: 2 weeks, weekly: 2 months, monthly: 1 year, yearly: 2 years
+    pruneOpts = [
+      "--keep-hourly 24"
+      "--keep-daily 14"
+      "--keep-weekly 8"
+      "--keep-monthly 12"
+      "--keep-yearly 2"
+    ];
+  };
 
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
@@ -174,6 +248,28 @@
 
   # Fix Tailscale TPM issue after BIOS updates
   systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
+
+  # Btrfs snapshot management for /home
+  # Snapshots accessible at /btr_pool/@snapshots/@home.<date>
+  services.btrbk.instances.home = {
+    onCalendar = "daily";
+    settings = {
+      snapshot_preserve_min = "2d";
+      snapshot_preserve = "7d 4w";
+      volume."/btr_pool" = {
+        subvolume."@home" = {
+          snapshot_dir = "@snapshots";
+        };
+      };
+    };
+  };
+
+  # Mount raw btrfs root for btrbk snapshot access
+  fileSystems."/btr_pool" = {
+    device = "/dev/mapper/cryptroot";
+    fsType = "btrfs";
+    options = [ "subvolid=5" "noatime" ];
+  };
 
   system.stateVersion = "25.05";
 }

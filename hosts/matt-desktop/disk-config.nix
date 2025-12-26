@@ -26,23 +26,23 @@
                   subvolumes = {
                     "@root" = {
                       mountpoint = "/";
-                      mountOptions = [ "compress=zstd" ];
+                      mountOptions = [ "compress=zstd" "noatime" ];
                     };
                     "@home" = {
                       mountpoint = "/home";
-                      mountOptions = [ "compress=zstd" ];
+                      mountOptions = [ "compress=zstd" "noatime" ];
                     };
                     "@nix" = {
                       mountpoint = "/nix";
-                      mountOptions = [ "compress=zstd" ];
+                      mountOptions = [ "compress=zstd" "noatime" ];
                     };
                     "@snapshots" = {
                       mountpoint = "/.snapshots";
-                      mountOptions = [ "compress=zstd" ];
+                      mountOptions = [ "compress=zstd" "noatime" ];
                     };
                     "@log" = {
                       mountpoint = "/var/log";
-                      mountOptions = [ "compress=zstd" ];
+                      mountOptions = [ "compress=zstd" "noatime" ];
                     };
                   };
                 };
