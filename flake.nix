@@ -77,6 +77,13 @@
       url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Walker launcher (Raycast-like for Linux)
+    elephant.url = "github:abenz1267/elephant";
+    walker = {
+      url = "github:abenz1267/walker";
+      inputs.elephant.follows = "elephant";
+    };
   };
 
   outputs =
@@ -144,7 +151,12 @@
               useGlobalPkgs = true;
               useUserPackages = true;
               extraSpecialArgs = { inherit inputs; };
-              users.matt = import ./hosts/matt-desktop/home.nix;
+              users.matt = {
+                imports = [
+                  ./hosts/matt-desktop/home.nix
+                  inputs.walker.homeManagerModules.default
+                ];
+              };
             };
           }
         ];

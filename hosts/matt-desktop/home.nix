@@ -126,6 +126,7 @@ in
       # Input settings
       input = {
         kb_layout = "us";
+        kb_options = "caps:escape";
         follow_mouse = 1;
         sensitivity = 0;
         touchpad = {
@@ -156,7 +157,7 @@ in
         "$mainMod, E, exec, ghostty -e yazi"
         "$mainMod SHIFT, E, exec, nautilus"
         "$mainMod, V, togglefloating,"
-        "$mainMod, Space, exec, fuzzel"
+        "$mainMod, Space, exec, walker"
         "$mainMod, P, pseudo,"
         "$mainMod, T, togglesplit,"
         "$mainMod, F, fullscreen,"
@@ -174,8 +175,8 @@ in
         ", Print, exec, grim -g \"$(slurp)\" - | swappy -f -"
         "SHIFT, Print, exec, grim - | swappy -f -"
 
-        # Clipboard history
-        "$mainMod SHIFT, V, exec, cliphist list | fuzzel -d | cliphist decode | wl-copy"
+        # Clipboard history (walker has built-in clipboard module)
+        "$mainMod SHIFT, V, exec, walker -m clipboard"
 
         # Color picker (copies hex to clipboard)
         "$mainMod SHIFT, C, exec, hyprpicker -a"
@@ -268,7 +269,7 @@ in
       # Layer rules for blur
       layerrule = [
         "blur, waybar"
-        "blur, fuzzel"
+        "blur, walker"
         "blur, launcher"
         "blur, gtk-layer-shell"
         "blur, logout_dialog"
@@ -276,12 +277,14 @@ in
         "blur, swaync-notification-window"
         # ignorealpha is critical - blur only pixels above 50% opacity
         "ignorealpha 0.5, waybar"
-        "ignorealpha 0.5, fuzzel"
+        "ignorealpha 0.5, walker"
         "ignorealpha 0.5, launcher"
         "ignorealpha 0.5, gtk-layer-shell"
         "ignorealpha 0.5, logout_dialog"
         "ignorealpha 0.5, swaync-control-center"
         "ignorealpha 0.5, swaync-notification-window"
+        # Walker prefers no animation to avoid flicker during layout changes
+        "noanim, walker"
       ];
     };
   };
@@ -290,7 +293,6 @@ in
   # Hyprlock Configuration
   # ===================
   stylix.targets.hyprlock.enable = false;
-  stylix.targets.fuzzel.enable = false;
 
   programs.hyprlock = {
     enable = true;
@@ -391,7 +393,7 @@ in
       };
       listener = [
         {
-          timeout = 1500; # 25 min - dim before lock
+          timeout = 1500; # 25 min
           on-timeout = "brightnessctl -s set 30%";
           on-resume = "brightnessctl -r";
         }
@@ -399,14 +401,11 @@ in
           timeout = 1800; # 30 min - lock
           on-timeout = "loginctl lock-session";
         }
-        # NVIDIA workaround: DPMS off crashes hyprlock, so we skip it.
-        # The monitor will use its own power saving mode.
-        # Uncomment below if hyprlock gets fixed upstream:
-        # {
-        #   timeout = 3600; # 60 min - display off
-        #   on-timeout = "hyprctl dispatch dpms off";
-        #   on-resume = "hyprctl dispatch dpms on";
-        # }
+        {
+          timeout = 3600; # 60 min - display off
+          on-timeout = "hyprctl dispatch dpms off";
+          on-resume = "hyprctl dispatch dpms on";
+        }
       ];
     };
   };
@@ -543,7 +542,7 @@ in
         layer = "top";
         position = "top";
         height = 38;
-        spacing = 4;
+        spacing = 0;
 
         modules-left = [ "hyprland/workspaces" "hyprland/window" ];
         modules-center = [ "clock" ];
@@ -589,8 +588,8 @@ in
         };
 
         pulseaudio = {
-          format = "{icon} {volume}%";
-          format-muted = "󰝟 muted";
+          format = "<span font='16px'>{icon}</span> {volume}%";
+          format-muted = "<span font='16px'>󰝟</span> muted";
           format-icons = {
             default = [ "󰕿" "󰖀" "󰕾" ];
           };
@@ -607,7 +606,7 @@ in
 
         "custom/notification" = {
           tooltip = false;
-          format = "{icon}";
+          format = "<span font='16px'>{icon}</span>";
           format-icons = {
             notification = "󰂚";
             none = "󰂜";
@@ -622,7 +621,7 @@ in
         };
 
         tray = {
-          spacing = 10;
+          spacing = 12;
         };
       };
     };
@@ -657,7 +656,16 @@ in
       #custom-gpu,
       #cpu,
       #memory {
-        padding: 0 5px;
+        padding: 0 6px;
+      }
+
+      #custom-notification,
+      #pulseaudio {
+        font-family: "JetBrainsMono Nerd Font";
+      }
+
+      #custom-notification {
+        padding: 0 3px;
       }
 
       /* Fixed width for percentage modules */
@@ -680,35 +688,394 @@ in
   };
 
   # ===================
-  # Fuzzel Launcher (Stylix disabled - manual theming)
+  # Walker Launcher (Raycast-like launcher)
   # ===================
-  programs.fuzzel = {
+  programs.walker = {
     enable = true;
-    settings = {
-      main = {
-        terminal = "ghostty -e";
-        prompt = "❯ ";
-        width = 50;
-        lines = 15;
-        horizontal-pad = 20;
-        vertical-pad = 10;
-        dpi-aware = "auto";
-        icons-enabled = true;
-        layer = "overlay";
+    runAsService = true;
+    config = {
+      theme = "gruvbox";
+      force_keyboard_focus = true;
+      selection_wrap = true;
+      hide_action_hints = true;
+      placeholders = {
+        default = { input = " Search..."; list = "No Results"; };
+        files = { input = " Search Files..."; list = "                                                       No Results                                                       "; };
       };
-      border = {
-        width = 2;
-        radius = 10;
+      keybinds.quick_activate = [];
+      columns.symbols = 1;
+      # Anchor to top so it doesn't jump around as results change
+      shell.anchor_top = true;
+      providers = {
+        max_results = 256;
+        default = [ "desktopapplications" ];
+        prefixes = [
+          { prefix = "/"; provider = "providerlist"; }
+          { prefix = "."; provider = "files"; }
+          { prefix = ":"; provider = "symbols"; }
+          { prefix = "="; provider = "calc"; }
+          { prefix = "@"; provider = "websearch"; }
+          { prefix = "$"; provider = "clipboard"; }
+        ];
       };
-      colors = {
-        # Gruvbox with more transparency for visible blur (aa = 67% opacity)
-        background = "282828aa";
-        text = "ebdbb2ff";
-        match = "fabd2fff";
-        selection = "3c3836dd";
-        selection-text = "ebdbb2ff";
-        selection-match = "fe8019ff";
-        border = "d79921ff";
+    };
+    themes.gruvbox = {
+      style = ''
+        /* Gruvbox color definitions */
+        @define-color selected-text #fabd2f;
+        @define-color text #ebdbb2;
+        @define-color base #282828;
+        @define-color border #d79921;
+        @define-color foreground #ebdbb2;
+        @define-color background #282828;
+
+        * {
+          all: unset;
+        }
+
+        * {
+          font-family: "JetBrains Mono";
+          font-size: 16px;
+          color: @text;
+        }
+
+        scrollbar {
+          opacity: 0;
+        }
+
+        .normal-icons {
+          -gtk-icon-size: 16px;
+        }
+
+        .large-icons {
+          -gtk-icon-size: 32px;
+        }
+
+        .box-wrapper {
+          background: alpha(@base, 0.75);
+          padding: 20px;
+          border: 2px solid @border;
+          border-radius: 10px;
+        }
+
+        .search-container {
+          background: @base;
+          padding: 10px;
+        }
+
+        .input placeholder {
+          opacity: 0.5;
+        }
+
+        .input:focus,
+        .input:active {
+          box-shadow: none;
+          outline: none;
+        }
+
+        child:selected .item-box * {
+          color: @selected-text;
+        }
+
+        .item-box {
+          padding-left: 14px;
+        }
+
+        .item-text-box {
+          all: unset;
+          padding: 14px 0;
+        }
+
+        .item-subtext {
+          font-size: 0px;
+          min-height: 0px;
+          margin: 0px;
+          padding: 0px;
+        }
+
+        .item-image {
+          margin-right: 14px;
+          -gtk-icon-transform: scale(0.9);
+        }
+
+        .current {
+          font-style: italic;
+        }
+
+        .keybind-hints {
+          background: @background;
+          padding: 10px;
+          margin-top: 10px;
+        }
+
+        .preview {
+          padding: 20px;
+          background: @background;
+          border-radius: 0 10px 10px 0;
+        }
+
+        .preview image {
+          -gtk-icon-size: 256px;
+        }
+      '';
+      layouts = {
+        # Calc items without icon (elephant calc doesn't provide one)
+        item_calc = ''
+          <?xml version="1.0" encoding="UTF-8"?>
+          <interface>
+            <requires lib="gtk" version="4.0"></requires>
+            <object class="GtkBox" id="ItemBox">
+              <style>
+                <class name="item-box"></class>
+              </style>
+              <property name="orientation">horizontal</property>
+              <property name="spacing">10</property>
+              <child>
+                <object class="GtkBox" id="ItemTextBox">
+                  <style>
+                    <class name="item-text-box"></class>
+                  </style>
+                  <property name="orientation">vertical</property>
+                  <property name="hexpand">true</property>
+                  <property name="vexpand">true</property>
+                  <property name="vexpand-set">true</property>
+                  <property name="spacing">0</property>
+                  <child>
+                    <object class="GtkLabel" id="ItemText">
+                      <style>
+                        <class name="item-text"></class>
+                      </style>
+                      <property name="wrap">false</property>
+                      <property name="ellipsize">end</property>
+                      <property name="vexpand_set">true</property>
+                      <property name="vexpand">true</property>
+                      <property name="xalign">0</property>
+                    </object>
+                  </child>
+                </object>
+              </child>
+            </object>
+          </interface>
+        '';
+        item_files = ''
+          <?xml version="1.0" encoding="UTF-8"?>
+          <interface>
+            <requires lib="gtk" version="4.0"></requires>
+            <object class="GtkBox" id="ItemBox">
+              <style>
+                <class name="item-box"></class>
+              </style>
+              <property name="orientation">horizontal</property>
+              <property name="spacing">10</property>
+              <child>
+                <object class="GtkImage" id="ItemImage">
+                  <style>
+                    <class name="item-image"></class>
+                  </style>
+                </object>
+              </child>
+              <child>
+                <object class="GtkBox" id="ItemTextBox">
+                  <style>
+                    <class name="item-text-box"></class>
+                  </style>
+                  <property name="orientation">vertical</property>
+                  <property name="hexpand">true</property>
+                  <property name="spacing">0</property>
+                  <child>
+                    <object class="GtkLabel" id="ItemText">
+                      <style>
+                        <class name="item-text"></class>
+                      </style>
+                      <property name="ellipsize">end</property>
+                      <property name="xalign">0</property>
+                    </object>
+                  </child>
+                  <child>
+                    <object class="GtkLabel" id="ItemSubtext">
+                      <style>
+                        <class name="item-subtext"></class>
+                      </style>
+                      <property name="ellipsize">end</property>
+                      <property name="xalign">0</property>
+                    </object>
+                  </child>
+                </object>
+              </child>
+            </object>
+          </interface>
+        '';
+        layout = ''
+          <?xml version="1.0" encoding="UTF-8"?>
+          <interface>
+            <requires lib="gtk" version="4.0"></requires>
+            <object class="GtkWindow" id="Window">
+              <style>
+                <class name="window"></class>
+              </style>
+              <property name="resizable">true</property>
+              <property name="title">Walker</property>
+              <child>
+                <object class="GtkBox" id="BoxWrapper">
+                  <style>
+                    <class name="box-wrapper"></class>
+                  </style>
+                  <property name="width-request">640</property>
+                  <property name="overflow">hidden</property>
+                  <property name="orientation">horizontal</property>
+                  <property name="valign">center</property>
+                  <property name="halign">center</property>
+                  <child>
+                    <object class="GtkBox" id="Box">
+                      <style>
+                        <class name="box"></class>
+                      </style>
+                      <property name="orientation">vertical</property>
+                      <property name="hexpand-set">true</property>
+                      <property name="hexpand">true</property>
+                      <property name="spacing">10</property>
+                      <child>
+                        <object class="GtkBox" id="SearchContainer">
+                          <style>
+                            <class name="search-container"></class>
+                          </style>
+                          <property name="overflow">hidden</property>
+                          <property name="orientation">horizontal</property>
+                          <property name="halign">fill</property>
+                          <property name="hexpand-set">true</property>
+                          <property name="hexpand">true</property>
+                          <child>
+                            <object class="GtkEntry" id="Input">
+                              <style>
+                                <class name="input"></class>
+                              </style>
+                              <property name="halign">fill</property>
+                              <property name="hexpand-set">true</property>
+                              <property name="hexpand">true</property>
+                            </object>
+                          </child>
+                        </object>
+                      </child>
+                      <child>
+                        <object class="GtkBox" id="ContentContainer">
+                          <style>
+                            <class name="content-container"></class>
+                          </style>
+                          <property name="orientation">horizontal</property>
+                          <property name="spacing">10</property>
+                          <property name="vexpand">true</property>
+                          <property name="vexpand-set">true</property>
+                          <child>
+                            <object class="GtkLabel" id="ElephantHint">
+                              <style>
+                                <class name="elephant-hint"></class>
+                              </style>
+                              <property name="hexpand">false</property>
+                              <property name="width-request">600</property>
+                              <property name="height-request">100</property>
+                              <property name="label">Loading...</property>
+                            </object>
+                          </child>
+                          <child>
+                            <object class="GtkLabel" id="Placeholder">
+                              <style>
+                                <class name="placeholder"></class>
+                              </style>
+                              <property name="label">No Results</property>
+                              <property name="halign">center</property>
+                              <property name="xalign">0.5</property>
+                              <property name="yalign">0.5</property>
+                              <property name="hexpand">false</property>
+                              <property name="width-request">600</property>
+                              <property name="height-request">400</property>
+                              <property name="wrap">false</property>
+                              <property name="ellipsize">none</property>
+                            </object>
+                          </child>
+                          <child>
+                            <object class="GtkScrolledWindow" id="Scroll">
+                              <style>
+                                <class name="scroll"></class>
+                              </style>
+                              <property name="hexpand">true</property>
+                              <property name="width-request">600</property>
+                              <property name="can_focus">false</property>
+                              <property name="overlay-scrolling">true</property>
+                              <property name="max-content-width">600</property>
+                              <property name="max-content-height">400</property>
+                              <property name="min-content-height">400</property>
+                              <property name="propagate-natural-height">true</property>
+                              <property name="propagate-natural-width">false</property>
+                              <property name="hscrollbar-policy">never</property>
+                              <property name="vscrollbar-policy">automatic</property>
+                              <child>
+                                <object class="GtkGridView" id="List">
+                                  <style>
+                                    <class name="list"></class>
+                                  </style>
+                                  <property name="max_columns">1</property>
+                                  <property name="can_focus">false</property>
+                                </object>
+                              </child>
+                            </object>
+                          </child>
+                          <child>
+                            <object class="GtkBox" id="Preview">
+                              <style>
+                                <class name="preview"></class>
+                              </style>
+                              <property name="halign">fill</property>
+                              <property name="valign">fill</property>
+                              <property name="hexpand">false</property>
+                              <property name="vexpand">true</property>
+                              <property name="width-request">460</property>
+                            </object>
+                          </child>
+                        </object>
+                      </child>
+                      <child>
+                        <object class="GtkBox" id="Keybinds">
+                          <property name="hexpand">true</property>
+                          <property name="margin-top">10</property>
+                          <style>
+                            <class name="keybinds"></class>
+                          </style>
+                          <child>
+                            <object class="GtkBox" id="GlobalKeybinds">
+                              <property name="spacing">10</property>
+                              <style>
+                                <class name="global-keybinds"></class>
+                              </style>
+                            </object>
+                          </child>
+                          <child>
+                            <object class="GtkBox" id="ItemKeybinds">
+                              <property name="hexpand">true</property>
+                              <property name="halign">end</property>
+                              <property name="spacing">10</property>
+                              <style>
+                                <class name="item-keybinds"></class>
+                              </style>
+                            </object>
+                          </child>
+                        </object>
+                      </child>
+                      <child>
+                        <object class="GtkLabel" id="Error">
+                          <style>
+                            <class name="error"></class>
+                          </style>
+                          <property name="xalign">0</property>
+                          <property name="visible">false</property>
+                        </object>
+                      </child>
+                    </object>
+                  </child>
+                </object>
+              </child>
+            </object>
+          </interface>
+        '';
       };
     };
   };
@@ -995,7 +1362,18 @@ in
 
     # Fonts (user-level)
     cascadia-code
+
+    # Icons (for desktop entries)
+    papirus-icon-theme
   ];
+
+  # ===================
+  # GTK Icon Theme
+  # ===================
+  gtk.iconTheme = {
+    name = "Papirus-Dark";
+    package = pkgs.papirus-icon-theme;
+  };
 
   # ===================
   # XDG
@@ -1029,7 +1407,7 @@ in
       "org.jellyfin.JellyfinDesktop" = {
         name = "Jellyfin Media Player";
         exec = "${jellyfin-wrapped}/bin/jellyfinmediaplayer";
-        icon = "org.jellyfin.JellyfinDesktop";
+        icon = "jellyfin";
         comment = "Jellyfin Desktop Client (Fixed)";
         terminal = false;
         categories = [ "Video" "AudioVideo" "Player" ];
@@ -1037,10 +1415,43 @@ in
       jellyfin-server = {
         name = "Jellyfin Server Dashboard";
         exec = "xdg-open http://localhost:8096";
-        icon = "org.jellyfin.JellyfinDesktop";
+        icon = "jellyfin";
         comment = "Jellyfin Server Administration";
         terminal = false;
         categories = [ "Network" "Settings" ];
+      };
+      # Power actions (searchable in walker)
+      lock-screen = {
+        name = "Lock Screen";
+        exec = "hyprlock";
+        icon = "system-lock-screen";
+        comment = "Lock the screen";
+        terminal = false;
+        categories = [ "System" ];
+      };
+      logout = {
+        name = "Logout";
+        exec = "hyprctl dispatch exit";
+        icon = "system-log-out";
+        comment = "End session and logout";
+        terminal = false;
+        categories = [ "System" ];
+      };
+      reboot = {
+        name = "Reboot";
+        exec = "systemctl reboot";
+        icon = "system-reboot";
+        comment = "Restart the system";
+        terminal = false;
+        categories = [ "System" ];
+      };
+      shutdown = {
+        name = "Shutdown";
+        exec = "systemctl poweroff";
+        icon = "system-shutdown";
+        comment = "Power off the system";
+        terminal = false;
+        categories = [ "System" ];
       };
     };
   };

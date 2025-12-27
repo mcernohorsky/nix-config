@@ -156,8 +156,11 @@
       softwareupdate --install-rosetta --agree-to-license
     fi
 
-    # Set battery brightness behavior
-    sudo pmset -b lessbright 0
+    # Power Management
+    # AC: 30m display off (~25m dim), never sleep
+    sudo pmset -c displaysleep 30 sleep 0
+    # Battery: 5m display off (~4m dim), sleep 1m after
+    sudo pmset -b displaysleep 5 sleep 1 lessbright 0
   '';
 
   # Touch ID for sudo

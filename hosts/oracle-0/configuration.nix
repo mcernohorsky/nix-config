@@ -95,6 +95,10 @@
 
   # Secrets management
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
+  age.secrets.pocketbase-superuser = {
+    file = ../../secrets/pocketbase-superuser.age;
+    mode = "0400";
+  };
 
   # Tailscale VPN
   # Note: tag:cloud is isolated - see tailscale-acl.json for policy
@@ -162,6 +166,7 @@
   # Provide built frontend to the repertoire-builder container module
   services.repertoire-builder.webDist =
     inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
+  services.repertoire-builder.superuserPasswordFile = config.age.secrets.pocketbase-superuser.path;
 
 
   # Configure nix for deployment

@@ -20,7 +20,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --time-format '%Y-%m-%d %H:%M' --asterisks --asterisks-char '•' --greeting 'matt-desktop' --width 50 --window-padding 2 --container-padding 2 --remember --remember-session --theme 'border=yellow;greet=yellow;time=gray;prompt=green;action=cyan;button=yellow;input=white' --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --time-format '%Y-%m-%d %H:%M' --asterisks --asterisks-char '•' --width 50 --window-padding 2 --container-padding 2 --remember --remember-session --theme 'border=yellow;greet=yellow;time=gray;prompt=green;action=cyan;button=yellow;input=white' --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
         user = "greeter";
       };
     };

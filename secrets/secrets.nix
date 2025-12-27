@@ -29,4 +29,7 @@ in
 
   # Cloudflare R2 credentials for restic backups
   "restic-r2-credentials.age".publicKeys = all;
+
+  # PocketBase superuser password for repertoire-builder
+  "pocketbase-superuser.age".publicKeys = all;
 }

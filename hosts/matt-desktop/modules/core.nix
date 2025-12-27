@@ -228,7 +228,6 @@
     inetutils
 
     # System monitoring
-    htop
     iotop
     lsof
 
@@ -245,7 +244,6 @@
     ncdu
 
     # Text editors (fallback)
-    vim
     nano
 
     # Version control
