@@ -37,9 +37,9 @@ deploy-oracle:
         -v ~/.ssh:/root/.ssh:ro \
         -w /workspace \
         --network host \
-        -e NIX_CONFIG="experimental-features = nix-command flakes" \
+        -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true" \
         nixos/nix:latest \
-        nix --experimental-features 'nix-command flakes' run github:serokell/deploy-rs -- --skip-checks --accept-flake-config .#oracle-0
+        nix run github:serokell/deploy-rs -- --skip-checks .#oracle-0
 
 # Deploy to Linux Desktop (remote build via Tailscale)
 deploy-desktop:
