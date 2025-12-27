@@ -28,6 +28,7 @@ build-oracle:
 deploy-oracle:
     @echo "🚀 Deploying to Oracle VPS using NixOS Docker container..."
     @echo "Container config is loaded from repertoire-builder project"
+    git add -A && git commit -m "update flake.lock" --allow-empty || true
     docker run --rm \
         --platform linux/arm64 \
         --security-opt seccomp=unconfined \
@@ -38,7 +39,7 @@ deploy-oracle:
         --network host \
         -e NIX_CONFIG="experimental-features = nix-command flakes" \
         nixos/nix:latest \
-        nix --experimental-features 'nix-command flakes' run github:serokell/deploy-rs -- --skip-checks .#oracle-0
+        nix --experimental-features 'nix-command flakes' run github:serokell/deploy-rs -- --skip-checks --accept-flake-config .#oracle-0
 
 # Deploy to Linux Desktop (remote build via Tailscale)
 deploy-desktop:
