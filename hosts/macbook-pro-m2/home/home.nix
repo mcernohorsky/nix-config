@@ -33,52 +33,72 @@
         "ui.background" = {}
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
+
+      # Oh My OpenCode Configuration
+      ".config/opencode/oh-my-opencode.json".text = builtins.toJSON {
+        google_auth = false;
+        agents = {
+          Sisyphus = {
+            model = "google/claude-opus-4-5-thinking-high";
+          };
+          frontend-ui-ux-engineer = {
+            model = "google/gemini-3-pro-high";
+          };
+          document-writer = {
+            model = "google/gemini-3-flash";
+          };
+          multimodal-looker = {
+            model = "google/gemini-3-flash";
+          };
+          oracle = {
+            model = "github-copilot/gpt-5.2";
+          };
+          explore = {
+            model = "google/gemini-3-flash";
+          };
+          librarian = {
+            model = "google/gemini-3-flash";
+          };
+          Planner-Sisyphus = {
+            model = "github-copilot/gpt-5.2";
+          };
+        };
+      };
     };
 
-    packages =
-      with pkgs;
-      [
-        lazydocker
-        tree
-        fd
-        bottom
-        hyperfine
-        gh
+    packages = with pkgs; [
+      lazydocker
+      tree
+      fd
+      bottom
+      hyperfine
+      gh
 
-        tailscale
-        bitwarden-desktop
+      tailscale
+      bitwarden-desktop
 
-        nixd
-        nixfmt-rfc-style
+      nixd
+      nixfmt-rfc-style
 
-        bun # for npm tools: bun i -g opencode-google-antigravity-auth @mixedbread/mgrep @opencode-ai/plugin
-        nodejs # needed for running globally installed npm packages (they use #!/usr/bin/env node)
+      bun # for npm tools: bun i -g oh-my-opencode opencode-antigravity-auth @opencode-ai/plugin
+      nodejs # needed for running globally installed npm packages (they use #!/usr/bin/env node)
 
-        # fonts
-        jetbrains-mono
-        nerd-fonts.jetbrains-mono
-        inter
-        merriweather
-        roboto
-      ]
-      ++ (
-        let
-          ai-tools = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-        in
-        [
-          # AI Coding Tools
-          ai-tools.amp
-          ai-tools.codex
-          ai-tools.claude-code
-          ai-tools.gemini-cli
-          # opencode is managed via programs.opencode
-        ]
-      );
+      # fonts
+      jetbrains-mono
+      nerd-fonts.jetbrains-mono
+      inter
+      merriweather
+      roboto
+
+      # AI Tools
+      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.amp
+    ];
 
     shellAliases = {
       lg = "lazygit";
       ld = "lazydocker";
       zj = "zellij";
+      oc = "opencode";
     };
   };
 
@@ -171,6 +191,11 @@
             "x" = "select_line_below";
             "X" = "select_line_above";
             "A-x" = "extend_to_line_bounds";
+            "D" = [
+              "ensure_selections_forward"
+              "extend_to_line_end"
+              "delete_selection"
+            ];
             space = {
               l = ":toggle lsp.display-inlay-hints";
               x = ":toggle whitespace.render all none";
@@ -287,35 +312,68 @@
 
     # AI coding assistant - package from nix-ai-tools, config via home-manager
     # Run once after rebuild:
-    #   bun i -g opencode-google-antigravity-auth @mixedbread/mgrep @opencode-ai/plugin
+    #   bun i -g oh-my-opencode opencode-antigravity-auth @opencode-ai/plugin
     #   opencode auth login
-    #   mgrep install-opencode
     opencode = {
       enable = true;
       package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
       settings = {
         small_model = "opencode/grok-code";
         plugin = [
-          "opencode-google-antigravity-auth"
+          "oh-my-opencode"
+          "opencode-antigravity-auth"
         ];
+        mcp = {
+          playwright = {
+            type = "local";
+            command = [
+              "bunx"
+              "@playwright/mcp@latest"
+              "--browser"
+              "chromium"
+            ];
+            enabled = false;
+          };
+        };
         provider = {
           google = {
-            npm = "@ai-sdk/google";
             models = {
-              "gemini-claude-opus-4-5-thinking-high" = {
-                id = "gemini-claude-opus-4-5-thinking";
-                name = "Claude Opus 4.5 (High Thinking)";
-                release_date = "2025-11-24";
-                reasoning = true;
+              "gemini-3-pro-high" = {
+                name = "Gemini 3 Pro High (Antigravity)";
+                limit = {
+                  context = 1048576;
+                  output = 65535;
+                };
+                modalities = {
+                  input = [
+                    "text"
+                    "image"
+                    "pdf"
+                  ];
+                  output = [ "text" ];
+                };
+              };
+              "gemini-3-flash" = {
+                name = "Gemini 3 Flash (Antigravity)";
+                limit = {
+                  context = 1048576;
+                  output = 65536;
+                };
+                modalities = {
+                  input = [
+                    "text"
+                    "image"
+                    "pdf"
+                  ];
+                  output = [ "text" ];
+                };
+              };
+              "claude-opus-4-5-thinking-high" = {
+                name = "Claude Opus 4.5 Thinking High (Antigravity)";
                 limit = {
                   context = 200000;
                   output = 64000;
                 };
-                cost = {
-                  input = 5;
-                  output = 25;
-                  cache_read = 0.5;
-                };
                 modalities = {
                   input = [
                     "text"
@@ -323,30 +381,6 @@
                     "pdf"
                   ];
                   output = [ "text" ];
-                };
-                options = {
-                  thinkingConfig = {
-                    thinkingBudget = 32000;
-                    includeThoughts = true;
-                  };
-                };
-              };
-              "gemini-3-flash-high" = {
-                id = "gemini-3-flash";
-                name = "Gemini 3 Flash (High Thinking)";
-                modalities = {
-                  input = [
-                    "text"
-                    "image"
-                    "pdf"
-                  ];
-                  output = [ "text" ];
-                };
-                options = {
-                  thinkingConfig = {
-                    thinkingLevel = "high";
-                    includeThoughts = true;
-                  };
                 };
               };
             };

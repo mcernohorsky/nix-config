@@ -1,5 +1,11 @@
 # Home Manager configuration for matt
-{ config, pkgs, inputs, lib, ... }:
+{
+  config,
+  pkgs,
+  inputs,
+  lib,
+  ...
+}:
 
 let
   # Fixed wrapper for Jellyfin Media Player (Forces XWayland and Fusion style to avoid crashes)
@@ -39,10 +45,10 @@ in
       };
 
       # Startup applications
+      # Note: hypridle is managed via systemd user service (services.hypridle.enable)
       exec-once = [
         "waybar"
         "swaync"
-        "hypridle"
         "nm-applet"
         "blueman-applet"
         "wl-paste --type text --watch cliphist store"
@@ -79,7 +85,7 @@ in
         inactive_opacity = 0.85;
         blur = {
           enabled = true;
-          size = 3; 
+          size = 3;
           passes = 3;
           new_optimizations = true;
           xray = false;
@@ -164,9 +170,7 @@ in
         "$mainMod, C, exec, zen"
 
         # Lock screen (use SUPER+Escape to avoid conflict with vim navigation)
-        "$mainMod, Escape, exec, hyprlock"
-
-
+        "$mainMod, Escape, exec, hyprlock --grace 3"
 
         # Notification center
         "$mainMod, N, exec, swaync-client -t -sw"
@@ -299,8 +303,8 @@ in
     settings = {
       general = {
         hide_cursor = true;
-        grace = 3;
-        disable_loading_bar = true;
+        # Note: grace and disable_loading_bar removed in hyprlock v0.9.x
+        # grace is now a CLI flag (--grace), set in hypridle lock_cmd
       };
 
       background = [
@@ -387,7 +391,7 @@ in
     enable = true;
     settings = {
       general = {
-        lock_cmd = "pidof hyprlock || hyprlock";
+        lock_cmd = "pidof hyprlock || hyprlock --grace 3";
         before_sleep_cmd = "loginctl lock-session";
         after_sleep_cmd = "hyprctl dispatch dpms on";
       };
@@ -415,7 +419,7 @@ in
   # ===================
   services.swayosd = {
     enable = true;
-    topMargin = 0.9;  # Show near bottom of screen
+    topMargin = 0.9; # Show near bottom of screen
   };
 
   # ===================
@@ -544,9 +548,20 @@ in
         height = 38;
         spacing = 0;
 
-        modules-left = [ "hyprland/workspaces" "hyprland/window" ];
+        modules-left = [
+          "hyprland/workspaces"
+          "hyprland/window"
+        ];
         modules-center = [ "clock" ];
-        modules-right = [ "tray" "custom/notification" "pulseaudio" "custom/sep" "cpu" "memory" "custom/gpu" ];
+        modules-right = [
+          "tray"
+          "custom/notification"
+          "pulseaudio"
+          "custom/sep"
+          "cpu"
+          "memory"
+          "custom/gpu"
+        ];
 
         "hyprland/workspaces" = {
           format = "{name}";
@@ -591,7 +606,11 @@ in
           format = "<span font='16px'>{icon}</span> {volume}%";
           format-muted = "<span font='16px'>󰝟</span> muted";
           format-icons = {
-            default = [ "󰕿" "󰖀" "󰕾" ];
+            default = [
+              "󰕿"
+              "󰖀"
+              "󰕾"
+            ];
           };
           on-click = "pwvucontrol";
           on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
@@ -699,10 +718,16 @@ in
       selection_wrap = true;
       hide_action_hints = true;
       placeholders = {
-        default = { input = " Search..."; list = "No Results"; };
-        files = { input = " Search Files..."; list = "                                                       No Results                                                       "; };
+        default = {
+          input = " Search...";
+          list = "No Results";
+        };
+        files = {
+          input = " Search Files...";
+          list = "                                                       No Results                                                       ";
+        };
       };
-      keybinds.quick_activate = [];
+      keybinds.quick_activate = [ ];
       columns.symbols = 1;
       # Anchor to top so it doesn't jump around as results change
       shell.anchor_top = true;
@@ -710,12 +735,30 @@ in
         max_results = 256;
         default = [ "desktopapplications" ];
         prefixes = [
-          { prefix = "/"; provider = "providerlist"; }
-          { prefix = "."; provider = "files"; }
-          { prefix = ":"; provider = "symbols"; }
-          { prefix = "="; provider = "calc"; }
-          { prefix = "@"; provider = "websearch"; }
-          { prefix = "$"; provider = "clipboard"; }
+          {
+            prefix = "/";
+            provider = "providerlist";
+          }
+          {
+            prefix = ".";
+            provider = "files";
+          }
+          {
+            prefix = ":";
+            provider = "symbols";
+          }
+          {
+            prefix = "=";
+            provider = "calc";
+          }
+          {
+            prefix = "@";
+            provider = "websearch";
+          }
+          {
+            prefix = "$";
+            provider = "clipboard";
+          }
         ];
       };
     };
@@ -1260,8 +1303,17 @@ in
         lsp.display-messages = true;
         file-picker.hidden = false;
         statusline = {
-          left = [ "mode" "spinner" "file-name" ];
-          right = [ "diagnostics" "selections" "position" "file-encoding" ];
+          left = [
+            "mode"
+            "spinner"
+            "file-name"
+          ];
+          right = [
+            "diagnostics"
+            "selections"
+            "position"
+            "file-encoding"
+          ];
         };
         indent-guides = {
           render = true;
@@ -1297,8 +1349,8 @@ in
       light = false;
       side-by-side = true;
       line-numbers = true;
-      };
     };
+  };
 
   # ===================
   # Modern CLI Tools (theming handled by Stylix)
@@ -1404,13 +1456,36 @@ in
       };
     };
     desktopEntries = {
+      helix = {
+        name = "Helix";
+        genericName = "Text Editor";
+        comment = "A post-modern text editor";
+        exec = "ghostty -e hx %F";
+        icon = "helix";
+        terminal = false;
+        categories = [
+          "Utility"
+          "TextEditor"
+          "Development"
+          "IDE"
+        ];
+        mimeType = [
+          "text/plain"
+          "text/markdown"
+          "application/x-shellscript"
+        ];
+      };
       "org.jellyfin.JellyfinDesktop" = {
         name = "Jellyfin Media Player";
         exec = "${jellyfin-wrapped}/bin/jellyfinmediaplayer";
         icon = "jellyfin";
         comment = "Jellyfin Desktop Client (Fixed)";
         terminal = false;
-        categories = [ "Video" "AudioVideo" "Player" ];
+        categories = [
+          "Video"
+          "AudioVideo"
+          "Player"
+        ];
       };
       jellyfin-server = {
         name = "Jellyfin Server Dashboard";
@@ -1418,7 +1493,10 @@ in
         icon = "jellyfin";
         comment = "Jellyfin Server Administration";
         terminal = false;
-        categories = [ "Network" "Settings" ];
+        categories = [
+          "Network"
+          "Settings"
+        ];
       };
       # Power actions (searchable in walker)
       lock-screen = {
