@@ -11,6 +11,18 @@
     networkmanager = {
       enable = true;
       wifi.powersave = false; # Better stability
+      ensureProfiles.profiles = {
+        # Direct ethernet cable to MacBook - use link-local so it doesn't timeout waiting for DHCP
+        direct-ethernet = {
+          connection = {
+            id = "direct-ethernet";
+            type = "ethernet";
+            interface-name = "enp4s0";
+          };
+          ipv4.method = "link-local";
+          ipv6.method = "link-local";
+        };
+      };
     };
 
     # Firewall

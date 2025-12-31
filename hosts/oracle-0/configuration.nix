@@ -148,10 +148,6 @@
       "http://chess.cernohorsky.ca" = {
         listenAddresses = [ "127.0.0.1" ];
         extraConfig = ''
-          # Strip trailing slashes from API routes (PocketBase v0.26+ is strict about this)
-          @trailingSlash path_regexp ^(.+)/$
-          rewrite @trailingSlash {re.1}
-
           reverse_proxy repertoire-builder:8090
 
           encode gzip

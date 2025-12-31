@@ -158,8 +158,8 @@
     winbindd.enable = false; # Not needed for simple file sharing
     settings = {
       global = {
-        # Only allow connections from direct ethernet link-local range
-        "hosts allow" = "169.254.";
+        # Only allow connections from direct ethernet link-local range (IPv4 and IPv6)
+        "hosts allow" = "169.254. fe80::/10";
         "hosts deny" = "ALL";
       };
       root = {
@@ -175,6 +175,7 @@
   # Avahi: Advertise Samba via mDNS/Bonjour for macOS Finder discovery
   services.avahi = {
     enable = true;
+    allowInterfaces = [ "enp4s0" ]; # Only advertise on direct ethernet, prevents hostname conflicts
     publish = {
       enable = true;
       userServices = true;

@@ -157,8 +157,8 @@
     fi
 
     # Power Management
-    # AC: 30m display off (~25m dim), never sleep
-    sudo pmset -c displaysleep 30 sleep 0
+    # AC: 30m display off (~25m dim), never sleep, disable standby/powernap for SSH access
+    sudo pmset -c displaysleep 30 sleep 0 standby 0 powernap 0
     # Battery: 5m display off (~4m dim), sleep 1m after
     sudo pmset -b displaysleep 5 sleep 1 lessbright 0
   '';
