@@ -727,11 +727,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767222281,
-        "narHash": "sha256-aIVGnUIu2zArkQ8a6nHI1kCTwBZtp3lIC9iHT/RWv0Y=",
+        "lastModified": 1767222550,
+        "narHash": "sha256-ODkouMR5urKME8IgkqZVjBAHt44pIuPR33YNemPwxZs=",
         "ref": "refs/heads/main",
-        "rev": "4cba60182404507aef43d1b82faa8a1a8831e644",
-        "revCount": 97,
+        "rev": "2cb11e607b9b23bdf0a7fe46545029df0b60aa4b",
+        "revCount": 98,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/repertoire-builder"
       },
