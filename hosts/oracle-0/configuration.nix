@@ -98,13 +98,16 @@
   # We deploy via OpenSSH (sshd) over the Tailscale network (tailscale0 interface).
   # Tailscale SSH is DISABLED (no --ssh flag).
   #
-  # CRITICAL: Tailscale is our ONLY network path to this host. If tailscaled restarts
-  # during activation, the tailscale0 interface flaps and kills the SSH connection.
-  # This is independent of using sshd vs Tailscale SSH - it's a transport layer issue.
+  # CRITICAL: Tailscale is our ONLY network path to this host. The following services
+  # can flap the tailscale0 interface or routes if restarted during activation:
+  # - tailscaled: provides the interface
+  # - systemd-networkd: manages routes
+  # - systemd-resolved: DNS resolution (less critical but can cause issues)
   #
-  # Solution: Don't restart tailscaled during activation. Tailscale updates take effect
-  # on next reboot or via manual `systemctl restart tailscaled`.
+  # Solution: Don't restart these during activation. Updates take effect on next reboot.
   systemd.services.tailscaled.restartIfChanged = false;
+  systemd.services.systemd-networkd.restartIfChanged = false;
+  systemd.services.systemd-resolved.restartIfChanged = false;
 
   # sshd can reload gracefully without dropping connections:
   systemd.services.sshd.reloadIfChanged = true;
