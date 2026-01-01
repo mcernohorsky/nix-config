@@ -385,6 +385,40 @@ If system fails to POST after changes:
 
 ## Troubleshooting
 
+### Deploy-rs "Failed" but Actually Succeeded
+
+**Symptom**: Deploy shows `ERROR: Deployment to node oracle-0 failed, rolled back` but checking the server shows the new profile is active.
+
+**Cause**: We deploy via Tailscale SSH, which is provided by `tailscaled`. If `tailscaled` restarts during activation, the SSH connection drops. Deploy-rs sees exit code 255 and reports failure, but the switch already completed.
+
+**Why tailscaled restarts**: Even with `restartIfChanged = false`, tailscaled can restart due to:
+1. Dependency chain: `systemd-networkd` or `systemd-resolved` restart → cycles `network-online.target` → drags tailscaled
+2. Unit definition changes (package path changed)
+
+**Solution**: We've disabled `magicRollback` for oracle-0 and added `stopIfChanged = false` to the networking stack. After deployment, always verify manually:
+```bash
+curl https://chess.cernohorsky.ca/api/version
+ssh matt@oracle-0 "readlink /run/current-system"
+```
+
+**Alternative**: Use regular OpenSSH over the Tailscale IP instead of Tailscale SSH. This would allow re-enabling magicRollback since restarting tailscaled wouldn't kill sshd.
+
+### Caddy Not Starting After Deployment
+
+**Symptom**: Caddy is stopped (`inactive (dead)`) after deployment, returning 502 errors.
+
+**Cause**: The NixOS Caddy module sets `StartLimitIntervalSec = 14400` (4 hours) and `StartLimitBurst = 10`. If Caddy fails to start 10 times within 50 seconds (at 5s intervals), systemd marks it as "failed" and won't retry for 4 hours.
+
+**Solution**: Override with `StartLimitIntervalSec = 0` in the Caddy service config:
+```nix
+systemd.services.caddy.serviceConfig.StartLimitIntervalSec = 0;
+```
+
+**Quick fix**: If Caddy is down, manually start it:
+```bash
+ssh matt@oracle-0 "sudo systemctl start caddy"
+```
+
 ### Host Key Verification Failed
 If you change hostnames or IPs, you may need to clear old host keys:
 ```bash

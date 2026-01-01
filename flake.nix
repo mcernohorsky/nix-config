@@ -163,11 +163,16 @@
       };
 
       # Deploy-rs configuration (using Tailscale MagicDNS hostnames)
+      # NOTE: magicRollback=false because we deploy via Tailscale SSH.
+      # Tailscaled may restart during activation, dropping SSH connection.
+      # This causes deploy-rs to think activation failed (exit 255) even when
+      # the new profile was successfully applied. Disabling magicRollback
+      # prevents false "rollback" attempts. Verify deployments manually with:
+      #   curl https://chess.cernohorsky.ca/api/version
       deploy.nodes.oracle-0 = {
         hostname = "oracle-0.tailc41cf5.ts.net";
         sshUser = "matt";
-        magicRollback = true;
-        confirmTimeout = 120;
+        magicRollback = false;
         profiles.system = {
           user = "root";
           path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;

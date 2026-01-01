@@ -95,15 +95,30 @@
   };
 
   # --- DEPLOYMENT STABILITY & SELF-HEALING ---
+  #
+  # CRITICAL: We deploy via Tailscale SSH, which is provided by tailscaled.
+  # If tailscaled restarts during activation, our SSH connection drops.
+  # To prevent this, we must stop the entire networking stack from restarting.
+  #
+  # - restartIfChanged=false: Don't restart if unit definition changes
+  # - stopIfChanged=false: Use restart instead of stop+start (less disruptive)
 
-  # Prevent SSH connection drops during deployment by preferring reload
+  # Prevent SSH connection drops during deployment
   systemd.services.sshd = {
     restartIfChanged = false;
     reloadIfChanged = true;
   };
 
-  # Stable tailscaled to prevent connection drops
-  systemd.services.tailscaled.restartIfChanged = false;
+  # CRITICAL: Tailscaled provides our SSH endpoint - never restart during deploy
+  systemd.services.tailscaled = {
+    restartIfChanged = false;
+    stopIfChanged = false;
+  };
+
+  # Prevent network stack restarts from cascading to tailscaled
+  systemd.services.systemd-networkd.restartIfChanged = false;
+  systemd.services.systemd-resolved.restartIfChanged = false;
+  systemd.services.nix-daemon.restartIfChanged = false;
 
   # Caddy: restart on failure, not always (avoid masking issues)
   # StartLimitIntervalSec=0 prevents 4-hour throttle from NixOS caddy module defaults
