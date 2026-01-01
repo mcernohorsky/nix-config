@@ -47,7 +47,6 @@
 
   networking.hostName = "oracle-0";
 
-
   time.timeZone = "America/Edmonton";
   i18n.defaultLocale = "en_CA.UTF-8";
 
@@ -58,7 +57,9 @@
       extraGroups = [
         "wheel"
       ];
-      openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca" ];
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca"
+      ];
     };
   };
 
@@ -93,6 +94,38 @@
     };
   };
 
+  # Prevent SSH connection drops during deployment
+  systemd.services.sshd.restartIfChanged = false;
+  systemd.services.sshd.reloadIfChanged = true;
+
+  # Stable tailscaled to prevent connection drops
+  systemd.services.tailscaled.restartIfChanged = false;
+
+  # Self-healing Caddy
+  systemd.services.caddy = {
+    serviceConfig = {
+      Restart = "always";
+      RestartSec = "5s";
+      StartLimitIntervalSec = 0;
+    };
+    wantedBy = [ "multi-user.target" ];
+  };
+
+  # Self-healing Container
+  systemd.services."container@repertoire-builder" = {
+    wantedBy = [ "multi-user.target" ];
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      Restart = "always";
+      RestartSec = "5s";
+      StartLimitIntervalSec = 0;
+    };
+  };
+
   # Secrets management
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
   age.secrets.pocketbase-superuser = {
@@ -105,7 +138,10 @@
   services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-authkey.path;
-    extraUpFlags = [ "--advertise-tags=tag:cloud" "--ssh" ];
+    extraUpFlags = [
+      "--advertise-tags=tag:cloud"
+      "--ssh"
+    ];
   };
 
   # Taildrive: Share root filesystem
@@ -167,7 +203,6 @@
   services.repertoire-builder.webDist =
     inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
   services.repertoire-builder.superuserPasswordFile = config.age.secrets.pocketbase-superuser.path;
-
 
   # Configure nix for deployment
   nix.settings.trusted-users = [ "@wheel" ];

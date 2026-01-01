@@ -38,6 +38,7 @@ deploy-oracle:
         -w /workspace \
         --network host \
         -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true" \
+        -e NIX_SSHOPTS="-o ServerAliveInterval=2 -o ServerAliveCountMax=30 -o ConnectTimeout=10 -o ConnectionAttempts=6" \
         nixos/nix:latest \
         nix run github:serokell/deploy-rs -- --skip-checks .#oracle-0
 

@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   networking = {
     # Enable systemd-networkd for proper container networking
@@ -9,7 +14,10 @@
     # NAT configuration for containers
     nat = {
       enable = true;
-      internalInterfaces = [ "br-containers" "ve-+" ];
+      internalInterfaces = [
+        "br-containers"
+        "ve-+"
+      ];
       externalInterface = "enp0s6";
     };
   };
@@ -27,7 +35,7 @@
       };
       # Keep Oracle's DNS configuration from DHCP
       dhcpV4Config = {
-        UseDNS = true;  # Use Oracle's metadata service DNS
+        UseDNS = true; # Use Oracle's metadata service DNS
         UseDomains = true;
         UseRoutes = true;
       };
@@ -49,7 +57,7 @@
         IPMasquerade = "ipv4";
         DHCPServer = true;
       };
-      addresses = [{ Address = "192.168.100.1/24"; }];
+      addresses = [ { Address = "192.168.100.1/24"; } ];
       dhcpServerConfig = {
         PoolOffset = 10;
         PoolSize = 100;
@@ -66,15 +74,20 @@
     };
   };
 
+  # Most important: do not restart networkd just because the unit changed.
+  # This prevents SSH drops during activation.
+  systemd.services.systemd-networkd.restartIfChanged = false;
+
   # DNS resolution
   services.resolved = {
     enable = true;
-    fallbackDns = [ "1.1.1.1" "1.0.0.1" ];
+    fallbackDns = [
+      "1.1.1.1"
+      "1.0.0.1"
+    ];
   };
 
   # Enable container hostname resolution via nss-mymachines
   system.nssModules = [ pkgs.systemd ];
   system.nssDatabases.hosts = lib.mkBefore [ "mymachines" ];
 }
-
-

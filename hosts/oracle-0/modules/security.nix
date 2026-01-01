@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   # Tailscale
   services.tailscale = {
@@ -10,7 +15,10 @@
   # Firewall - all ports closed; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
   networking.firewall = {
     allowedTCPPorts = [ ]; # No public ports; Cloudflare Tunnel handles HTTP traffic
-    trustedInterfaces = [ "tailscale0" "br-containers" ];
+    trustedInterfaces = [
+      "tailscale0"
+      "br-containers"
+    ];
   };
 
   # Secrets
@@ -26,7 +34,7 @@
     isSystemUser = true;
     group = "cloudflared";
   };
-  users.groups.cloudflared = {};
+  users.groups.cloudflared = { };
 
   # Cloudflare Tunnel for HTTP access (dashboard-managed with token)
   systemd.services.cloudflared-tunnel = {
@@ -36,12 +44,11 @@
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = "${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate run --token-file ${config.age.secrets.cloudflared-token.path}";
-      Restart = "on-failure";
+      Restart = "always";
       RestartSec = "5s";
+      StartLimitIntervalSec = 0;
       User = "cloudflared";
       Group = "cloudflared";
     };
   };
 }
-
-
