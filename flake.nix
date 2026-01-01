@@ -164,15 +164,17 @@
 
       # Deploy-rs configuration (using Tailscale MagicDNS hostnames)
       # We deploy via OpenSSH (sshd) over the Tailscale network, NOT Tailscale SSH.
-      # This decouples deploy transport from tailscaled lifecycle, allowing:
-      # - magicRollback to work reliably
-      # - confirmTimeout to handle brief network blips
-      # - No need for restartIfChanged=false hacks on critical services
+      #
+      # IMPORTANT: magicRollback is disabled because the SSH connection drops during
+      # activation (sysinit-reactivation.target restarts network services). This is
+      # unavoidable when Tailscale is the only network path. The new profile is actually
+      # applied successfully - deploy-rs just can't confirm it.
+      #
+      # After each deploy, verify with: just verify-chess
       deploy.nodes.oracle-0 = {
         hostname = "oracle-0.tailc41cf5.ts.net";
         sshUser = "matt";
-        magicRollback = true;
-        confirmTimeout = 120;
+        magicRollback = false;
         profiles.system = {
           user = "root";
           path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;
