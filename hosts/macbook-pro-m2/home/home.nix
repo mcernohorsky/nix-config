@@ -320,8 +320,8 @@
       settings = {
         small_model = "opencode/grok-code";
         plugin = [
-          "oh-my-opencode"
-          "opencode-antigravity-auth"
+          "oh-my-opencode@latest"
+          "opencode-antigravity-auth@latest"
         ];
         mcp = {
           playwright = {

@@ -499,11 +499,11 @@
     "homebrew-cask": {
       "flake": false,
       "locked": {
-        "lastModified": 1767155810,
-        "narHash": "sha256-8Y8PNJDbY6zqCP18iBmoKV26RBrgWsahBIHNtMAEtJs=",
+        "lastModified": 1767232075,
+        "narHash": "sha256-eFlhP9csVw12qIkSjp/0D+Tac7JEe1t0PpChVFYrAPU=",
         "owner": "homebrew",
         "repo": "homebrew-cask",
-        "rev": "6f1c6fe94a86eb17878ff1404aa85c3399483355",
+        "rev": "5e35bdaed4c99b25477ee97f3cfcd9dc13dbed2a",
         "type": "github"
       },
       "original": {
@@ -515,11 +515,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1767141904,
-        "narHash": "sha256-HkCsN1GT1UmrFnzkc5qoMoo0XnEn8mbbE4KVsB78kcA=",
+        "lastModified": 1767231553,
+        "narHash": "sha256-KR2aanjgwdNHGDeOgbcrN3eWua4uvmnFiuXJDwKvhjI=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "0abdef72e90f933a1c8ca14f4de3949ba63adf5e",
+        "rev": "7a74a51313b4bb2fa4096b75516832fba76945b3",
         "type": "github"
       },
       "original": {
@@ -550,11 +550,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1767151028,
-        "narHash": "sha256-jvoOvubDeM0cuO87BU23wVfMaeKBHDMkwhx1Nmf9wUA=",
+        "lastModified": 1767192721,
+        "narHash": "sha256-+hD5e3GdzNgY1ijeWmt1ySjjOfWEs3dWz/h/6wSBlJs=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "41a0d4896e2a79780140d033724e3f526169a2e5",
+        "rev": "0cfdf2f732581c50e11735bdb5b1200cdcab4a1d",
         "type": "github"
       },
       "original": {
@@ -662,11 +662,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1767026758,
-        "narHash": "sha256-7fsac/f7nh/VaKJ/qm3I338+wAJa/3J57cOGpXi0Sbg=",
+        "lastModified": 1767151656,
+        "narHash": "sha256-ujL2AoYBnJBN262HD95yer7QYUmYp5kFZGYbyCCKxq8=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "346dd96ad74dc4457a9db9de4f4f57dab2e5731d",
+        "rev": "f665af0cdb70ed27e1bd8f9fdfecaf451260fc55",
         "type": "github"
       },
       "original": {
@@ -727,11 +727,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767228023,
-        "narHash": "sha256-22f7GR+YD1YEk7EP5sZ6T4Zx0W2m/Tvf1Na/Pg5YDvI=",
+        "lastModified": 1767235597,
+        "narHash": "sha256-a5Bu0CBe5IfQ7IWQI8J2kh/eeViXe1l97OiQRNsiD1Q=",
         "ref": "refs/heads/main",
-        "rev": "ca824a32674fa5883b7a2f2da1b4fe43a0fd6b86",
-        "revCount": 107,
+        "rev": "b77354200e39206bb0a77776406e8e0000d02f0d",
+        "revCount": 108,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/repertoire-builder"
       },
