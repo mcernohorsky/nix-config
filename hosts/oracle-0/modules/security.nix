@@ -44,7 +44,7 @@
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       ExecStart = "${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate run --token-file ${config.age.secrets.cloudflared-token.path}";
-      Restart = "always";
+      Restart = lib.mkForce "always";
       RestartSec = "5s";
       StartLimitIntervalSec = 0;
       User = "cloudflared";

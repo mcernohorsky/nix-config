@@ -104,7 +104,7 @@
   # Self-healing Caddy
   systemd.services.caddy = {
     serviceConfig = {
-      Restart = "always";
+      Restart = lib.mkForce "always";
       RestartSec = "5s";
       StartLimitIntervalSec = 0;
     };
