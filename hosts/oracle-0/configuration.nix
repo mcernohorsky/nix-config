@@ -105,28 +105,27 @@
   # Stable tailscaled to prevent connection drops
   systemd.services.tailscaled.restartIfChanged = false;
 
-  # Self-healing edge services using targeted overrides
+  # Caddy: restart on failure, not always (avoid masking issues)
   systemd.services.caddy = {
     serviceConfig = {
-      Restart = lib.mkOverride 50 "always";
+      Restart = lib.mkOverride 50 "on-failure";
       RestartSec = "5s";
-      StartLimitIntervalSec = 0;
     };
     wantedBy = [ "multi-user.target" ];
   };
 
-  # Ensure the container always starts and stays up
+  # Container ordering: wait for bridge to be ready
   systemd.services."container@repertoire-builder" = {
     wantedBy = [ "multi-user.target" ];
     after = [
       "network-online.target"
       "tailscaled.service"
+      "systemd-networkd.service"
     ];
     wants = [ "network-online.target" ];
     serviceConfig = {
-      Restart = lib.mkOverride 50 "always";
+      Restart = lib.mkOverride 50 "on-failure";
       RestartSec = "5s";
-      StartLimitIntervalSec = 0;
     };
   };
 

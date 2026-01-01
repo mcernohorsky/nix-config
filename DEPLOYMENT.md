@@ -394,3 +394,69 @@ ssh-keyscan -H oracle-0.tailc41cf5.ts.net >> ~/.ssh/known_hosts
 
 ### Deployment Timeout
 If deployment times out during activation, it usually means the Tailscale connection was interrupted. Magic rollback will revert the changes automatically.
+
+---
+
+## Deployment Verification Checklist
+
+After every deployment, verify these to confirm success:
+
+### 1. Backend Version
+```bash
+curl https://chess.cernohorsky.ca/api/version
+```
+Expected: JSON with `version`, `gitCommit`, `buildTime`
+
+### 2. Frontend Version
+```bash
+curl https://chess.cernohorsky.ca/version.json
+```
+Expected: JSON matching the deployment commit
+
+### 3. UI Footer
+Check the app footer shows the version (e.g., `v0.1.0 (abc1234)`)
+
+### 4. Container & Service Health
+```bash
+just container-status oracle-0
+ssh matt@oracle-0 "sudo systemctl status container@repertoire-builder"
+ssh matt@oracle-0 "sudo machinectl shell repertoire-builder /bin/systemctl status repertoire-builder"
+ssh matt@oracle-0 "sudo machinectl shell repertoire-builder /bin/systemctl status pocketbase-superuser-setup"
+```
+
+### 5. pb_public Mount Verification
+```bash
+ssh matt@oracle-0 "sudo machinectl shell repertoire-builder /bin/ls -la /var/lib/pocketbase/pb_public"
+```
+Expected: Shows files from the Nix store (read-only mount)
+
+### 6. Database Persistence
+```bash
+ssh matt@oracle-0 "sudo sqlite3 /var/lib/containers/repertoire-builder/data/data.db 'SELECT COUNT(*) FROM edges;'"
+```
+Compare with API result to verify same database is being used.
+
+### 7. Service Restart Test
+```bash
+just container-restart oracle-0
+# Wait 30 seconds, then verify:
+curl https://chess.cernohorsky.ca/api/health
+curl https://chess.cernohorsky.ca/version.json
+```
+Expected: No "missing assets" window, services come up cleanly
+
+---
+
+## If Frontend Didn't Update (Rare)
+
+If `/version.json` shows an old commit after deployment:
+
+1. **Clear Docker nix store volume** (on build machine):
+   ```bash
+   docker volume rm nix-config-store
+   just deploy-oracle
+   ```
+
+2. **Do NOT** bump version numbers or modify derivation inputs as a workaround.
+
+The root cause is usually Docker volume cache corruption. Clearing the volume forces a fresh evaluation and build.
