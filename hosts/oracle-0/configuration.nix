@@ -94,24 +94,28 @@
     };
   };
 
-  # Prevent SSH connection drops during deployment
-  systemd.services.sshd.restartIfChanged = false;
-  systemd.services.sshd.reloadIfChanged = true;
+  # --- DEPLOYMENT STABILITY & SELF-HEALING ---
+
+  # Prevent SSH connection drops during deployment by preferring reload
+  systemd.services.sshd = {
+    restartIfChanged = false;
+    reloadIfChanged = true;
+  };
 
   # Stable tailscaled to prevent connection drops
   systemd.services.tailscaled.restartIfChanged = false;
 
-  # Self-healing Caddy
+  # Self-healing edge services using targeted overrides
   systemd.services.caddy = {
     serviceConfig = {
-      Restart = lib.mkForce "always";
+      Restart = lib.mkOverride 50 "always";
       RestartSec = "5s";
       StartLimitIntervalSec = 0;
     };
     wantedBy = [ "multi-user.target" ];
   };
 
-  # Self-healing Container
+  # Ensure the container always starts and stays up
   systemd.services."container@repertoire-builder" = {
     wantedBy = [ "multi-user.target" ];
     after = [
@@ -120,11 +124,13 @@
     ];
     wants = [ "network-online.target" ];
     serviceConfig = {
-      Restart = lib.mkForce "always";
+      Restart = lib.mkOverride 50 "always";
       RestartSec = "5s";
       StartLimitIntervalSec = 0;
     };
   };
+
+  # --- END DEPLOYMENT STABILITY ---
 
   # Secrets management
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;

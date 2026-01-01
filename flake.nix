@@ -166,8 +166,7 @@
       deploy.nodes.oracle-0 = {
         hostname = "oracle-0.tailc41cf5.ts.net";
         sshUser = "matt";
-        magicRollback = false; # Prevent rollback on connection drop
-        activationTimeout = 600; # 10 minutes
+        magicRollback = false; # Prevent rollback on connection drop during activation
         profiles.system = {
           user = "root";
           path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;
