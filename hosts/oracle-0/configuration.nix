@@ -94,11 +94,18 @@
     };
   };
 
-  # --- DEPLOYMENT NOTES ---
+  # --- DEPLOYMENT TRANSPORT ---
   # We deploy via OpenSSH (sshd) over the Tailscale network (tailscale0 interface).
-  # Tailscale SSH is DISABLED (no --ssh flag). This decouples deploy transport from
-  # tailscaled lifecycle, making deployments more reliable.
+  # Tailscale SSH is DISABLED (no --ssh flag).
   #
+  # CRITICAL: Tailscale is our ONLY network path to this host. If tailscaled restarts
+  # during activation, the tailscale0 interface flaps and kills the SSH connection.
+  # This is independent of using sshd vs Tailscale SSH - it's a transport layer issue.
+  #
+  # Solution: Don't restart tailscaled during activation. Tailscale updates take effect
+  # on next reboot or via manual `systemctl restart tailscaled`.
+  systemd.services.tailscaled.restartIfChanged = false;
+
   # sshd can reload gracefully without dropping connections:
   systemd.services.sshd.reloadIfChanged = true;
 
