@@ -93,6 +93,18 @@ tailscale-status:
     @echo "Local Tailscale status:"
     @tailscale status | grep -E "(oracle|matt-desktop)"
 
+# Verify chess app deployment (backend + frontend versions)
+verify-chess:
+    @echo "🔍 Verifying chess.cernohorsky.ca deployment..."
+    @echo ""
+    @echo "Backend /api/version:"
+    @curl -fsSL https://chess.cernohorsky.ca/api/version | jq .
+    @echo ""
+    @echo "Frontend /version.json:"
+    @curl -fsSL https://chess.cernohorsky.ca/version.json | jq .
+    @echo ""
+    @echo "✅ Verification complete"
+
 # Verify connectivity to all hosts
 ping-all:
     @echo "Pinging oracle-0..."

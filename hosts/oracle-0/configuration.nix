@@ -94,59 +94,13 @@
     };
   };
 
-  # --- DEPLOYMENT STABILITY & SELF-HEALING ---
+  # --- DEPLOYMENT NOTES ---
+  # We deploy via OpenSSH (sshd) over the Tailscale network (tailscale0 interface).
+  # Tailscale SSH is DISABLED (no --ssh flag). This decouples deploy transport from
+  # tailscaled lifecycle, making deployments more reliable.
   #
-  # CRITICAL: We deploy via Tailscale SSH, which is provided by tailscaled.
-  # If tailscaled restarts during activation, our SSH connection drops.
-  # To prevent this, we must stop the entire networking stack from restarting.
-  #
-  # - restartIfChanged=false: Don't restart if unit definition changes
-  # - stopIfChanged=false: Use restart instead of stop+start (less disruptive)
-
-  # Prevent SSH connection drops during deployment
-  systemd.services.sshd = {
-    restartIfChanged = false;
-    reloadIfChanged = true;
-  };
-
-  # CRITICAL: Tailscaled provides our SSH endpoint - never restart during deploy
-  systemd.services.tailscaled = {
-    restartIfChanged = false;
-    stopIfChanged = false;
-  };
-
-  # Prevent network stack restarts from cascading to tailscaled
-  systemd.services.systemd-networkd.restartIfChanged = false;
-  systemd.services.systemd-resolved.restartIfChanged = false;
-  systemd.services.nix-daemon.restartIfChanged = false;
-
-  # Caddy: restart on failure, not always (avoid masking issues)
-  # StartLimitIntervalSec=0 prevents 4-hour throttle from NixOS caddy module defaults
-  systemd.services.caddy = {
-    serviceConfig = {
-      Restart = lib.mkOverride 50 "on-failure";
-      RestartSec = "5s";
-      StartLimitIntervalSec = 0;
-    };
-    wantedBy = [ "multi-user.target" ];
-  };
-
-  # Container ordering: wait for bridge to be ready
-  systemd.services."container@repertoire-builder" = {
-    wantedBy = [ "multi-user.target" ];
-    after = [
-      "network-online.target"
-      "tailscaled.service"
-      "systemd-networkd.service"
-    ];
-    wants = [ "network-online.target" ];
-    serviceConfig = {
-      Restart = lib.mkOverride 50 "on-failure";
-      RestartSec = "5s";
-    };
-  };
-
-  # --- END DEPLOYMENT STABILITY ---
+  # sshd can reload gracefully without dropping connections:
+  systemd.services.sshd.reloadIfChanged = true;
 
   # Secrets management
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
@@ -157,12 +111,12 @@
 
   # Tailscale VPN
   # Note: tag:cloud is isolated - see tailscale-acl.json for policy
+  # SSH access is via OpenSSH (sshd) over tailscale0, NOT Tailscale SSH
   services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-authkey.path;
     extraUpFlags = [
       "--advertise-tags=tag:cloud"
-      "--ssh"
     ];
   };
 
