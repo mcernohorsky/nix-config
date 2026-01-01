@@ -106,10 +106,12 @@
   systemd.services.tailscaled.restartIfChanged = false;
 
   # Caddy: restart on failure, not always (avoid masking issues)
+  # StartLimitIntervalSec=0 prevents 4-hour throttle from NixOS caddy module defaults
   systemd.services.caddy = {
     serviceConfig = {
       Restart = lib.mkOverride 50 "on-failure";
       RestartSec = "5s";
+      StartLimitIntervalSec = 0;
     };
     wantedBy = [ "multi-user.target" ];
   };
