@@ -43,7 +43,7 @@ deploy-oracle:
         -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true" \
         -e NIX_SSHOPTS="-o ServerAliveInterval=2 -o ServerAliveCountMax=30 -o ConnectTimeout=10 -o ConnectionAttempts=6" \
         nixos/nix:2.25.4 \
-        nix run github:serokell/deploy-rs -- --skip-checks .#oracle-0
+        nix run .#deploy-rs -- --skip-checks .#oracle-0
 
 # Deploy to Linux Desktop (remote build via Tailscale)
 deploy-desktop:

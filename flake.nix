@@ -191,6 +191,17 @@
         };
       };
 
+      # Expose deploy-rs as a runnable flake app so we can do:
+      #   nix run .#deploy-rs -- --skip-checks .#oracle-0
+      apps.aarch64-linux.deploy-rs = {
+        type = "app";
+        program = "${inputs.deploy-rs.packages.aarch64-linux.deploy-rs}/bin/deploy";
+      };
+      apps.x86_64-linux.deploy-rs = {
+        type = "app";
+        program = "${inputs.deploy-rs.packages.x86_64-linux.deploy-rs}/bin/deploy";
+      };
+
       # Deploy-rs checks
       checks.aarch64-linux = inputs.deploy-rs.lib.aarch64-linux.deployChecks inputs.self.deploy;
       checks.x86_64-linux = inputs.deploy-rs.lib.x86_64-linux.deployChecks inputs.self.deploy;
