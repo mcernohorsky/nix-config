@@ -84,33 +84,19 @@
     ghostty.terminfo
   ];
 
-  # OpenSSH: Keep enabled for agenix host keys, but prefer Tailscale SSH for access
-  services.openssh = {
-    enable = true;
-    openFirewall = false; # Not exposed to internet, Tailscale SSH preferred
-    settings = {
-      PermitRootLogin = "no";
-      PasswordAuthentication = false;
-    };
-  };
+  # --- DEPLOYMENT / ACCESS TRANSPORT ---
+  # We only expose SSH access via Tailscale SSH (handled by tailscaled).
+  # No OpenSSH daemon.
+  #
+  # IMPORTANT SAFETY:
+  # - Ensure your Tailscale ACLs allow SSH to this node (tag:cloud), otherwise you can lock yourself out.
+  # - Tailscale is our ONLY network path, so do NOT restart tailscaled during activation.
+  services.openssh.enable = false;
 
-  # --- DEPLOYMENT TRANSPORT ---
-  # We deploy via OpenSSH (sshd) over the Tailscale network (tailscale0 interface).
-  # Tailscale SSH is DISABLED (no --ssh flag).
-  #
-  # CRITICAL: Tailscale is our ONLY network path to this host. The following services
-  # can flap the tailscale0 interface or routes if restarted during activation:
-  # - tailscaled: provides the interface
-  # - systemd-networkd: manages routes
-  # - systemd-resolved: DNS resolution (less critical but can cause issues)
-  #
-  # Solution: Don't restart these during activation. Updates take effect on next reboot.
+  # Don't restart these during activation. Updates take effect on next reboot.
   systemd.services.tailscaled.restartIfChanged = false;
   systemd.services.systemd-networkd.restartIfChanged = false;
   systemd.services.systemd-resolved.restartIfChanged = false;
-
-  # sshd can reload gracefully without dropping connections:
-  systemd.services.sshd.reloadIfChanged = true;
 
   # Secrets management
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
@@ -127,6 +113,7 @@
     authKeyFile = config.age.secrets.tailscale-authkey.path;
     extraUpFlags = [
       "--advertise-tags=tag:cloud"
+      "--ssh"
     ];
   };
 

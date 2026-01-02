@@ -25,21 +25,24 @@ build-oracle:
     nix build .#nixosConfigurations.oracle-0.config.system.build.toplevel
 
 # Deploy to Oracle VPS using NixOS Docker container
+# Deploy to Oracle VPS using Nix in Docker (stateless)
+#
+# Notes:
+# - We intentionally do NOT mount a persistent /nix volume. That avoids "split brain" store issues
+#   where the same store path hash might contain different outputs across runs.
+# - Build performance should still be reasonable via binary caches defined in flake.nix (nixConfig).
+# - We also avoid auto-committing as part of deploy; deployments should be a pure operation.
 deploy-oracle:
-    @echo "🚀 Deploying to Oracle VPS using NixOS Docker container..."
-    @echo "Container config is loaded from repertoire-builder project"
-    git add -A && git commit -m "update flake.lock" --allow-empty || true
     docker run --rm \
         --platform linux/arm64 \
         --security-opt seccomp=unconfined \
         -v $(pwd):/workspace \
-        -v nix-config-store:/nix \
         -v ~/.ssh:/root/.ssh:ro \
         -w /workspace \
         --network host \
         -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true" \
         -e NIX_SSHOPTS="-o ServerAliveInterval=2 -o ServerAliveCountMax=30 -o ConnectTimeout=10 -o ConnectionAttempts=6" \
-        nixos/nix:latest \
+        nixos/nix:2.25.4 \
         nix run github:serokell/deploy-rs -- --skip-checks .#oracle-0
 
 # Deploy to Linux Desktop (remote build via Tailscale)
