@@ -93,7 +93,14 @@
   # 2) In a follow-up deploy, disable OpenSSH.
   #
   # We are now in step (2): Tailscale SSH works (see tailscaled ssh-session journal entries).
+  #
+  # NOTE: we still need an SSH host key available for agenix, even if OpenSSH is disabled.
+  # See: age.identityPaths below.
   services.openssh.enable = false;
+
+  # agenix needs an age identity. When OpenSSH is disabled, NixOS can't auto-derive it from
+  # ssh host keys, so we point it at the existing host ed25519 key.
+  age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
   # Don't restart these during activation. Updates take effect on next reboot.
   systemd.services.tailscaled.restartIfChanged = false;
