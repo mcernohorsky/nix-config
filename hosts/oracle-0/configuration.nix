@@ -91,7 +91,9 @@
   # Safer two-step rollout:
   # 1) Keep OpenSSH enabled while enabling Tailscale SSH ("--ssh"). Deploy and verify TS SSH works.
   # 2) In a follow-up deploy, disable OpenSSH.
-  services.openssh.enable = true;
+  #
+  # We are now in step (2): Tailscale SSH works (see tailscaled ssh-session journal entries).
+  services.openssh.enable = false;
 
   # Don't restart these during activation. Updates take effect on next reboot.
   systemd.services.tailscaled.restartIfChanged = false;
