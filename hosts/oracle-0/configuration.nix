@@ -84,28 +84,15 @@
     ghostty.terminfo
   ];
 
-  # --- DEPLOYMENT / ACCESS TRANSPORT ---
-  # IMPORTANT: deploy-rs activation currently restarts tailscaled during the switch.
-  # Since Tailscale is our ONLY network path, that drops the SSH control channel and triggers deploy-rs rollback.
-  #
-  # Safer two-step rollout:
-  # 1) Keep OpenSSH enabled while enabling Tailscale SSH ("--ssh"). Deploy and verify TS SSH works.
-  # 2) In a follow-up deploy, disable OpenSSH.
-  #
-  # We are now in step (2): Tailscale SSH works (see tailscaled ssh-session journal entries).
-  #
-  # NOTE: we still need an SSH host key available for agenix, even if OpenSSH is disabled.
-  # See: age.identityPaths below.
-  services.openssh.enable = false;
-
-  # agenix needs an age identity. When OpenSSH is disabled, NixOS can't auto-derive it from
-  # ssh host keys, so we point it at the existing host ed25519 key.
-  age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
-
-  # Don't restart these during activation. Updates take effect on next reboot.
-  systemd.services.tailscaled.restartIfChanged = false;
-  systemd.services.systemd-networkd.restartIfChanged = false;
-  systemd.services.systemd-resolved.restartIfChanged = false;
+  # OpenSSH: Keep enabled for agenix host keys, but prefer Tailscale SSH for access
+  services.openssh = {
+    enable = true;
+    openFirewall = false; # Not exposed to internet, Tailscale SSH preferred
+    settings = {
+      PermitRootLogin = "no";
+      PasswordAuthentication = false;
+    };
+  };
 
   # Secrets management
   age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
@@ -116,7 +103,6 @@
 
   # Tailscale VPN
   # Note: tag:cloud is isolated - see tailscale-acl.json for policy
-  # SSH access is via OpenSSH (sshd) over tailscale0, NOT Tailscale SSH
   services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-authkey.path;
@@ -166,6 +152,10 @@
       "http://chess.cernohorsky.ca" = {
         listenAddresses = [ "127.0.0.1" ];
         extraConfig = ''
+          # Strip trailing slashes from API routes (PocketBase v0.26+ is strict about this)
+          @trailingSlash path_regexp ^(.+)/$
+          rewrite @trailingSlash {re.1}
+
           reverse_proxy repertoire-builder:8090
 
           encode gzip
