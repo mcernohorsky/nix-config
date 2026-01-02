@@ -85,13 +85,13 @@
   ];
 
   # --- DEPLOYMENT / ACCESS TRANSPORT ---
-  # We only expose SSH access via Tailscale SSH (handled by tailscaled).
-  # No OpenSSH daemon.
+  # IMPORTANT: deploy-rs activation currently restarts tailscaled during the switch.
+  # Since Tailscale is our ONLY network path, that drops the SSH control channel and triggers deploy-rs rollback.
   #
-  # IMPORTANT SAFETY:
-  # - Ensure your Tailscale ACLs allow SSH to this node (tag:cloud), otherwise you can lock yourself out.
-  # - Tailscale is our ONLY network path, so do NOT restart tailscaled during activation.
-  services.openssh.enable = false;
+  # Safer two-step rollout:
+  # 1) Keep OpenSSH enabled while enabling Tailscale SSH ("--ssh"). Deploy and verify TS SSH works.
+  # 2) In a follow-up deploy, disable OpenSSH.
+  services.openssh.enable = true;
 
   # Don't restart these during activation. Updates take effect on next reboot.
   systemd.services.tailscaled.restartIfChanged = false;
