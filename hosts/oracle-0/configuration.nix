@@ -116,7 +116,7 @@
 
   # Tailscale VPN
   # Note: tag:cloud is isolated - see tailscale-acl.json for policy
-  # SSH access is via OpenSSH (sshd) over tailscale0, NOT Tailscale SSH
+  # SSH access is via Tailscale SSH (--ssh flag), OpenSSH is disabled
   services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-authkey.path;
