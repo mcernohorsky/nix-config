@@ -395,13 +395,27 @@ If system fails to POST after changes:
 1. Dependency chain: `systemd-networkd` or `systemd-resolved` restart → cycles `network-online.target` → drags tailscaled
 2. Unit definition changes (package path changed)
 
-**Solution**: We've disabled `magicRollback` for oracle-0 and added `stopIfChanged = false` to the networking stack. After deployment, always verify manually:
+**Solution**: After deployment, always verify manually:
 ```bash
 curl https://chess.cernohorsky.ca/api/version
 ssh matt@oracle-0 "readlink /run/current-system"
 ```
 
-**Alternative**: Use regular OpenSSH over the Tailscale IP instead of Tailscale SSH. This would allow re-enabling magicRollback since restarting tailscaled wouldn't kill sshd.
+If rollback happened but new system was built, manually activate:
+```bash
+ssh matt@oracle-0 "ls /nix/store | grep nixos-system-oracle-0-26"
+ssh matt@oracle-0 "sudo /nix/store/<new-system-path>/bin/switch-to-configuration switch"
+```
+
+### Transitioning from OpenSSH to Tailscale SSH
+
+**Symptom**: `Failed to restart sshd.service: Unit sshd.service not found.`
+
+**Cause**: When switching from `services.openssh.enable = true` to `false`, NixOS activation tries to restart `sshd.service` which no longer exists.
+
+**Impact**: The activation script returns non-zero, deploy-rs rolls back, but the actual switch may have completed.
+
+**Solution**: This only happens once during the transition. After the first deploy with OpenSSH disabled, subsequent deploys won't have this issue. Use manual activation via Tailscale SSH if needed.
 
 ### Caddy Not Starting After Deployment
 
@@ -494,3 +508,28 @@ If `/version.json` shows an old commit after deployment:
 2. **Do NOT** bump version numbers or modify derivation inputs as a workaround.
 
 The root cause is usually Docker volume cache corruption. Clearing the volume forces a fresh evaluation and build.
+
+---
+
+## bun2nix Build Issues
+
+### EPERM: Operation not permitted during bun install
+
+**Symptom**: `web-dist` derivation fails with:
+```
+EPERM: Operation not permitted: failed to link package: glob-parent@5.1.2 (link)
+```
+
+**Cause**: 
+1. bun2nix hook defaults to `--backend=symlink` which uses hardlinks
+2. In Nix sandboxes (especially Docker), `/tmp` (bun cache) and `/build` (build dir) are separate mount points
+3. Linux forbids hardlinks across mount points → EPERM
+
+**Failed attempt**: Setting `BUN_CONFIG_INSTALL_BACKEND = "copyfile";` env var doesn't work because CLI flags override env vars, and the hook explicitly passes `--backend=symlink`.
+
+**Working fix**: In the repertoire-builder `flake.nix`, use `bunInstallFlags` to override the hook's default:
+```nix
+bunInstallFlags = "--linker=isolated --backend=copyfile";
+```
+
+**Note**: Use `bunInstallFlags` (string) not `bunInstallFlagsArray` (Nix list). The hook's `concatTo` function doesn't properly handle Nix lists.
