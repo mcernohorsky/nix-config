@@ -411,11 +411,34 @@ ssh matt@oracle-0 "sudo /nix/store/<new-system-path>/bin/switch-to-configuration
 
 **Symptom**: `Failed to restart sshd.service: Unit sshd.service not found.`
 
-**Cause**: When switching from `services.openssh.enable = true` to `false`, NixOS activation tries to restart `sshd.service` which no longer exists.
+**Cause**: NixOS compares the new system against `/run/booted-system` (the system from last boot) to determine which units to restart. If the server hasn't been rebooted since OpenSSH was disabled, it keeps trying to restart the old `sshd.service`.
 
-**Impact**: The activation script returns non-zero, deploy-rs rolls back, but the actual switch may have completed.
+**Solution**: Reboot the server after disabling OpenSSH:
+```bash
+ssh matt@oracle-0 "sudo reboot"
+# Wait 30-60 seconds, then verify:
+ssh matt@oracle-0 "ls /run/booted-system/etc/systemd/system/sshd.service" # Should fail (file not found)
+```
 
-**Solution**: This only happens once during the transition. After the first deploy with OpenSSH disabled, subsequent deploys won't have this issue. Use manual activation via Tailscale SSH if needed.
+After reboot, `/run/booted-system` points to the new system without sshd, and future activations work cleanly.
+
+### Docker Deploy Performance
+
+**Problem**: Deploys taking 15-20+ minutes instead of seconds.
+
+**Cause**: The persistent `/nix` volume was removed from the Docker deploy command, forcing fresh downloads every time.
+
+**Solution**: The justfile now mounts a persistent nix store volume (`-v nix-config-store:/nix`).
+
+**Performance**:
+| Deploy Type | Time |
+|-------------|------|
+| Cached (no changes) | ~16 seconds |
+| Cold cache (first build) | ~5 minutes |
+
+**Cache Management**:
+- If "split brain" issues occur (stale cache causing wrong files to deploy): `docker volume rm nix-config-store`
+- Then run deploy again to rebuild from scratch
 
 ### Caddy Not Starting After Deployment
 
