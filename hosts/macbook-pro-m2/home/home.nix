@@ -320,7 +320,8 @@ in
 
     # AI coding assistant - binary from llm-agents.nix, plugins auto-install to ~/.cache/opencode/
     # Update binary: nix flake update llm-agents && darwin-rebuild switch
-    # Update plugins: cd ~/.cache/opencode && bun update
+    # Update plugins: just update-plugins && darwin-rebuild switch
+    # Auth tokens: ~/.local/share/opencode/antigravity-accounts.json (run `opencode auth login`)
     opencode = {
       enable = true;
       package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
@@ -329,7 +330,7 @@ in
         small_model = "opencode/grok-code";
         plugin = [
           "oh-my-opencode@${opencode-plugins.oh-my-opencode}"
-          "opencode-antigravity-auth@${opencode-plugins.opencode-antigravity-auth}"
+          "opencode-google-antigravity-auth@${opencode-plugins.opencode-google-antigravity-auth}"
         ];
         mcp = {
           playwright = {
@@ -345,8 +346,9 @@ in
         provider = {
           google = {
             models = {
-              "gemini-3-pro-high" = {
-                name = "Gemini 3 Pro High (Antigravity)";
+              # Gemini 3 Pro with high thinking level variant
+              "gemini-3-pro-preview" = {
+                name = "Gemini 3 Pro Preview";
                 limit = {
                   context = 1048576;
                   output = 65535;
@@ -359,9 +361,19 @@ in
                   ];
                   output = [ "text" ];
                 };
+                variants = {
+                  high = {
+                    options = {
+                      thinkingConfig = {
+                        thinkingLevel = "high";
+                        includeThoughts = true;
+                      };
+                    };
+                  };
+                };
               };
               "gemini-3-flash" = {
-                name = "Gemini 3 Flash (Antigravity)";
+                name = "Gemini 3 Flash";
                 limit = {
                   context = 1048576;
                   output = 65536;
@@ -375,8 +387,9 @@ in
                   output = [ "text" ];
                 };
               };
-              "claude-opus-4-5-thinking-high" = {
-                name = "Claude Opus 4.5 Thinking High (Antigravity)";
+              # Claude Opus via Antigravity proxy - "-thinking" suffix enables interleaved thinking
+              "gemini-claude-opus-4-5-thinking" = {
+                name = "Claude Opus 4.5 Thinking";
                 limit = {
                   context = 200000;
                   output = 64000;
@@ -388,6 +401,12 @@ in
                     "pdf"
                   ];
                   output = [ "text" ];
+                };
+                options = {
+                  thinkingConfig = {
+                    thinkingBudget = 32000;
+                    includeThoughts = true;
+                  };
                 };
               };
             };
