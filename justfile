@@ -8,9 +8,24 @@ desktop_host := "matt-desktop.tailc41cf5.ts.net"
 default:
     @just --list
 
-# Update flake inputs
+# Update flake inputs and opencode plugins
 update:
     nix flake update
+    just update-plugins
+
+# Update opencode plugins versions in JSON
+update-plugins:
+    #!/usr/bin/env bash
+    set -e
+    echo "🔍 Checking for latest opencode plugin versions via registry..."
+    OMO_VERSION=$(curl -s https://registry.npmjs.org/oh-my-opencode/latest | jq -r '.version')
+    ANTIGRAVITY_VERSION=$(curl -s https://registry.npmjs.org/opencode-antigravity-auth/latest | jq -r '.version')
+    echo "oh-my-opencode: $OMO_VERSION"
+    echo "opencode-antigravity-auth: $ANTIGRAVITY_VERSION"
+    jq -n --arg omo "$OMO_VERSION" --arg anti "$ANTIGRAVITY_VERSION" \
+        '{"oh-my-opencode": $omo, "opencode-antigravity-auth": $anti}' \
+        > hosts/macbook-pro-m2/home/opencode-plugins.json
+    echo "✅ Updated hosts/macbook-pro-m2/home/opencode-plugins.json"
 
 # Update just the repertoire-builder input
 update-app:

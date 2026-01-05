@@ -253,42 +253,42 @@ in
         ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
       ];
 
-      # Window rules
-      windowrulev2 = [
-        "suppressevent maximize, class:.*"
-        "float, class:^(pavucontrol)$"
-        "float, class:^(pwvucontrol)$"
-        "float, class:^(blueman-manager)$"
-        "float, class:^(nm-connection-editor)$"
-        "float, title:^(Picture-in-Picture)$"
-        "pin, title:^(Picture-in-Picture)$"
+      # Window rules (Hyprland 0.53+ syntax)
+      windowrule = [
+        "suppress_event maximize, match:class .*"
+        "float 1, match:class ^(pavucontrol)$"
+        "float 1, match:class ^(pwvucontrol)$"
+        "float 1, match:class ^(blueman-manager)$"
+        "float 1, match:class ^(nm-connection-editor)$"
+        "float 1, match:title ^(Picture-in-Picture)$"
+        "pin 1, match:title ^(Picture-in-Picture)$"
         # Steam rules
-        "float, class:^(steam)$,title:^(Friends List)$"
-        "float, class:^(steam)$,title:^(Steam Settings)$"
+        "float 1, match:class ^(steam)$, match:title ^(Friends List)$"
+        "float 1, match:class ^(steam)$, match:title ^(Steam Settings)$"
         # Game rules - allow tearing for better latency
-        "immediate, class:^(cs2)$"
-        "immediate, class:^(steam_app_.*)$"
+        "immediate 1, match:class ^(cs2)$"
+        "immediate 1, match:class ^(steam_app_.*)$"
       ];
 
-      # Layer rules for blur
+      # Layer rules for blur (Hyprland 0.53+ syntax)
       layerrule = [
-        "blur, waybar"
-        "blur, walker"
-        "blur, launcher"
-        "blur, gtk-layer-shell"
-        "blur, logout_dialog"
-        "blur, swaync-control-center"
-        "blur, swaync-notification-window"
-        # ignorealpha is critical - blur only pixels above 50% opacity
-        "ignorealpha 0.5, waybar"
-        "ignorealpha 0.5, walker"
-        "ignorealpha 0.5, launcher"
-        "ignorealpha 0.5, gtk-layer-shell"
-        "ignorealpha 0.5, logout_dialog"
-        "ignorealpha 0.5, swaync-control-center"
-        "ignorealpha 0.5, swaync-notification-window"
+        "blur 1, match:namespace ^(waybar)$"
+        "blur 1, match:namespace ^(walker)$"
+        "blur 1, match:namespace ^(launcher)$"
+        "blur 1, match:namespace ^(gtk-layer-shell)$"
+        "blur 1, match:namespace ^(logout_dialog)$"
+        "blur 1, match:namespace ^(swaync-control-center)$"
+        "blur 1, match:namespace ^(swaync-notification-window)$"
+        # ignore_alpha is critical - blur only pixels above 50% opacity
+        "ignore_alpha 0.5, match:namespace ^(waybar)$"
+        "ignore_alpha 0.5, match:namespace ^(walker)$"
+        "ignore_alpha 0.5, match:namespace ^(launcher)$"
+        "ignore_alpha 0.5, match:namespace ^(gtk-layer-shell)$"
+        "ignore_alpha 0.5, match:namespace ^(logout_dialog)$"
+        "ignore_alpha 0.5, match:namespace ^(swaync-control-center)$"
+        "ignore_alpha 0.5, match:namespace ^(swaync-notification-window)$"
         # Walker prefers no animation to avoid flicker during layout changes
-        "noanim, walker"
+        "no_anim 1, match:namespace ^(walker)$"
       ];
     };
   };

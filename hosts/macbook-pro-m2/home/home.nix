@@ -1,4 +1,7 @@
 { pkgs, inputs, ... }:
+let
+  opencode-plugins = builtins.fromJSON (builtins.readFile ./opencode-plugins.json);
+in
 {
   # disabledModules = [ "programs/ghostty.nix" ];
   imports = [ ];
@@ -12,11 +15,11 @@
     # Add scripts to the PATH.
     sessionPath = [
       "$HOME/.local/bin"
-      "$HOME/.bun/bin" # For bun global packages (opencode plugins, etc.)
+      "$HOME/.bun/bin" # For bun/bunx
     ];
     sessionVariables = {
       DIRENV_WARN_TIMEOUT = "0";
-      NODE_PATH = "$HOME/.bun/install/global/node_modules"; # For opencode plugin resolution
+      # NODE_PATH not needed - opencode manages plugins in ~/.cache/opencode/
     };
 
     file = {
@@ -37,6 +40,10 @@
       # Oh My OpenCode Configuration
       ".config/opencode/oh-my-opencode.json".text = builtins.toJSON {
         google_auth = false;
+        auto_update = false; # Disable plugin self-update (use bun update in ~/.cache/opencode/)
+        disabledHooks = [ "auto-update-checker" ]; # Prevents EROFS errors from config writes
+        disabled_mcps = [ "websearch_exa" ];
+        disabled_skills = [ "playwright" ];
         agents = {
           Sisyphus = {
             model = "google/claude-opus-4-5-thinking-high";
@@ -80,7 +87,7 @@
       nixd
       nixfmt-rfc-style
 
-      bun # for npm tools: bun i -g oh-my-opencode opencode-antigravity-auth @opencode-ai/plugin
+      bun # for bunx and general bun usage
       nodejs # needed for running globally installed npm packages (they use #!/usr/bin/env node)
 
       # fonts
@@ -92,6 +99,7 @@
 
       # AI Tools
       inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.amp
+      playwright-mcp # For opencode MCP integration (includes bundled browsers)
     ];
 
     shellAliases = {
@@ -310,25 +318,24 @@
       enable = true;
     };
 
-    # AI coding assistant - package from nix-ai-tools, config via home-manager
-    # Run once after rebuild:
-    #   bun i -g oh-my-opencode opencode-antigravity-auth @opencode-ai/plugin
-    #   opencode auth login
+    # AI coding assistant - binary from llm-agents.nix, plugins auto-install to ~/.cache/opencode/
+    # Update binary: nix flake update llm-agents && darwin-rebuild switch
+    # Update plugins: cd ~/.cache/opencode && bun update
     opencode = {
       enable = true;
       package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
       settings = {
+        autoupdate = false; # Prevent binary self-update (managed by nix flake update)
         small_model = "opencode/grok-code";
         plugin = [
-          "oh-my-opencode@latest"
-          "opencode-antigravity-auth@latest"
+          "oh-my-opencode@${opencode-plugins.oh-my-opencode}"
+          "opencode-antigravity-auth@${opencode-plugins.opencode-antigravity-auth}"
         ];
         mcp = {
           playwright = {
             type = "local";
             command = [
-              "bunx"
-              "@playwright/mcp@latest"
+              "${pkgs.lib.getExe pkgs.playwright-mcp}" # Nix-managed with bundled browsers
               "--browser"
               "chromium"
             ];
