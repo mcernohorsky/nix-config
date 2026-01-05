@@ -385,26 +385,14 @@ If system fails to POST after changes:
 
 ## Troubleshooting
 
-### Deploy-rs "Failed" but Actually Succeeded
+### Deploy-rs Verification
 
-**Symptom**: Deploy shows `ERROR: Deployment to node oracle-0 failed, rolled back` but checking the server shows the new profile is active.
-
-**Cause**: We deploy via Tailscale SSH, which is provided by `tailscaled`. If `tailscaled` restarts during activation, the SSH connection drops. Deploy-rs sees exit code 255 and reports failure, but the switch already completed.
-
-**Why tailscaled restarts**: Even with `restartIfChanged = false`, tailscaled can restart due to:
-1. Dependency chain: `systemd-networkd` or `systemd-resolved` restart → cycles `network-online.target` → drags tailscaled
-2. Unit definition changes (package path changed)
-
-**Solution**: After deployment, always verify manually:
+After deployment, verify success:
 ```bash
 curl https://chess.cernohorsky.ca/api/version
-ssh matt@oracle-0 "readlink /run/current-system"
-```
-
-If rollback happened but new system was built, manually activate:
-```bash
-ssh matt@oracle-0 "ls /nix/store | grep nixos-system-oracle-0-26"
-ssh matt@oracle-0 "sudo /nix/store/<new-system-path>/bin/switch-to-configuration switch"
+curl https://chess.cernohorsky.ca/version.json
+# Or use the justfile command:
+just verify-chess
 ```
 
 ### Transitioning from OpenSSH to Tailscale SSH
