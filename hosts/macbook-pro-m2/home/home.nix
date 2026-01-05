@@ -46,10 +46,10 @@ in
         disabled_skills = [ "playwright" ];
         agents = {
           Sisyphus = {
-            model = "google/claude-opus-4-5-thinking-high";
+            model = "google/gemini-claude-opus-4-5-thinking";
           };
           frontend-ui-ux-engineer = {
-            model = "google/gemini-3-pro-high";
+            model = "google/gemini-3-pro-preview";
           };
           document-writer = {
             model = "google/gemini-3-flash";
