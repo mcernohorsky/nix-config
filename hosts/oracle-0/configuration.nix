@@ -175,6 +175,11 @@
             X-Frame-Options "DENY"
             X-XSS-Protection "1; mode=block"
             Referrer-Policy "strict-origin-when-cross-origin"
+            # Required for SharedArrayBuffer (Stockfish WASM threading)
+            # Using credentialless instead of require-corp for broader compatibility
+            # with external resources (fonts, analytics, etc.)
+            Cross-Origin-Opener-Policy "same-origin"
+            Cross-Origin-Embedder-Policy "credentialless"
           }
         '';
       };
