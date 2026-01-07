@@ -467,11 +467,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767811801,
-        "narHash": "sha256-QICeGwbXfqtaOZmgh6BrSBB72drPuHO3pjuyh+x8eIY=",
+        "lastModified": 1767824564,
+        "narHash": "sha256-DRhbz2dZaEmj5MgLFMXjEPfmKYfMG6LwNT9Bv8zeLPQ=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "c068188a8e5c277f7bc8671557a7568864b57515",
+        "rev": "4fee4bd14b5e4178855ad0041df89fa44f3f2bea",
         "type": "github"
       },
       "original": {
@@ -727,11 +727,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767823639,
-        "narHash": "sha256-6BvpeEh+uUjdGwtaEyjFxLkJRgI9/rHBSSgmb0+vmqQ=",
+        "lastModified": 1767824270,
+        "narHash": "sha256-3teKBGHATJ+haSRox70irrdatbSYFcA8zdCZ6cf0vjg=",
         "ref": "refs/heads/main",
-        "rev": "88e5effd8db80da22770f879039f22f362f5256b",
-        "revCount": 128,
+        "rev": "cff51730ae29829fc7381936a9ed845bbb241f4b",
+        "revCount": 129,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/repertoire-builder"
       },
