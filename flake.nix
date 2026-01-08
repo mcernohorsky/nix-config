@@ -52,11 +52,12 @@
     # Additional packages
     helix-master.url = "github:helix-editor/helix";
 
-    # Repertoire Builder (using HTTPS with token)
-    repertoire-builder = {
-      url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Repertoire Builder
+    # NOTE: Do NOT use `inputs.nixpkgs.follows` here!
+    # The webDist derivation depends on exact bun version from nixpkgs.
+    # Different nixpkgs commit = different bun = different webDist hash.
+    # Let repertoire-builder use its own pinned nixpkgs for reproducibility.
+    repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
 
     # AI Coding Tools
     llm-agents.url = "github:numtide/llm-agents.nix";
