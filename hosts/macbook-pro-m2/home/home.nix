@@ -177,7 +177,7 @@ in
       bitwarden-desktop
 
       nixd
-      nixfmt-rfc-style
+      nixfmt
 
       bun # for bunx and general bun usage
       nodejs # needed for running globally installed npm packages (they use #!/usr/bin/env node)
@@ -404,6 +404,7 @@ in
 
     yazi = {
       enable = true;
+      shellWrapperName = "y";
     };
 
     ripgrep = {
