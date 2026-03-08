@@ -1,10 +1,27 @@
-{ pkgs, inputs, ... }:
+{
+  pkgs,
+  inputs,
+  config,
+  lib,
+  ...
+}:
 let
   opencode-plugins = builtins.fromJSON (builtins.readFile ./opencode-plugins.json);
 in
 {
   # disabledModules = [ "programs/ghostty.nix" ];
-  imports = [ ];
+  imports = [
+    ../modules/portal.nix
+  ];
+
+  # Portal - Mobile-first web UI for OpenCode
+  # Access from iPhone: https://macbook-pro-m2.tailc41cf5.ts.net
+  # Uses port 4097 to avoid conflicts with manual `opencode` sessions (which use 4096)
+  services.portal = {
+    enable = true;
+    workingDirectory = "/Users/matt/Developer";
+    opencodePort = 4097; # Dedicated port for Portal (avoids conflict with terminal sessions)
+  };
 
   # User Configuration
   home = {
@@ -38,36 +55,111 @@ in
       ".config/zellij/config.kdl".source = ./config.kdl;
 
       # Oh My OpenCode Configuration
+      # Agents guide: https://github.com/code-yeongyu/oh-my-opencode/blob/dev/docs/guide/agent-model-matching.md
+      # Thinking variants: max for orchestrators, high for specialists, low for utility runners
       ".config/opencode/oh-my-opencode.json".text = builtins.toJSON {
         google_auth = false;
         auto_update = false; # Disable plugin self-update (use bun update in ~/.cache/opencode/)
+        auto_commit = false; # Agents only commit when explicitly asked (v3.11 default)
+        hashline_edit = true; # Hash-anchored edits for safer file modifications (v3.10)
         disabledHooks = [ "auto-update-checker" ]; # Prevents EROFS errors from config writes
-        disabled_mcps = [ "websearch_exa" ];
+        disabled_mcps = [ ]; # websearch_exa re-enabled for research capabilities
         disabled_skills = [ "playwright" ];
+
+        # Agent model assignments — Claude/Gemini via Antigravity, GPT via GitHub Copilot
         agents = {
+          # Orchestrators — max thinking for planning accuracy
           Sisyphus = {
-            model = "google/gemini-claude-opus-4-5-thinking";
+            model = "google/antigravity-claude-opus-4-6-thinking";
+            variant = "max";
+            ultrawork = {
+              model = "google/antigravity-claude-opus-4-6-thinking";
+              variant = "max";
+            };
           };
-          frontend-ui-ux-engineer = {
-            model = "google/gemini-3-pro-preview";
+          prometheus = {
+            model = "google/antigravity-claude-opus-4-6-thinking";
+            variant = "max";
           };
-          document-writer = {
-            model = "google/gemini-3-flash";
+          metis = {
+            model = "google/antigravity-claude-opus-4-6-thinking";
+            variant = "max";
           };
-          multimodal-looker = {
-            model = "google/gemini-3-flash";
+          atlas = {
+            model = "google/antigravity-claude-sonnet-4-6";
           };
+
+          # Specialists — GPT via Copilot
           oracle = {
-            model = "github-copilot/gpt-5.2";
+            model = "github-copilot/gpt-5.4";
           };
+          momus = {
+            model = "github-copilot/gpt-5.4";
+          };
+          # Hephaestus — autonomous deep worker, GPT-5.3 Codex is the OMO-recommended model
+          hephaestus = {
+            model = "github-copilot/gpt-5.3-codex";
+          };
+
+          # Visual/creative — Gemini 3.1 Pro with high thinking
+          frontend-ui-ux-engineer = {
+            model = "google/antigravity-gemini-3.1-pro";
+            variant = "high";
+          };
+
+          # Utility runners — speed over intelligence, no thinking variants
           explore = {
-            model = "google/gemini-3-flash";
+            model = "google/antigravity-gemini-3-flash";
           };
           librarian = {
-            model = "google/gemini-3-flash";
+            model = "google/antigravity-gemini-3-flash";
           };
-          Planner-Sisyphus = {
-            model = "github-copilot/gpt-5.2";
+          document-writer = {
+            model = "google/antigravity-gemini-3-flash";
+          };
+          multimodal-looker = {
+            model = "google/antigravity-gemini-3-flash";
+          };
+        };
+
+        # Category model defaults — used when agents delegate tasks
+        categories = {
+          quick = {
+            model = "google/antigravity-gemini-3-flash";
+          };
+          visual-engineering = {
+            model = "google/antigravity-gemini-3.1-pro";
+            variant = "high";
+          };
+          artistry = {
+            model = "google/antigravity-gemini-3.1-pro";
+            variant = "high";
+          };
+          writing = {
+            model = "google/antigravity-gemini-3-flash";
+          };
+          unspecified-low = {
+            model = "google/antigravity-claude-sonnet-4-6";
+          };
+          unspecified-high = {
+            model = "github-copilot/gpt-5.4";
+          };
+          ultrabrain = {
+            model = "github-copilot/gpt-5.4";
+          };
+          deep = {
+            model = "github-copilot/gpt-5.3-codex";
+          };
+        };
+
+        # Concurrency limits — prevent runaway parallel requests
+        background_task = {
+          providerConcurrency = {
+            github-copilot = 3;
+            google = 10;
+          };
+          modelConcurrency = {
+            "google/antigravity-claude-opus-4-6-thinking" = 2;
           };
         };
       };
@@ -327,11 +419,10 @@ in
       package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
       settings = {
         autoupdate = false; # Prevent binary self-update (managed by nix flake update)
-        small_model = "opencode/grok-code";
+        small_model = "google/antigravity-gemini-3-flash";
         plugin = [
           "oh-my-opencode@${opencode-plugins.oh-my-opencode}"
-          "opencode-google-antigravity-auth@${opencode-plugins.opencode-google-antigravity-auth}"
-          "opencode-openai-codex-auth@${opencode-plugins.opencode-openai-codex-auth}"
+          "opencode-antigravity-auth@${opencode-plugins.opencode-antigravity-auth}"
         ];
         mcp = {
           playwright = {
@@ -344,59 +435,14 @@ in
             enabled = false;
           };
         };
+        # Provider models — only Antigravity (all Claude + Gemini through Google OAuth)
+        # GPT-5.4 via github-copilot is auto-detected, no provider config needed
         provider = {
-          openai = {
-            options = {
-              reasoningEffort = "xhigh";
-              reasoningSummary = "detailed";
-              textVerbosity = "medium";
-              include = [ "reasoning.encrypted_content" ];
-              store = false;
-            };
-            models = {
-              "gpt-5.2-codex" = {
-                name = "GPT 5.2 Codex (OAuth)";
-                limit = {
-                  context = 272000;
-                  output = 128000;
-                };
-                modalities = {
-                  input = [
-                    "text"
-                    "image"
-                  ];
-                  output = [ "text" ];
-                };
-                variants = {
-                  low = {
-                    reasoningEffort = "low";
-                    reasoningSummary = "auto";
-                    textVerbosity = "medium";
-                  };
-                  medium = {
-                    reasoningEffort = "medium";
-                    reasoningSummary = "auto";
-                    textVerbosity = "medium";
-                  };
-                  high = {
-                    reasoningEffort = "high";
-                    reasoningSummary = "detailed";
-                    textVerbosity = "medium";
-                  };
-                  xhigh = {
-                    reasoningEffort = "xhigh";
-                    reasoningSummary = "detailed";
-                    textVerbosity = "medium";
-                  };
-                };
-              };
-            };
-          };
           google = {
             models = {
-              # Gemini 3 Pro with high thinking level variant
-              "gemini-3-pro-preview" = {
-                name = "Gemini 3 Pro Preview";
+              # Gemini 3.1 Pro — visual-engineering, artistry, frontend
+              "antigravity-gemini-3.1-pro" = {
+                name = "Gemini 3.1 Pro (Antigravity)";
                 limit = {
                   context = 1048576;
                   output = 65535;
@@ -410,18 +456,20 @@ in
                   output = [ "text" ];
                 };
                 variants = {
+                  low = {
+                    thinkingLevel = "low";
+                  };
+                  medium = {
+                    thinkingLevel = "medium";
+                  };
                   high = {
-                    options = {
-                      thinkingConfig = {
-                        thinkingLevel = "high";
-                        includeThoughts = true;
-                      };
-                    };
+                    thinkingLevel = "high";
                   };
                 };
               };
-              "gemini-3-flash" = {
-                name = "Gemini 3 Flash";
+              # Gemini 3 Flash — explore, librarian, quick tasks, writing
+              "antigravity-gemini-3-flash" = {
+                name = "Gemini 3 Flash (Antigravity)";
                 limit = {
                   context = 1048576;
                   output = 65536;
@@ -434,10 +482,24 @@ in
                   ];
                   output = [ "text" ];
                 };
+                variants = {
+                  minimal = {
+                    thinkingLevel = "minimal";
+                  };
+                  low = {
+                    thinkingLevel = "low";
+                  };
+                  medium = {
+                    thinkingLevel = "medium";
+                  };
+                  high = {
+                    thinkingLevel = "high";
+                  };
+                };
               };
-              # Claude Opus via Antigravity proxy - "-thinking" suffix enables interleaved thinking
-              "gemini-claude-opus-4-5-thinking" = {
-                name = "Claude Opus 4.5 Thinking";
+              # Claude Sonnet 4.6 — atlas, unspecified-low tasks
+              "antigravity-claude-sonnet-4-6" = {
+                name = "Claude Sonnet 4.6 (Antigravity)";
                 limit = {
                   context = 200000;
                   output = 64000;
@@ -450,10 +512,32 @@ in
                   ];
                   output = [ "text" ];
                 };
-                options = {
-                  thinkingConfig = {
-                    thinkingBudget = 32000;
-                    includeThoughts = true;
+              };
+              # Claude Opus 4.6 Thinking — Sisyphus, prometheus, metis
+              "antigravity-claude-opus-4-6-thinking" = {
+                name = "Claude Opus 4.6 Thinking (Antigravity)";
+                limit = {
+                  context = 200000;
+                  output = 64000;
+                };
+                modalities = {
+                  input = [
+                    "text"
+                    "image"
+                    "pdf"
+                  ];
+                  output = [ "text" ];
+                };
+                variants = {
+                  low = {
+                    thinkingConfig = {
+                      thinkingBudget = 8192;
+                    };
+                  };
+                  max = {
+                    thinkingConfig = {
+                      thinkingBudget = 32768;
+                    };
                   };
                 };
               };

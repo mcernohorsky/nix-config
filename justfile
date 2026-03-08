@@ -19,13 +19,11 @@ update-plugins:
     set -e
     echo "🔍 Checking for latest opencode plugin versions via registry..."
     OMO_VERSION=$(curl -s https://registry.npmjs.org/oh-my-opencode/latest | jq -r '.version')
-    GOOGLE_ANTIGRAVITY_VERSION=$(curl -s https://registry.npmjs.org/opencode-google-antigravity-auth/latest | jq -r '.version')
-    OPENAI_CODEX_AUTH_VERSION=$(curl -s https://registry.npmjs.org/opencode-openai-codex-auth/latest | jq -r '.version')
+    ANTIGRAVITY_VERSION=$(curl -s https://registry.npmjs.org/opencode-antigravity-auth/beta | jq -r '.version')
     echo "oh-my-opencode: $OMO_VERSION"
-    echo "opencode-google-antigravity-auth: $GOOGLE_ANTIGRAVITY_VERSION"
-    echo "opencode-openai-codex-auth: $OPENAI_CODEX_AUTH_VERSION"
-    jq -n --arg omo "$OMO_VERSION" --arg anti "$GOOGLE_ANTIGRAVITY_VERSION" --arg codex "$OPENAI_CODEX_AUTH_VERSION" \
-        '{"oh-my-opencode": $omo, "opencode-google-antigravity-auth": $anti, "opencode-openai-codex-auth": $codex}' \
+    echo "opencode-antigravity-auth (beta): $ANTIGRAVITY_VERSION"
+    jq -n --arg omo "$OMO_VERSION" --arg anti "$ANTIGRAVITY_VERSION" \
+        '{"oh-my-opencode": $omo, "opencode-antigravity-auth": $anti}' \
         > hosts/macbook-pro-m2/home/opencode-plugins.json
     echo "✅ Updated hosts/macbook-pro-m2/home/opencode-plugins.json"
 
@@ -130,3 +128,27 @@ ping-all:
     @ping -c 1 {{oracle_host}} > /dev/null && echo "✅ oracle-0 reachable" || echo "❌ oracle-0 unreachable"
     @echo "Pinging matt-desktop..."
     @ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || echo "❌ matt-desktop unreachable"
+
+# Portal (OpenCode mobile UI) commands
+# Access from iPhone: https://macbook-pro-m2.tailc41cf5.ts.net
+
+# Check Portal service status
+portal-status:
+    @echo "Portal launchd agent:"
+    @launchctl list | grep portal || echo "Not running"
+    @echo ""
+    @echo "Tailscale Serve config:"
+    @tailscale serve status
+
+# View Portal logs
+portal-logs:
+    @tail -f ~/Library/Logs/portal.log
+
+# Restart Portal service
+portal-restart:
+    launchctl kickstart -k gui/$(id -u)/org.nix-community.home.portal
+
+# Reset Tailscale Serve config (useful after port changes)
+portal-reset-serve:
+    tailscale serve reset
+    tailscale serve --bg http://127.0.0.1:3000
