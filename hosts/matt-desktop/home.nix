@@ -59,7 +59,6 @@ in
       env = [
         "XCURSOR_SIZE,24"
         "HYPRCURSOR_SIZE,24"
-        "GDK_SCALE,1.5"
       ];
 
       # General settings
@@ -73,10 +72,6 @@ in
         allow_tearing = true;
       };
 
-      # Render settings for lower latency
-      render = {
-        direct_scanout = true;
-      };
 
       # Decorations
       decoration = {
@@ -87,7 +82,6 @@ in
           enabled = true;
           size = 3;
           passes = 3;
-          new_optimizations = true;
           xray = false;
           ignore_opacity = true;
         };
@@ -165,7 +159,7 @@ in
         "$mainMod, V, togglefloating,"
         "$mainMod, Space, exec, walker"
         "$mainMod, P, pseudo,"
-        "$mainMod, T, togglesplit,"
+        "$mainMod, T, layoutmsg, togglesplit"
         "$mainMod, F, fullscreen,"
         "$mainMod, C, exec, zen"
 
@@ -1392,7 +1386,6 @@ in
     inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # Development
-    nushell
     lazygit
     gh
     jq
