@@ -1134,6 +1134,7 @@ in
   # File Manager: Yazi (modern, fast terminal file manager)
   # ===================
   programs.yazi = {
+    shellWrapperName = "y";
     enable = true;
     enableNushellIntegration = true;
     settings = {

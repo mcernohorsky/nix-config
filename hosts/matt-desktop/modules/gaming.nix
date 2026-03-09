@@ -34,7 +34,7 @@
     gamepad-tool
 
     # Wine for non-Steam games
-    wineWowPackages.stable
+    wineWow64Packages.stable
     winetricks
 
     # Lutris game launcher

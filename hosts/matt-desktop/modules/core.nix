@@ -44,8 +44,8 @@
   # Resolved for DNS (with mDNS support)
   services.resolved = {
     enable = true;
-    dnssec = "allow-downgrade";
-    fallbackDns = [
+    settings.Resolve.DNSSEC = "allow-downgrade";
+    settings.Resolve.FallbackDNS = [
       "1.1.1.1"
       "1.0.0.1"
       "8.8.8.8"
