@@ -15,6 +15,8 @@
   boot.kernelParams = [
     "plymouth.use-simpledrm"
     "nvidia_drm.fbdev=1" # Helps with DPMS/suspend issues
+    # Preserve video memory across suspend/resume
+    "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
   ];
   boot.plymouth.extraConfig = ''
     DeviceTimeout=0

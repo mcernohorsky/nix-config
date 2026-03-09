@@ -32,24 +32,11 @@
       # Default deny, open ports as needed in other modules
     };
 
-    # mDNS/DNS-SD for local network discovery
-    # (find printers, chromecast, etc.)
-  };
+
 
   # Don't wait for network during boot (nothing needs it that early)
   systemd.services.NetworkManager-wait-online.enable = false;
 
-  # Avahi for mDNS
-  services.avahi = {
-    enable = true;
-    nssmdns4 = true;
-    openFirewall = true;
-    publish = {
-      enable = true;
-      addresses = true;
-      workstation = true;
-    };
-  };
 
   # Resolved for DNS (with mDNS support)
   services.resolved = {
@@ -108,10 +95,6 @@
       "systemd.show_status=auto"
       "rd.udev.log_level=3"
       "vt.global_cursor_default=0"
-      # Nvidia-specific fixes for Plymouth/LUKS
-      "nvidia-drm.modeset=1"
-      "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
-      "nvidia_drm.fbdev=1"
     ];
   };
 
@@ -138,15 +121,6 @@
   security.sudo = {
     enable = true;
     wheelNeedsPassword = true;
-    extraRules = [
-      {
-        groups = [ "wheel" ];
-        commands = [
-          { command = "/run/current-system/sw/bin/nixos-rebuild"; options = [ "NOPASSWD" ]; }
-          { command = "/run/current-system/sw/bin/systemctl"; options = [ "NOPASSWD" ]; }
-        ];
-      }
-    ];
   };
 
   # rtkit for realtime audio priority

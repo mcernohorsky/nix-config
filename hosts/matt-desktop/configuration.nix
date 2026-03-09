@@ -102,7 +102,9 @@
     };
   };
 
-  # Passwordless sudo for matt (required for deploy-rs)
+  # Passwordless sudo for matt
+  # Required by deploy-rs for remote NixOS activation.
+  # This overrides wheelNeedsPassword from core.nix for user matt specifically.
   security.sudo.extraRules = [
     {
       users = [ "matt" ];
@@ -172,10 +174,13 @@
   };
   networking.firewall.interfaces."enp4s0".allowedTCPPorts = [ 445 ];
 
-  # Avahi: Advertise Samba via mDNS/Bonjour for macOS Finder discovery
+  # Avahi: mDNS for Samba discovery from macOS Finder (enp4s0 only)
+  # NOTE: Restricted to direct ethernet link. For general mDNS (printers, Chromecast),
+  # remove allowInterfaces or add your main network interface.
   services.avahi = {
     enable = true;
-    allowInterfaces = [ "enp4s0" ]; # Only advertise on direct ethernet, prevents hostname conflicts
+    nssmdns4 = true;
+    allowInterfaces = [ "enp4s0" ];
     publish = {
       enable = true;
       userServices = true;
