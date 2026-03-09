@@ -83,7 +83,6 @@
     pwvucontrol
 
     # Brightness control
-    brightnessctl
 
     # Network manager applet
     networkmanagerapplet

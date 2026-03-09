@@ -17,6 +17,8 @@
     "nvidia_drm.fbdev=1" # Helps with DPMS/suspend issues
     # Preserve video memory across suspend/resume
     "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
+    # Enable enterprise DDC for reliable I2C access on NVIDIA GPUs
+    "nvidia.NVreg_RegistryDwords=RMUseEnterpriseDdc=1"
   ];
   boot.plymouth.extraConfig = ''
     DeviceTimeout=0
@@ -25,6 +27,12 @@
   boot.loader.systemd-boot.consoleMode = "max";
 
   hardware.graphics.enable = true;
+
+  # I2C/DDC for direct monitor control (ddcutil)
+  # Required because NVIDIA's DPMS path is unreliable under Wayland
+  hardware.i2c.enable = true;
+
+  boot.kernelModules = [ "i2c-dev" "i2c-nvidia-gpu" ];
 
   hardware.nvidia = {
     # Modesetting is required for Wayland
@@ -56,5 +64,6 @@
     libva-utils
     vulkan-tools
     mesa-demos
+    ddcutil  # Direct monitor control via DDC/CI (used by hypridle)
   ];
 }

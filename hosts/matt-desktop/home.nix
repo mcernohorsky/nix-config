@@ -243,8 +243,6 @@ in
       bindel = [
         ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
         ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
-        ", XF86MonBrightnessUp, exec, swayosd-client --brightness raise"
-        ", XF86MonBrightnessDown, exec, swayosd-client --brightness lower"
       ];
 
       # Window rules (Hyprland 0.53+ syntax)
@@ -387,22 +385,20 @@ in
       general = {
         lock_cmd = "pidof hyprlock || hyprlock --grace 3";
         before_sleep_cmd = "loginctl lock-session";
-        after_sleep_cmd = "hyprctl dispatch dpms on";
+        after_sleep_cmd = "ddcutil setvcp 0xD6 1";
       };
       listener = [
-        {
-          timeout = 1500; # 25 min
-          on-timeout = "brightnessctl -s set 30%";
-          on-resume = "brightnessctl -r";
-        }
         {
           timeout = 1800; # 30 min - lock
           on-timeout = "loginctl lock-session";
         }
         {
-          timeout = 3600; # 60 min - display off
-          on-timeout = "hyprctl dispatch dpms off";
-          on-resume = "hyprctl dispatch dpms on";
+          # 60 min - monitor off via DDC/CI (bypasses broken NVIDIA DPMS path)
+          # DDC/CI feature code 0xD6: Power Mode
+          # Values: 1=on, 4=standby, 5=off
+          timeout = 3600;
+          on-timeout = "ddcutil setvcp 0xD6 4";
+          on-resume = "ddcutil setvcp 0xD6 1";
         }
       ];
     };
