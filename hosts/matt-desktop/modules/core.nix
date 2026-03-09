@@ -31,6 +31,9 @@
       allowPing = true;
       # Default deny, open ports as needed in other modules
     };
+  };
+
+  # Don't wait for network during boot (nothing needs it that early)
 
 
 
