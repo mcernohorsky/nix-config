@@ -15,17 +15,16 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             # Python and core tools
-            python311
-            python311Packages.pip
-            python311Packages.virtualenv
+            python313
+            python313Packages.pip
+            python313Packages.virtualenv
             poetry
             ruff
-            black
-            
+
             # Language server and debugging
-            python311Packages.python-lsp-server
-            python311Packages.debugpy
-            
+            python313Packages.python-lsp-server
+            python313Packages.debugpy
+
             # Common tools
             git
           ];
@@ -36,8 +35,7 @@
             echo "  - python: $(python --version)"
             echo "  - pip: $(pip --version)"
             echo "  - poetry: $(poetry --version)"
-            echo "  - ruff: Linter ready"
-            echo "  - black: Formatter ready"
+            echo "  - ruff: Linter and formatter ready"
             echo "  - python-lsp-server: Language server ready"
             echo ""
             echo "Quick start:"
@@ -45,8 +43,8 @@
             echo "  poetry add package     # Add dependency"
             echo "  poetry install         # Install dependencies"
             echo "  poetry run python      # Run Python"
-            echo "  black .                # Format code"
             echo "  ruff check .           # Lint code"
+            echo "  ruff format .          # Format code"
           '';
         };
       });

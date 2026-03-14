@@ -12,10 +12,10 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
         sdk = (import android { inherit pkgs; }).sdk (sdkPkgs: with sdkPkgs; [
-          build-tools-33-0-0
+          build-tools-35-0-0
           cmdline-tools-latest
           platform-tools
-          platforms-android-33
+          platforms-android-35
           emulator
         ]);
       in
