@@ -47,8 +47,10 @@ in
       # Startup applications
       # Note: hypridle is managed via systemd user service (services.hypridle.enable)
       exec-once = [
+        # UWSM is not activating graphical-session.target here, so start the
+        # expected user services explicitly once the Wayland session is ready.
+        "systemctl --user start hyprpaper.service hypridle.service swayosd.service swaync.service elephant.service walker.service"
         "waybar"
-        "swaync"
         "nm-applet"
         "blueman-applet"
         "wl-paste --type text --watch cliphist store"
@@ -385,7 +387,7 @@ in
       general = {
         lock_cmd = "pidof hyprlock || hyprlock --grace 3";
         before_sleep_cmd = "loginctl lock-session";
-        after_sleep_cmd = "ddcutil setvcp 0xD6 1";
+        after_sleep_cmd = "hyprctl dispatch dpms on";
       };
       listener = [
         {
@@ -393,12 +395,10 @@ in
           on-timeout = "loginctl lock-session";
         }
         {
-          # 60 min - monitor off via DDC/CI (bypasses broken NVIDIA DPMS path)
-          # DDC/CI feature code 0xD6: Power Mode
-          # Values: 1=on, 4=standby, 5=off
+          # 60 min - display off via compositor DPMS
           timeout = 3600;
-          on-timeout = "ddcutil setvcp 0xD6 4";
-          on-resume = "ddcutil setvcp 0xD6 1";
+          on-timeout = "hyprctl dispatch dpms off";
+          on-resume = "hyprctl dispatch dpms on";
         }
       ];
     };

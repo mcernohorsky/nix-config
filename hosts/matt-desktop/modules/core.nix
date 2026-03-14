@@ -95,7 +95,6 @@
       "quiet"
       "splash"
       "loglevel=3"
-      "systemd.show_status=auto"
       "rd.udev.log_level=3"
       "vt.global_cursor_default=0"
     ];
@@ -105,7 +104,7 @@
   console = {
     earlySetup = false; # Don't load in initrd to avoid red error
     packages = [ pkgs.terminus_font ];
-    font = "${pkgs.terminus_font}/share/consolefonts/ter-v32n.psf.gz"; 
+    font = "ter-v32n";
     keyMap = "us";
   };
 

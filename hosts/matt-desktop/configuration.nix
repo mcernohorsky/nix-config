@@ -1,4 +1,8 @@
-{ config, pkgs, inputs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
 
 {
   imports = [
@@ -26,9 +30,19 @@
 
   users.users.matt = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" "video" "audio" "input" "i2c" ];
-    openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "video"
+      "audio"
+      "input"
+      "i2c"
+    ];
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca"
+    ];
   };
+  users.groups.netdev = { };
 
   # Restic REST Server for receiving backups from oracle-0
   # Security: Tailscale ACLs restrict access to tag:cloud only, appendOnly prevents deletion
@@ -50,15 +64,18 @@
     # Wallpaper: Replace with path to your preferred image
     # Example: image = ./wallpapers/painting.jpg;
     # For now, using a generated Gruvbox gradient
-    image = pkgs.runCommand "gruvbox-wallpaper.png" {
-      nativeBuildInputs = [ pkgs.imagemagick ];
-    } ''
-      magick -size 3840x2160 \
-        -define gradient:angle=135 \
-        gradient:'#1d2021-#282828' \
-        -blur 0x2 \
-        $out
-    '';
+    image =
+      pkgs.runCommand "gruvbox-wallpaper.png"
+        {
+          nativeBuildInputs = [ pkgs.imagemagick ];
+        }
+        ''
+          magick -size 3840x2160 \
+            -define gradient:angle=135 \
+            gradient:'#1d2021-#282828' \
+            -blur 0x2 \
+            $out
+        '';
 
     # Fonts (Using JetBrains Mono for everything)
     fonts = {
@@ -109,7 +126,10 @@
     {
       users = [ "matt" ];
       commands = [
-        { command = "ALL"; options = [ "NOPASSWD" ]; }
+        {
+          command = "ALL";
+          options = [ "NOPASSWD" ];
+        }
       ];
     }
   ];
@@ -124,7 +144,10 @@
     enable = true;
     openFirewall = true; # Allow UDP 41641 for direct connections
     authKeyFile = config.age.secrets.tailscale-authkey.path;
-    extraUpFlags = [ "--advertise-tags=tag:trusted" "--ssh" ];
+    extraUpFlags = [
+      "--advertise-tags=tag:trusted"
+      "--ssh"
+    ];
   };
 
   # Taildrive: Share main drives
@@ -150,7 +173,10 @@
   };
 
   # Firewall: Restic REST Server only via Tailscale (SSH handled by Tailscale SSH)
-  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8000 13378 ];
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [
+    8000
+    13378
+  ];
 
   # Samba: Share root filesystem over direct ethernet connection
   # Note: Can't use "bind interfaces only" as smbd crashes if interface missing
@@ -236,7 +262,10 @@
   };
 
   nix.settings = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
@@ -249,7 +278,10 @@
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
     ];
-    trusted-users = [ "root" "@wheel" ];
+    trusted-users = [
+      "root"
+      "@wheel"
+    ];
   };
 
   # Fix Tailscale TPM issue after BIOS updates
@@ -274,7 +306,10 @@
   fileSystems."/btr_pool" = {
     device = "/dev/mapper/cryptroot";
     fsType = "btrfs";
-    options = [ "subvolid=5" "noatime" ];
+    options = [
+      "subvolid=5"
+      "noatime"
+    ];
   };
 
   system.stateVersion = "25.05";

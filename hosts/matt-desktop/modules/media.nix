@@ -1,7 +1,5 @@
 # Media playback configuration
 {
-  config,
-  lib,
   pkgs,
   ...
 }:
@@ -30,7 +28,10 @@
   ];
 
   # Grant Jellyfin access to GPU for hardware transcoding
-  users.users.jellyfin.extraGroups = [ "video" "render" ];
+  users.users.jellyfin.extraGroups = [
+    "video"
+    "render"
+  ];
 
   # Bootstrap audiobook library directory on HDD
   systemd.tmpfiles.rules = [
@@ -42,6 +43,9 @@
 
   # Ensure Audiobookshelf waits for HDD mount before starting
   systemd.services.audiobookshelf = {
-    unitConfig.RequiresMountsFor = [ "/mnt/hdd" "/mnt/hdd/audiobooks" ];
+    unitConfig.RequiresMountsFor = [
+      "/mnt/hdd"
+      "/mnt/hdd/audiobooks"
+    ];
   };
 }

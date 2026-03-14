@@ -186,6 +186,9 @@
         hostname = "matt-desktop.tailc41cf5.ts.net";
         sshUser = "matt";
         remoteBuild = true;
+        # Activation can briefly drop the Tailscale-backed SSH path while
+        # system services restart, so deploy-rs confirmation is unreliable here.
+        magicRollback = false;
         profiles.system = {
           user = "root";
           path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos inputs.self.nixosConfigurations.matt-desktop;

@@ -19,11 +19,11 @@ update-plugins:
     set -e
     echo "🔍 Checking for latest opencode plugin versions via registry..."
     OMO_VERSION=$(curl -s https://registry.npmjs.org/oh-my-opencode/latest | jq -r '.version')
-    ANTIGRAVITY_VERSION=$(curl -s https://registry.npmjs.org/opencode-antigravity-auth/beta | jq -r '.version')
+    QUOTAS_VERSION=$(curl -s https://registry.npmjs.org/opencode-quotas/latest | jq -r '.version')
     echo "oh-my-opencode: $OMO_VERSION"
-    echo "opencode-antigravity-auth (beta): $ANTIGRAVITY_VERSION"
-    jq -n --arg omo "$OMO_VERSION" --arg anti "$ANTIGRAVITY_VERSION" \
-        '{"oh-my-opencode": $omo, "opencode-antigravity-auth": $anti}' \
+    echo "opencode-quotas: $QUOTAS_VERSION"
+    jq -n --arg omo "$OMO_VERSION" --arg quotas "$QUOTAS_VERSION" \
+        '{"oh-my-opencode": $omo, "opencode-quotas": $quotas}' \
         > hosts/macbook-pro-m2/home/opencode-plugins.json
     echo "✅ Updated hosts/macbook-pro-m2/home/opencode-plugins.json"
 

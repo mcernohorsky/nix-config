@@ -18,6 +18,7 @@
   # Login manager: greetd with tuigreet (launches UWSM session)
   services.greetd = {
     enable = true;
+    useTextGreeter = true;
     settings = {
       default_session = {
         command = "${pkgs.tuigreet}/bin/tuigreet --time --time-format '%Y-%m-%d %H:%M' --asterisks --asterisks-char '•' --width 50 --window-padding 2 --container-padding 2 --remember --remember-session --theme 'border=yellow;greet=yellow;time=gray;prompt=green;action=cyan;button=yellow;input=white' --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
@@ -67,9 +68,8 @@
     # Screen recording
     wf-recorder
 
-    # Notifications (swaync - feature-rich notification center)
+    # Notifications
     libnotify
-    swaynotificationcenter
 
     # Lock screen and idle
     hyprlock

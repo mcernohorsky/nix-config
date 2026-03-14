@@ -56,99 +56,184 @@ in
 
       # Oh My OpenCode Configuration
       # Agents guide: https://github.com/code-yeongyu/oh-my-opencode/blob/dev/docs/guide/agent-model-matching.md
-      # Thinking variants: max for orchestrators, high for specialists, low for utility runners
+      # OpenAI handles most high-value GPT work, OpenCode Go handles cheap utility work,
+      # and GitHub Copilot provides selected Claude/Gemini fallbacks where they are strongest.
       ".config/opencode/oh-my-opencode.json".text = builtins.toJSON {
-        google_auth = false;
         auto_update = false; # Disable plugin self-update (use bun update in ~/.cache/opencode/)
         auto_commit = false; # Agents only commit when explicitly asked (v3.11 default)
         hashline_edit = true; # Hash-anchored edits for safer file modifications (v3.10)
+        runtime_fallback = true;
         disabledHooks = [ "auto-update-checker" ]; # Prevents EROFS errors from config writes
         disabled_mcps = [ ]; # websearch_exa re-enabled for research capabilities
         disabled_skills = [ "playwright" ];
 
-        # Agent model assignments — Claude/Gemini via Antigravity, GPT via GitHub Copilot
+        # Agent model assignments — tuned from OMO defaults plus local subscription constraints.
         agents = {
-          # Orchestrators — max thinking for planning accuracy
+          # Orchestrators and planners
           Sisyphus = {
-            model = "google/antigravity-claude-opus-4-6-thinking";
-            variant = "max";
+            model = "openai/gpt-5.4";
+            variant = "medium";
+            fallback_models = [
+              "github-copilot/claude-sonnet-4.6"
+              "opencode-go/kimi-k2.5"
+            ];
             ultrawork = {
-              model = "google/antigravity-claude-opus-4-6-thinking";
-              variant = "max";
+              model = "github-copilot/claude-opus-4.6";
+              variant = "thinking";
             };
           };
           prometheus = {
-            model = "google/antigravity-claude-opus-4-6-thinking";
-            variant = "max";
+            model = "openai/gpt-5.4";
+            variant = "high";
+            fallback_models = [
+              "opencode-go/glm-5"
+              "github-copilot/claude-sonnet-4.6"
+            ];
           };
           metis = {
-            model = "google/antigravity-claude-opus-4-6-thinking";
+            model = "github-copilot/claude-opus-4.6";
             variant = "max";
+            fallback_models = [
+              "opencode-go/glm-5"
+              "openai/gpt-5.4"
+            ];
           };
           atlas = {
-            model = "google/antigravity-claude-sonnet-4-6";
+            model = "github-copilot/claude-sonnet-4.6";
+            fallback_models = [
+              "opencode-go/kimi-k2.5"
+              "openai/gpt-5.4"
+            ];
           };
 
-          # Specialists — GPT via Copilot
+          # Specialists — GPT via OpenAI
           oracle = {
-            model = "github-copilot/gpt-5.4";
+            model = "openai/gpt-5.4";
+            variant = "high";
+            fallback_models = [
+              "github-copilot/gemini-3.1-pro-preview"
+              "opencode-go/glm-5"
+            ];
           };
           momus = {
-            model = "github-copilot/gpt-5.4";
+            model = "openai/gpt-5.4";
+            variant = "xhigh";
+            fallback_models = [
+              "github-copilot/gemini-3.1-pro-preview"
+              "opencode-go/glm-5"
+            ];
           };
-          # Hephaestus — autonomous deep worker, GPT-5.3 Codex is the OMO-recommended model
+          # Hephaestus — autonomous deep worker, Codex remains the default lane
           hephaestus = {
-            model = "github-copilot/gpt-5.3-codex";
+            model = "openai/gpt-5.3-codex";
+            variant = "medium";
+            fallback_models = [
+              "opencode-go/glm-5"
+              "github-copilot/claude-sonnet-4.6"
+            ];
           };
 
-          # Visual/creative — Gemini 3.1 Pro with high thinking
+          # Visual/creative — Copilot Gemini/Claude where they remain strongest.
           frontend-ui-ux-engineer = {
-            model = "google/antigravity-gemini-3.1-pro";
-            variant = "high";
+            model = "github-copilot/claude-sonnet-4.6";
+            fallback_models = [
+              "opencode-go/kimi-k2.5"
+              "openai/gpt-5.4"
+            ];
           };
 
-          # Utility runners — speed over intelligence, no thinking variants
+          document-writer = {
+            model = "opencode-go/minimax-m2.5";
+            fallback_models = [
+              "opencode/minimax-m2.5-free"
+              "opencode/nemotron-3-super-free"
+              "github-copilot/gemini-3-flash-preview"
+            ];
+          };
+
+          # Utility runners — MiniMax for cheap speed, Kimi for multimodal support
           explore = {
-            model = "google/antigravity-gemini-3-flash";
+            model = "opencode-go/minimax-m2.5";
+            fallback_models = [
+              "opencode/minimax-m2.5-free"
+              "opencode/nemotron-3-super-free"
+              "github-copilot/gemini-3-flash-preview"
+            ];
           };
           librarian = {
-            model = "google/antigravity-gemini-3-flash";
-          };
-          document-writer = {
-            model = "google/antigravity-gemini-3-flash";
+            model = "opencode-go/minimax-m2.5";
+            fallback_models = [
+              "opencode/minimax-m2.5-free"
+              "opencode/nemotron-3-super-free"
+              "github-copilot/gemini-3-flash-preview"
+            ];
           };
           multimodal-looker = {
-            model = "google/antigravity-gemini-3-flash";
+            model = "openai/gpt-5.4";
+            variant = "medium";
+            fallback_models = [ "opencode-go/kimi-k2.5" ];
           };
         };
 
         # Category model defaults — used when agents delegate tasks
         categories = {
           quick = {
-            model = "google/antigravity-gemini-3-flash";
+            model = "opencode-go/minimax-m2.5";
+            fallback_models = [
+              "opencode/minimax-m2.5-free"
+              "opencode/nemotron-3-super-free"
+            ];
           };
           visual-engineering = {
-            model = "google/antigravity-gemini-3.1-pro";
-            variant = "high";
+            model = "github-copilot/gemini-3.1-pro-preview";
+            fallback_models = [
+              "openai/gpt-5.4"
+              "opencode-go/glm-5"
+            ];
           };
           artistry = {
-            model = "google/antigravity-gemini-3.1-pro";
-            variant = "high";
+            model = "github-copilot/gemini-3.1-pro-preview";
+            fallback_models = [ "openai/gpt-5.4" ];
           };
           writing = {
-            model = "google/antigravity-gemini-3-flash";
+            model = "github-copilot/gemini-3-flash-preview";
+            fallback_models = [
+              "opencode-go/glm-5"
+              "openai/gpt-5.4"
+            ];
           };
           unspecified-low = {
-            model = "google/antigravity-claude-sonnet-4-6";
+            model = "openai/gpt-5.4";
+            variant = "low";
+            fallback_models = [
+              "opencode-go/kimi-k2.5"
+              "github-copilot/gemini-3-flash-preview"
+              "opencode/minimax-m2.5-free"
+            ];
           };
           unspecified-high = {
-            model = "github-copilot/gpt-5.4";
+            model = "openai/gpt-5.4";
+            variant = "high";
+            fallback_models = [
+              "opencode-go/glm-5"
+              "github-copilot/claude-sonnet-4.6"
+            ];
           };
           ultrabrain = {
-            model = "github-copilot/gpt-5.4";
+            model = "openai/gpt-5.4";
+            variant = "xhigh";
+            fallback_models = [
+              "github-copilot/gemini-3.1-pro-preview"
+              "github-copilot/claude-opus-4.6"
+            ];
           };
           deep = {
-            model = "github-copilot/gpt-5.3-codex";
+            model = "openai/gpt-5.3-codex";
+            variant = "medium";
+            fallback_models = [
+              "opencode-go/glm-5"
+              "github-copilot/claude-sonnet-4.6"
+            ];
           };
         };
 
@@ -156,10 +241,13 @@ in
         background_task = {
           providerConcurrency = {
             github-copilot = 3;
-            google = 10;
+            openai = 3;
+            opencode = 10;
+            "opencode-go" = 10;
           };
           modelConcurrency = {
-            "google/antigravity-claude-opus-4-6-thinking" = 2;
+            "github-copilot/claude-opus-4.6" = 2;
+            "openai/gpt-5.4" = 2;
           };
         };
       };
@@ -191,7 +279,6 @@ in
 
       # AI Tools
       inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.amp
-      playwright-mcp # For opencode MCP integration (includes bundled browsers)
     ];
 
     shellAliases = {
@@ -414,137 +501,17 @@ in
     # AI coding assistant - binary from llm-agents.nix, plugins auto-install to ~/.cache/opencode/
     # Update binary: nix flake update llm-agents && darwin-rebuild switch
     # Update plugins: just update-plugins && darwin-rebuild switch
-    # Auth tokens: ~/.local/share/opencode/antigravity-accounts.json (run `opencode auth login`)
+    # Auth tokens: ~/.local/share/opencode/auth.json (run `opencode auth login`)
     opencode = {
       enable = true;
       package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
       settings = {
         autoupdate = false; # Prevent binary self-update (managed by nix flake update)
-        small_model = "google/antigravity-gemini-3-flash";
+        small_model = "opencode-go/minimax-m2.5";
         plugin = [
           "oh-my-opencode@${opencode-plugins.oh-my-opencode}"
-          "opencode-antigravity-auth@${opencode-plugins.opencode-antigravity-auth}"
+          "opencode-quotas@${opencode-plugins.opencode-quotas}"
         ];
-        mcp = {
-          playwright = {
-            type = "local";
-            command = [
-              "${pkgs.lib.getExe pkgs.playwright-mcp}" # Nix-managed with bundled browsers
-              "--browser"
-              "chromium"
-            ];
-            enabled = false;
-          };
-        };
-        # Provider models — only Antigravity (all Claude + Gemini through Google OAuth)
-        # GPT-5.4 via github-copilot is auto-detected, no provider config needed
-        provider = {
-          google = {
-            models = {
-              # Gemini 3.1 Pro — visual-engineering, artistry, frontend
-              "antigravity-gemini-3.1-pro" = {
-                name = "Gemini 3.1 Pro (Antigravity)";
-                limit = {
-                  context = 1048576;
-                  output = 65535;
-                };
-                modalities = {
-                  input = [
-                    "text"
-                    "image"
-                    "pdf"
-                  ];
-                  output = [ "text" ];
-                };
-                variants = {
-                  low = {
-                    thinkingLevel = "low";
-                  };
-                  medium = {
-                    thinkingLevel = "medium";
-                  };
-                  high = {
-                    thinkingLevel = "high";
-                  };
-                };
-              };
-              # Gemini 3 Flash — explore, librarian, quick tasks, writing
-              "antigravity-gemini-3-flash" = {
-                name = "Gemini 3 Flash (Antigravity)";
-                limit = {
-                  context = 1048576;
-                  output = 65536;
-                };
-                modalities = {
-                  input = [
-                    "text"
-                    "image"
-                    "pdf"
-                  ];
-                  output = [ "text" ];
-                };
-                variants = {
-                  minimal = {
-                    thinkingLevel = "minimal";
-                  };
-                  low = {
-                    thinkingLevel = "low";
-                  };
-                  medium = {
-                    thinkingLevel = "medium";
-                  };
-                  high = {
-                    thinkingLevel = "high";
-                  };
-                };
-              };
-              # Claude Sonnet 4.6 — atlas, unspecified-low tasks
-              "antigravity-claude-sonnet-4-6" = {
-                name = "Claude Sonnet 4.6 (Antigravity)";
-                limit = {
-                  context = 200000;
-                  output = 64000;
-                };
-                modalities = {
-                  input = [
-                    "text"
-                    "image"
-                    "pdf"
-                  ];
-                  output = [ "text" ];
-                };
-              };
-              # Claude Opus 4.6 Thinking — Sisyphus, prometheus, metis
-              "antigravity-claude-opus-4-6-thinking" = {
-                name = "Claude Opus 4.6 Thinking (Antigravity)";
-                limit = {
-                  context = 200000;
-                  output = 64000;
-                };
-                modalities = {
-                  input = [
-                    "text"
-                    "image"
-                    "pdf"
-                  ];
-                  output = [ "text" ];
-                };
-                variants = {
-                  low = {
-                    thinkingConfig = {
-                      thinkingBudget = 8192;
-                    };
-                  };
-                  max = {
-                    thinkingConfig = {
-                      thinkingBudget = 32768;
-                    };
-                  };
-                };
-              };
-            };
-          };
-        };
       };
     };
   };
