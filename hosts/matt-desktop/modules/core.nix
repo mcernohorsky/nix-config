@@ -34,12 +34,7 @@
   };
 
   # Don't wait for network during boot (nothing needs it that early)
-
-
-
-  # Don't wait for network during boot (nothing needs it that early)
   systemd.services.NetworkManager-wait-online.enable = false;
-
 
   # Resolved for DNS (with mDNS support)
   services.resolved = {

@@ -66,14 +66,12 @@
 
     casks = [
       "affinity"
-      # "android-studio"
       "betterdisplay"
       "blender"
       "cursor"
       "discord"
       "ghostty"
       "handy"
-      # "hammerspoon"
       "helium-browser"
       "iina"
       "imageoptim"
@@ -81,7 +79,6 @@
       "itsycal"
       "jellyfin-media-player"
       "keka"
-      # "kicad"
       "magicavoxel"
       "monodraw"
       "orbstack"
@@ -104,16 +101,7 @@
       "Dropover" = 1355679052;
       "Kindle" = 302584613;
       "Klack" = 6446206067;
-      # "Xcode" = 497799835;
-      # "Microsoft Excel" = 462058435;
-      # "Microsoft Word" = 462054704;
-      # "Pages" = 409201541;
     };
-
-    # Manually Installed Apps:
-    # BatFi
-    # Excel
-    # Word
   };
 
   system.defaults = {

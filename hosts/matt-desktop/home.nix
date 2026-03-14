@@ -74,7 +74,6 @@ in
         allow_tearing = true;
       };
 
-
       # Decorations
       decoration = {
         rounding = 10;

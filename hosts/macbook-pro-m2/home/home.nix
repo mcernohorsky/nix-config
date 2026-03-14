@@ -9,7 +9,6 @@ let
   opencode-plugins = builtins.fromJSON (builtins.readFile ./opencode-plugins.json);
 in
 {
-  # disabledModules = [ "programs/ghostty.nix" ];
   imports = [
     ../modules/portal.nix
   ];
@@ -430,17 +429,14 @@ in
       package = null;
       settings = {
         auto-update = "off";
-        # theme = "light:GruvboxLight,dark:catppuccin-mocha";
         theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
         background-opacity = 0.95;
         background-blur = 10;
         macos-option-as-alt = "left";
         mouse-hide-while-typing = true;
         command = "${pkgs.bashInteractive}/bin/bash -i -l -c 'exec nu'";
-        # keybind = "global:opt+ =toggle_quick_terminal";
         quick-terminal-animation-duration = 0;
         macos-non-native-fullscreen = true;
-        # macos-icon = "retro";
       };
     };
 

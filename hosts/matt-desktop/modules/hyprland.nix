@@ -82,8 +82,6 @@
     pavucontrol
     pwvucontrol
 
-    # Brightness control
-
     # Network manager applet
     networkmanagerapplet
 
