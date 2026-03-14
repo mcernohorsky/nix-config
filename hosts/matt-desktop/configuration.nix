@@ -150,7 +150,7 @@
   };
 
   # Firewall: Restic REST Server only via Tailscale (SSH handled by Tailscale SSH)
-  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8000 ];
+  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8000 13378 ];
 
   # Samba: Share root filesystem over direct ethernet connection
   # Note: Can't use "bind interfaces only" as smbd crashes if interface missing
