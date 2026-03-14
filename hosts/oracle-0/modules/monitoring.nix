@@ -1,12 +1,9 @@
 { config, lib, pkgs, ... }:
 let
-  grafanaPort = 3010;  # local loopback port
+  grafanaPort = 3010;
   prometheusPort = 3020;
 in
 {
-  # Remove Netdata
-  services.netdata.enable = lib.mkForce false;
-
   # Prometheus server
   services.prometheus = {
     enable = true;
@@ -69,17 +66,18 @@ in
     };
   };
 
-  # Caddy vhost for Grafana
-  services.caddy.virtualHosts."metrics.cernohorsky.ca".extraConfig = ''
-    reverse_proxy 127.0.0.1:${toString grafanaPort}
-    encode gzip
-    header {
-      Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-      X-Content-Type-Options "nosniff"
-      X-Frame-Options "DENY"
-      Referrer-Policy "strict-origin-when-cross-origin"
-    }
-  '';
+  # Caddy vhost for Grafana (loopback only, accessed via Cloudflare Tunnel)
+  services.caddy.virtualHosts."http://metrics.cernohorsky.ca" = {
+    listenAddresses = [ "127.0.0.1" ];
+    extraConfig = ''
+      reverse_proxy 127.0.0.1:${toString grafanaPort}
+      encode gzip
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+      }
+    '';
+  };
 }
-
-

@@ -18,27 +18,31 @@
     ./modules/backup.nix
   ];
 
-  nix.settings = {
-    experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
-    # Binary caches for faster builds
-    extra-substituters = [
-      "https://deploy-rs.cachix.org"
-    ];
-    extra-trusted-public-keys = [
-      "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
-    ];
+  nix = {
+    settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      extra-substituters = [
+        "https://deploy-rs.cachix.org"
+      ];
+      extra-trusted-public-keys = [
+        "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
+      ];
+    };
+    optimise.automatic = true;
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-older-than 14d";
+    };
   };
 
   boot = {
     loader = {
       systemd-boot.enable = true;
-      efi = {
-        canTouchEfiVariables = true;
-        efiSysMountPoint = "/boot";
-      };
+      efi.canTouchEfiVariables = true;
     };
     initrd.systemd.enable = true;
   };
@@ -119,6 +123,8 @@
   # SSH access is via Tailscale SSH (--ssh flag), OpenSSH is disabled
   services.tailscale = {
     enable = true;
+    openFirewall = true;
+    useRoutingFeatures = "server";
     authKeyFile = config.age.secrets.tailscale-authkey.path;
     extraUpFlags = [
       "--advertise-tags=tag:cloud"
@@ -146,8 +152,6 @@
       ${pkgs.tailscale}/bin/tailscale drive share root /
     '';
   };
-
-  # Netdata removed; see modules/monitoring.nix for Prometheus+Grafana
 
   services.caddy = {
     enable = true;
@@ -197,29 +201,8 @@
   # Disable autologin.
   services.getty.autologinUser = null;
 
-  # Firewall moved to modules/security.nix
-
-  # Additional container networking will be configured in repertoire-builder-container.nix
-
   # Disable documentation for minimal install.
   documentation.enable = false;
 
-  # This option defines the first version of NixOS you have installed on this particular machine,
-  # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
-  #
-  # Most users should NEVER change this value after the initial install, for any reason,
-  # even if you've upgraded your system to a new NixOS release.
-  #
-  # This value does NOT affect the Nixpkgs version your packages and OS are pulled from,
-  # so changing it will NOT upgrade your system - see https://nixos.org/manual/nixos/stable/#sec-upgrading for how
-  # to actually do that.
-  #
-  # This value being lower than the current NixOS release does NOT mean your system is
-  # out of date, out of support, or vulnerable.
-  #
-  # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
-  # and migrated your data accordingly.
-  #
-  # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
-  system.stateVersion = "25.05"; # Did you read the comment?
+  system.stateVersion = "25.05";
 }

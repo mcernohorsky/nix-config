@@ -5,13 +5,6 @@
   ...
 }:
 {
-  # Tailscale
-  services.tailscale = {
-    enable = true;
-    useRoutingFeatures = "server"; # enable subnet routing if needed later
-    openFirewall = true;
-  };
-
   # Firewall - all ports closed; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
   networking.firewall = {
     allowedTCPPorts = [ ]; # No public ports; Cloudflare Tunnel handles HTTP traffic
