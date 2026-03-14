@@ -1,0 +1,29 @@
+Task: Stage From (2022) Season 1 into Jellyfin-ready tree
+Completed: 2026-03-14 00:08:07 -0600
+
+Destination season folder:
+/Volumes/x9-pro/Jellyfin Ready/Shows/From (2022) [tvdbid-401003]/Season 01/
+
+Moved/renamed episode files (bytes):
+- From - S01E01.mkv = 5477791703
+- From - S01E02.mkv = 4918523266
+- From - S01E03.mkv = 5588234222
+- From - S01E04.mkv = 4954445877
+- From - S01E05.mkv = 4817726259
+- From - S01E06.mkv = 4757778972
+- From - S01E07.mkv = 5175314775
+- From - S01E08.mkv = 5264855200
+- From - S01E09.mkv = 4593740663
+- From - S01E10.mkv = 4978570006
+
+Verification:
+- MKV count in Season 01: 10
+- No .nfo/.txt files found in ready tree under From (2022)
+- Sidecar archive path used:
+  /Volumes/x9-pro/_jellyfin-prep-sidecars/2026-03-13-prep/Shows/From (2022) [tvdbid-401003]/
+- Sidecar file count present: 11
+- Source path removed: /Volumes/x9-pro/Shows/From (no longer exists)
+
+Notes:
+- E08 source file moved from loose Italian-titled filename and renamed to canonical `From - S01E08.mkv`.
+- Residual source .DS_Store blocked first rmdir; moved to sidecar archive, then source directory removed.

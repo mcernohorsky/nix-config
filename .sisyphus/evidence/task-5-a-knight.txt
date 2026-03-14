@@ -1,0 +1,32 @@
+Task 5 Evidence - A Knight of the Seven Kingdoms Season 1 staging
+Date: 2026-03-14
+
+Destination season folder:
+/Volumes/x9-pro/Jellyfin Ready/Shows/A Knight of the Seven Kingdoms (2026) [tvdbid-433631]/Season 01/
+
+Moved episodes and verified byte sizes (pre -> post):
+- S01E01: 6115254972 -> 6115254972
+- S01E02: 3640313255 -> 3640313255
+- S01E03: 2274541402 -> 2274541402
+- S01E04: 4797209696 -> 4797209696
+- S01E05: 3128971659 -> 3128971659
+
+Final Season 01 files (exactly 5):
+- A Knight of the Seven Kingdoms - S01E01.mkv
+- A Knight of the Seven Kingdoms - S01E02.mkv
+- A Knight of the Seven Kingdoms - S01E03.mkv
+- A Knight of the Seven Kingdoms - S01E04.mkv
+- A Knight of the Seven Kingdoms - S01E05.mkv
+
+Archived sidecar files moved from UIndex folders:
+/Volumes/x9-pro/_jellyfin-prep-sidecars/2026-03-13-prep/Shows/A Knight of the Seven Kingdoms (2026) [tvdbid-433631]/
+- A Knight of the Seven Kingdoms S01E02 Hard Salt Beef 2160p HMAX WEB-DL DDP5 1 DV H 265-NTb.mkv.nfo
+- A Knight of the Seven Kingdoms S01E03 The Squire 2160p HMAX WEB-DL DDP5 1 DV HDR H 265-NTb.mkv.nfo
+- A Knight of the Seven Kingdoms S01E04 Seven 2160p HMAX WEB-DL DDP5 1 Atmos DV HDR H 265-FLUX.mkv.nfo
+- Torrent Downloaded From     UIndex.org      .txt
+
+Validation results:
+- mkv count in Season 01: 5
+- .nfo/.txt count in ready show tree: 0
+- UIndex source folders removed: yes (3/3)
+- Loose source files removed from original locations: yes (2/2)

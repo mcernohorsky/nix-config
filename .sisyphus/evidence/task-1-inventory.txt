@@ -1,0 +1,83 @@
+FILESYSTEM CHECK
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/disk7s1    1.9T  1.7T  161G  92% /Volumes/x9-pro
+
+SOURCE INVENTORY
+SOURCE 1: EXISTS
+  Type: File
+  Size: 20804790244 bytes
+
+SOURCE 2: EXISTS
+  Type: Directory
+
+SOURCE 3: EXISTS
+  Type: Directory
+
+SOURCE 4: EXISTS
+  Type: File
+  Size: 6115254972 bytes
+
+SOURCE 5: EXISTS
+  Type: File
+  Size: 3128971659 bytes
+
+SOURCE 6: EXISTS
+  Type: Directory
+
+SOURCE 7: EXISTS
+  Type: Directory
+
+SOURCE 8: EXISTS
+  Type: Directory
+
+THE PITT DETAILS
+Contents of /Volumes/x9-pro/Shows/The.Pitt.S01.web-dl.sdr.2160p.av1.5.1.eac3.vmaf97-Dust:
+  [MKV] The.Pitt.S01E01.700am.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1934489810 bytes
+  [MKV] The.Pitt.S01E02.800am.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1813628120 bytes
+  [MKV] The.Pitt.S01E03.900am.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1738974442 bytes
+  [MKV] The.Pitt.S01E04.1000am.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1671618407 bytes
+  [MKV] The.Pitt.S01E05.1100am.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1635425950 bytes
+  [MKV] The.Pitt.S01E06.1200pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1819504977 bytes
+  [MKV] The.Pitt.S01E07.100pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1676995408 bytes
+  [MKV] The.Pitt.S01E08.200pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1760924129 bytes
+  [MKV] The.Pitt.S01E09.300pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1937586734 bytes
+  [MKV] The.Pitt.S01E10.400pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1959523299 bytes
+  [MKV] The.Pitt.S01E11.500pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 2031559376 bytes
+  [MKV] The.Pitt.S01E12.600pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1946256708 bytes
+  [MKV] The.Pitt.S01E13.700pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 2148630668 bytes
+  [MKV] The.Pitt.S01E14.8.00pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1862917225 bytes
+  [MKV] The.Pitt.S01E15.900pm.web.sdr.2160p.av1.5.1.eac3-Dust.mkv - 1924258369 bytes
+  [OTHER] nfo.screens.poster
+
+FROM DETAILS
+Contents of /Volumes/x9-pro/Shows/From:
+  [Loose Media] From.S01E08.Finestre.rotte.porte.aperte.2160p.WEBMux.ITA.ENG.x265-BlackBit.mkv
+    Size: 5264855200 bytes
+  [UIndex Folder] www.UIndex.org    -    From S01E01 Long Days Journey Into Night 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E02 The Way Things Are Now 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E03 Choosing Day 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E04 A Rock and a Farway 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E05 Silhouettes 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E06 Book 74 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E07 All Good Things 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E09 Into the Woods 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+  [UIndex Folder] www.UIndex.org    -    From S01E10 Oh the Places Well Go 2160p STAN WEB-DL DDP5 1 H 265-Kitsune (contains 1 .mkv file(s))
+
+A KNIGHT DETAILS (UIndex folders)
+UIndex Folder for E02:
+  Path: /Volumes/x9-pro/Shows/www.UIndex.org    -    A Knight of the Seven Kingdoms S01E02 Hard Salt Beef 2160p HMAX WEB-DL DDP5 1 DV H 265-NTb
+  MKV File: A Knight of the Seven Kingdoms S01E02 Hard Salt Beef 2160p HMAX WEB-DL DDP5 1 DV H 265-NTb.mkv
+  Size: 3640313255 bytes
+
+UIndex Folder for E03:
+  Path: /Volumes/x9-pro/Shows/www.UIndex.org    -    A Knight of the Seven Kingdoms S01E03 The Squire 2160p HMAX WEB-DL DDP5 1 DV HDR H 265-NTb
+  MKV File: A Knight of the Seven Kingdoms S01E03 The Squire 2160p HMAX WEB-DL DDP5 1 DV HDR H 265-NTb.mkv
+  Size: 2274541402 bytes
+
+UIndex Folder for E04:
+  Path: /Volumes/x9-pro/Shows/www.UIndex.org    -    A Knight of the Seven Kingdoms S01E04 Seven 2160p HMAX WEB-DL DDP5 1 Atmos DV HDR H 265-FLUX
+  MKV File: A Knight of the Seven Kingdoms S01E04 Seven 2160p HMAX WEB-DL DDP5 1 Atmos DV HDR H 265-FLUX.mkv
+  Size: 4797209696 bytes
+
+SUMMARY
+Please see above for details.

@@ -1,0 +1,46 @@
+JELLYFIN X9-PRO PREP — DRAG AND DROP MANIFEST
+Generated: 2026-03-13
+Sidecar archive: /Volumes/x9-pro/_jellyfin-prep-sidecars/2026-03-13-prep/
+
+=== MOVIES ===
+
+TITLE: 28 Years Later - The Bone Temple (2026)
+  STAGED AT:   /Volumes/x9-pro/Jellyfin Ready/Movies/28 Years Later - The Bone Temple (2026) [tmdbid-1272837]/
+  DRAG INTO:   /mnt/hdd/Movies/  (on matt-desktop)
+  RESULT:      /mnt/hdd/Movies/28 Years Later - The Bone Temple (2026) [tmdbid-1272837]/
+  SIDECAR:     (none — source contained only the movie file)
+
+=== SHOWS ===
+
+TITLE: The Pitt (2025) — Season 01, 15 episodes
+  STAGED AT:   /Volumes/x9-pro/Jellyfin Ready/Shows/The Pitt (2025) [tvdbid-448176]/
+  DRAG INTO:   /mnt/hdd/Shows/  (on matt-desktop)
+  RESULT:      /mnt/hdd/Shows/The Pitt (2025) [tvdbid-448176]/
+  SIDECAR:     /Volumes/x9-pro/_jellyfin-prep-sidecars/2026-03-13-prep/Shows/The Pitt (2025) [tvdbid-448176]/
+
+TITLE: A Knight of the Seven Kingdoms (2026) — Season 01, 5 episodes
+  STAGED AT:   /Volumes/x9-pro/Jellyfin Ready/Shows/A Knight of the Seven Kingdoms (2026) [tvdbid-433631]/
+  DRAG INTO:   /mnt/hdd/Shows/  (on matt-desktop)
+  RESULT:      /mnt/hdd/Shows/A Knight of the Seven Kingdoms (2026) [tvdbid-433631]/
+  SIDECAR:     /Volumes/x9-pro/_jellyfin-prep-sidecars/2026-03-13-prep/Shows/A Knight of the Seven Kingdoms (2026) [tvdbid-433631]/
+
+TITLE: From (2022) — Season 01, 10 episodes
+  STAGED AT:   /Volumes/x9-pro/Jellyfin Ready/Shows/From (2022) [tvdbid-401003]/
+  DRAG INTO:   /mnt/hdd/Shows/  (on matt-desktop)
+  RESULT:      /mnt/hdd/Shows/From (2022) [tvdbid-401003]/
+  SIDECAR:     /Volumes/x9-pro/_jellyfin-prep-sidecars/2026-03-13-prep/Shows/From (2022) [tvdbid-401003]/
+
+=== HOW TO TRANSFER ===
+
+1. Connect to matt-desktop (or use the Jellyfin server's file manager)
+2. For each TITLE above:
+   - Drag the "STAGED AT" folder into the "DRAG INTO" directory
+   - After the copy completes, Jellyfin will auto-detect the new title
+3. After verifying playback, you can delete the sidecar archive folders
+
+=== VERIFICATION COMMANDS (run on matt-desktop after transfer) ===
+
+ls /mnt/hdd/Movies/ | grep "28 Years Later"
+ls /mnt/hdd/Shows/ | grep "Pitt"
+ls /mnt/hdd/Shows/ | grep "Knight"
+ls /mnt/hdd/Shows/ | grep "From"

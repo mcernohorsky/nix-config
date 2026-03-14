@@ -1,0 +1,14 @@
+# Task 4: Tailscale Firewall Evidence
+# Date: Sat Mar 14 2026
+# File: /private/tmp/nix-config-audiobook-server-matt-desktop/hosts/matt-desktop/configuration.nix
+
+$ grep -n 'allowedTCPPorts' /private/tmp/nix-config-audiobook-server-matt-desktop/hosts/matt-desktop/configuration.nix
+
+153:  networking.firewall.interfaces."tailscale0".allowedTCPPorts = [ 8000 13378 ];
+175:  networking.firewall.interfaces."enp4s0".allowedTCPPorts = [ 445 ];
+
+# Verification:
+# - Line 153 shows BOTH 8000 and 13378 on tailscale0 interface ✓
+# - 8000 (Restic REST server) preserved ✓
+# - 13378 (Audiobookshelf) added to tailscale0 only ✓
+# - No global firewall changes ✓
