@@ -67,6 +67,7 @@
     casks = [
       "affinity"
       "betterdisplay"
+      "chatgpt"
       "blender"
       "cursor"
       "discord"
