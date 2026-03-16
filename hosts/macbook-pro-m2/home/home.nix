@@ -62,8 +62,8 @@ in
               "moonshotai/kimi-k2.5" = {
                 options = {
                   provider = {
-                    order = [ "fireworks" ];
-                    allow_fallbacks = true;
+                    only = [ "fireworks" ];
+                    allow_fallbacks = false;
                   };
                 };
               };
