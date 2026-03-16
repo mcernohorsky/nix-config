@@ -1,5 +1,0 @@
-pre_move_size_bytes=20804790244
-post_move_path=/Volumes/x9-pro/Jellyfin Ready/Movies/28 Years Later - The Bone Temple (2026) [tmdbid-1272837]/28 Years Later - The Bone Temple (2026).mp4
-post_move_size_bytes=20804790244
-size_match_confirmation=yes
-source_folder_removed_confirmation=yes

@@ -1,2 +1,0 @@
-«derivation /nix/store/wyhci01rfnv646hh9bnhgi9mspq40l48-nixos-system-matt-desktop-26.05.20260216.d1c15b7.drv»
-EXIT:0

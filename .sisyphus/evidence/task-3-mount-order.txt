@@ -1,4 +1,0 @@
-Grep check for RequiresMountsFor in media.nix:
-48:    serviceConfig.RequiresMountsFor = [ "/mnt/hdd" "/mnt/hdd/audiobooks" ];
-
-Result: ✓ Match found containing both /mnt/hdd and /mnt/hdd/audiobooks
