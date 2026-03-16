@@ -53,8 +53,26 @@ in
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
 
+      # OpenCode Core Configuration - Model and provider preferences (with fallbacks enabled)
+      ".config/opencode/config.json".text = builtins.toJSON {
+        model = "openrouter/moonshotai/kimi-k2.5";
+        provider = {
+          openrouter = {
+            models = {
+              "moonshotai/kimi-k2.5" = {
+                options = {
+                  provider = {
+                    order = [ "fireworks" ];
+                    allow_fallbacks = true;
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+
       # Oh My OpenCode Configuration
-      # Agents guide: https://github.com/code-yeongyu/oh-my-opencode/blob/dev/docs/guide/agent-model-matching.md
       # OpenAI handles most high-value GPT work, OpenCode Go handles cheap utility work,
       # and GitHub Copilot provides selected Claude/Gemini fallbacks where they are strongest.
       ".config/opencode/oh-my-opencode.json".text = builtins.toJSON {
@@ -98,9 +116,9 @@ in
             ];
           };
           atlas = {
-            model = "github-copilot/claude-sonnet-4.6";
+            model = "opencode-go/glm-5";
             fallback_models = [
-              "opencode-go/kimi-k2.5"
+              "github-copilot/claude-sonnet-4.6"
               "openai/gpt-5.4"
             ];
           };
