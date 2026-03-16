@@ -29,7 +29,7 @@ in
   # Hyprland Configuration
   # ===================
   wayland.windowManager.hyprland = {
-    enable = true;
+    enable = false;
     # Disable systemd integration since we use UWSM
     systemd.enable = false;
 
@@ -45,11 +45,11 @@ in
       };
 
       # Startup applications
-      # Note: hypridle is managed via systemd user service (services.hypridle.enable)
+      # Note: idle is managed via systemd user service (services.swayidle.enable)
       exec-once = [
         # UWSM is not activating graphical-session.target here, so start the
         # expected user services explicitly once the Wayland session is ready.
-        "systemctl --user start hyprpaper.service hypridle.service swayosd.service swaync.service elephant.service walker.service"
+        "systemctl --user start hyprpaper.service swayidle.service swayosd.service swaync.service elephant.service walker.service"
         "waybar"
         "nm-applet"
         "blueman-applet"
@@ -152,7 +152,6 @@ in
       bind = [
         # Core
         "$mainMod, Return, exec, ghostty"
-        "$mainMod SHIFT, Return, exec, ghostty -e nu"
         "$mainMod, Q, killactive,"
         "$mainMod SHIFT, E, exit,"
         "$mainMod, E, exec, ghostty -e yazi"
@@ -162,10 +161,10 @@ in
         "$mainMod, P, pseudo,"
         "$mainMod, T, layoutmsg, togglesplit"
         "$mainMod, F, fullscreen,"
-        "$mainMod, C, exec, zen"
+        "$mainMod, C, exec, helium"
 
         # Lock screen (use SUPER+Escape to avoid conflict with vim navigation)
-        "$mainMod, Escape, exec, hyprlock --grace 3"
+        "$mainMod, Escape, exec, hyprlock"
 
         # Notification center
         "$mainMod, N, exec, swaync-client -t -sw"
@@ -286,6 +285,263 @@ in
     };
   };
 
+  programs.niri.settings = {
+    prefer-no-csd = true;
+
+    input = {
+      mod-key = "Super";
+      keyboard.xkb = {
+        layout = "us";
+        options = "caps:escape";
+      };
+      touchpad.natural-scroll = true;
+    };
+
+    layout = {
+      focus-ring = {
+        width = 2;
+        inactive.color = "transparent";
+      };
+    };
+
+    spawn-at-startup = [
+      {
+        command = [
+          "systemctl"
+          "--user"
+          "start"
+          "swayosd.service"
+          "swaync.service"
+          "elephant.service"
+          "walker.service"
+        ];
+      }
+      { command = [ "waybar" ]; }
+      { command = [ "nm-applet" ]; }
+      { command = [ "blueman-applet" ]; }
+      {
+        command = [
+          "sh"
+          "-c"
+          "wl-paste --type text --watch cliphist store"
+        ];
+      }
+      {
+        command = [
+          "sh"
+          "-c"
+          "wl-paste --type image --watch cliphist store"
+        ];
+      }
+    ];
+
+    binds = {
+      "Mod+Shift+Slash".action.show-hotkey-overlay = [ ];
+      "Mod+T".action.spawn = "ghostty";
+      "Mod+Space".action.spawn = "walker";
+      "Mod+B".action.spawn = "helium";
+      "Super+Alt+L".action.spawn = "hyprlock";
+
+      "XF86AudioRaiseVolume".allow-when-locked = true;
+      "XF86AudioRaiseVolume".action.spawn = [
+        "swayosd-client"
+        "--output-volume"
+        "raise"
+      ];
+      "XF86AudioLowerVolume".allow-when-locked = true;
+      "XF86AudioLowerVolume".action.spawn = [
+        "swayosd-client"
+        "--output-volume"
+        "lower"
+      ];
+      "XF86AudioMute".allow-when-locked = true;
+      "XF86AudioMute".action.spawn = [
+        "swayosd-client"
+        "--output-volume"
+        "mute-toggle"
+      ];
+      "XF86AudioMicMute".allow-when-locked = true;
+      "XF86AudioMicMute".action.spawn = [
+        "swayosd-client"
+        "--input-volume"
+        "mute-toggle"
+      ];
+      "XF86AudioPlay".allow-when-locked = true;
+      "XF86AudioPlay".action.spawn = [
+        "swayosd-client"
+        "--playerctl"
+        "play-pause"
+      ];
+      "XF86AudioStop".allow-when-locked = true;
+      "XF86AudioStop".action.spawn = [
+        "swayosd-client"
+        "--playerctl"
+        "stop"
+      ];
+      "XF86AudioPrev".allow-when-locked = true;
+      "XF86AudioPrev".action.spawn = [
+        "swayosd-client"
+        "--playerctl"
+        "prev"
+      ];
+      "XF86AudioNext".allow-when-locked = true;
+      "XF86AudioNext".action.spawn = [
+        "swayosd-client"
+        "--playerctl"
+        "next"
+      ];
+      "XF86MonBrightnessUp".allow-when-locked = true;
+      "XF86MonBrightnessUp".action.spawn = [
+        "swayosd-client"
+        "--brightness"
+        "raise"
+      ];
+      "XF86MonBrightnessDown".allow-when-locked = true;
+      "XF86MonBrightnessDown".action.spawn = [
+        "swayosd-client"
+        "--brightness"
+        "lower"
+      ];
+
+      "Mod+O".action.toggle-overview = [ ];
+      "Mod+Q".action.close-window = [ ];
+
+      "Mod+Left".action.focus-column-left = [ ];
+      "Mod+Down".action.focus-window-down = [ ];
+      "Mod+Up".action.focus-window-up = [ ];
+      "Mod+Right".action.focus-column-right = [ ];
+      "Mod+H".action.focus-column-left = [ ];
+      "Mod+J".action.focus-window-down = [ ];
+      "Mod+K".action.focus-window-up = [ ];
+      "Mod+L".action.focus-column-right = [ ];
+
+      "Mod+Ctrl+Left".action.move-column-left = [ ];
+      "Mod+Ctrl+Down".action.move-window-down = [ ];
+      "Mod+Ctrl+Up".action.move-window-up = [ ];
+      "Mod+Ctrl+Right".action.move-column-right = [ ];
+      "Mod+Ctrl+H".action.move-column-left = [ ];
+      "Mod+Ctrl+J".action.move-window-down = [ ];
+      "Mod+Ctrl+K".action.move-window-up = [ ];
+      "Mod+Ctrl+L".action.move-column-right = [ ];
+
+      "Mod+Home".action.focus-column-first = [ ];
+      "Mod+End".action.focus-column-last = [ ];
+      "Mod+Ctrl+Home".action.move-column-to-first = [ ];
+      "Mod+Ctrl+End".action.move-column-to-last = [ ];
+
+      "Mod+Shift+Left".action.focus-monitor-left = [ ];
+      "Mod+Shift+Down".action.focus-monitor-down = [ ];
+      "Mod+Shift+Up".action.focus-monitor-up = [ ];
+      "Mod+Shift+Right".action.focus-monitor-right = [ ];
+      "Mod+Shift+H".action.focus-monitor-left = [ ];
+      "Mod+Shift+J".action.focus-monitor-down = [ ];
+      "Mod+Shift+K".action.focus-monitor-up = [ ];
+      "Mod+Shift+L".action.focus-monitor-right = [ ];
+
+      "Mod+Shift+Ctrl+Left".action.move-column-to-monitor-left = [ ];
+      "Mod+Shift+Ctrl+Down".action.move-column-to-monitor-down = [ ];
+      "Mod+Shift+Ctrl+Up".action.move-column-to-monitor-up = [ ];
+      "Mod+Shift+Ctrl+Right".action.move-column-to-monitor-right = [ ];
+      "Mod+Shift+Ctrl+H".action.move-column-to-monitor-left = [ ];
+      "Mod+Shift+Ctrl+J".action.move-column-to-monitor-down = [ ];
+      "Mod+Shift+Ctrl+K".action.move-column-to-monitor-up = [ ];
+      "Mod+Shift+Ctrl+L".action.move-column-to-monitor-right = [ ];
+
+      "Mod+Page_Down".action.focus-workspace-down = [ ];
+      "Mod+Page_Up".action.focus-workspace-up = [ ];
+      "Mod+U".action.focus-workspace-down = [ ];
+      "Mod+I".action.focus-workspace-up = [ ];
+      "Mod+Ctrl+Page_Down".action.move-column-to-workspace-down = [ ];
+      "Mod+Ctrl+Page_Up".action.move-column-to-workspace-up = [ ];
+      "Mod+Ctrl+U".action.move-column-to-workspace-down = [ ];
+      "Mod+Ctrl+I".action.move-column-to-workspace-up = [ ];
+      "Mod+Shift+Page_Down".action.move-workspace-down = [ ];
+      "Mod+Shift+Page_Up".action.move-workspace-up = [ ];
+      "Mod+Shift+U".action.move-workspace-down = [ ];
+      "Mod+Shift+I".action.move-workspace-up = [ ];
+
+      "Mod+N".action.spawn-sh = "swaync-client -t -sw";
+      "Mod+1".action.focus-workspace = 1;
+      "Mod+2".action.focus-workspace = 2;
+      "Mod+3".action.focus-workspace = 3;
+      "Mod+4".action.focus-workspace = 4;
+      "Mod+5".action.focus-workspace = 5;
+      "Mod+6".action.focus-workspace = 6;
+      "Mod+7".action.focus-workspace = 7;
+      "Mod+8".action.focus-workspace = 8;
+      "Mod+9".action.focus-workspace = 9;
+      "Mod+Ctrl+1".action.move-column-to-workspace = 1;
+      "Mod+Ctrl+2".action.move-column-to-workspace = 2;
+      "Mod+Ctrl+3".action.move-column-to-workspace = 3;
+      "Mod+Ctrl+4".action.move-column-to-workspace = 4;
+      "Mod+Ctrl+5".action.move-column-to-workspace = 5;
+      "Mod+Ctrl+6".action.move-column-to-workspace = 6;
+      "Mod+Ctrl+7".action.move-column-to-workspace = 7;
+      "Mod+Ctrl+8".action.move-column-to-workspace = 8;
+      "Mod+Ctrl+9".action.move-column-to-workspace = 9;
+
+      "Mod+BracketLeft".action.consume-or-expel-window-left = [ ];
+      "Mod+BracketRight".action.consume-or-expel-window-right = [ ];
+      "Mod+Comma".action.consume-window-into-column = [ ];
+      "Mod+Period".action.expel-window-from-column = [ ];
+
+      "Mod+R".action.switch-preset-column-width = [ ];
+      "Mod+Shift+R".action.switch-preset-window-height = [ ];
+      "Mod+Ctrl+R".action.reset-window-height = [ ];
+      "Mod+F".action.maximize-column = [ ];
+      "Mod+Shift+F".action.fullscreen-window = [ ];
+      "Mod+Ctrl+F".action.expand-column-to-available-width = [ ];
+      "Mod+C".action.center-column = [ ];
+      "Mod+Ctrl+C".action.center-visible-columns = [ ];
+      "Mod+Minus".action.set-column-width = "-10%";
+      "Mod+Equal".action.set-column-width = "+10%";
+      "Mod+Shift+Minus".action.set-window-height = "-10%";
+      "Mod+Shift+Equal".action.set-window-height = "+10%";
+      "Mod+V".action.toggle-window-floating = [ ];
+      "Mod+Shift+V".action.switch-focus-between-floating-and-tiling = [ ];
+      "Mod+W".action.toggle-column-tabbed-display = [ ];
+
+      "Print".action.screenshot = [ ];
+      "Ctrl+Print".action.screenshot-screen = [ ];
+      "Alt+Print".action.screenshot-window = [ ];
+      "Mod+S".action.screenshot = [ ];
+
+      "Mod+Escape".allow-inhibiting = false;
+      "Mod+Escape".action.toggle-keyboard-shortcuts-inhibit = [ ];
+      "Mod+Shift+E".action.quit = [ ];
+      "Ctrl+Alt+Delete".action.quit = [ ];
+      "Mod+Shift+P".action.power-off-monitors = [ ];
+    };
+
+    window-rules = [
+      {
+        clip-to-geometry = true;
+        draw-border-with-background = false;
+        geometry-corner-radius = {
+          top-left = 12.0;
+          top-right = 12.0;
+          bottom-right = 12.0;
+          bottom-left = 12.0;
+        };
+      }
+      {
+        matches = [
+          { app-id = "pavucontrol"; }
+          { app-id = "pwvucontrol"; }
+          { app-id = "blueman-manager"; }
+          { app-id = "nm-connection-editor"; }
+        ];
+        open-floating = true;
+      }
+      {
+        matches = [ { title = "^Picture-in-Picture$"; } ];
+        open-floating = true;
+      }
+    ];
+  };
+
+  services.hyprpaper.enable = lib.mkForce false;
+
   # ===================
   # Hyprlock Configuration
   # ===================
@@ -297,7 +553,7 @@ in
       general = {
         hide_cursor = true;
         # Note: grace and disable_loading_bar removed in hyprlock v0.9.x
-        # grace is now a CLI flag (--grace), set in hypridle lock_cmd
+        # grace is now a CLI flag (--grace), set in keybinds and swayidle commands
       };
 
       background = [
@@ -378,29 +634,25 @@ in
   };
 
   # ===================
-  # Hypridle Configuration
+  # Swayidle Configuration
   # ===================
-  services.hypridle = {
+  services.swayidle = {
     enable = true;
-    settings = {
-      general = {
-        lock_cmd = "pidof hyprlock || hyprlock --grace 3";
-        before_sleep_cmd = "loginctl lock-session";
-        after_sleep_cmd = "hyprctl dispatch dpms on";
-      };
-      listener = [
-        {
-          timeout = 1800; # 30 min - lock
-          on-timeout = "loginctl lock-session";
-        }
-        {
-          # 60 min - display off via compositor DPMS
-          timeout = 3600;
-          on-timeout = "hyprctl dispatch dpms off";
-          on-resume = "hyprctl dispatch dpms on";
-        }
-      ];
+    events = {
+      before-sleep = "${pkgs.procps}/bin/pidof hyprlock || ${pkgs.hyprlock}/bin/hyprlock";
+      lock = "${pkgs.procps}/bin/pidof hyprlock || ${pkgs.hyprlock}/bin/hyprlock";
     };
+    timeouts = [
+      {
+        timeout = 1800;
+        command = "${pkgs.systemd}/bin/loginctl lock-session";
+      }
+      {
+        timeout = 3600;
+        command = "${config.programs.niri.package}/bin/niri msg action power-off-monitors";
+        resumeCommand = "${config.programs.niri.package}/bin/niri msg action power-on-monitors";
+      }
+    ];
   };
 
   # ===================
@@ -431,6 +683,16 @@ in
       fit-to-screen = true;
       control-center-width = 400;
       notification-window-width = 400;
+      widgets = [
+        "title"
+        "dnd"
+        "notifications"
+      ];
+      widget-config = {
+        title = { };
+        dnd = { };
+        notifications = { };
+      };
       keyboard-shortcuts = true;
       image-visibility = "when-available";
       transition-time = 200;
@@ -538,8 +800,8 @@ in
         spacing = 0;
 
         modules-left = [
-          "hyprland/workspaces"
-          "hyprland/window"
+          "niri/workspaces"
+          "niri/window"
         ];
         modules-center = [ "clock" ];
         modules-right = [
@@ -552,13 +814,13 @@ in
           "custom/gpu"
         ];
 
-        "hyprland/workspaces" = {
-          format = "{name}";
+        "niri/workspaces" = {
+          format = "{index}";
           on-click = "activate";
           sort-by-number = true;
         };
 
-        "hyprland/window" = {
+        "niri/window" = {
           max-length = 50;
         };
 
@@ -1112,6 +1374,11 @@ in
     };
   };
 
+  systemd.user.services.walker.Service.Environment = [
+    "GDK_BACKEND=wayland"
+    "GSK_RENDERER=ngl"
+  ];
+
   # ===================
   # Terminal: Ghostty (theming/fonts handled by Stylix)
   # ===================
@@ -1379,7 +1646,7 @@ in
   # ===================
   home.packages = with pkgs; [
     # Browser
-    inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default
+    inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # Development
     lazygit
@@ -1434,9 +1701,9 @@ in
     mimeApps = {
       enable = true;
       defaultApplications = {
-        "text/html" = "zen.desktop";
-        "x-scheme-handler/http" = "zen.desktop";
-        "x-scheme-handler/https" = "zen.desktop";
+        "text/html" = "helium.desktop";
+        "x-scheme-handler/http" = "helium.desktop";
+        "x-scheme-handler/https" = "helium.desktop";
         "image/png" = "imv.desktop";
         "image/jpeg" = "imv.desktop";
         "video/mp4" = "mpv.desktop";
@@ -1445,7 +1712,7 @@ in
       };
     };
     desktopEntries = {
-      helix = {
+      "Helix" = {
         name = "Helix";
         genericName = "Text Editor";
         comment = "A post-modern text editor";
@@ -1463,6 +1730,22 @@ in
           "text/markdown"
           "application/x-shellscript"
         ];
+      };
+      "org.gnome.Nautilus" = {
+        name = "Files";
+        genericName = "File Manager";
+        comment = "Access and organize files";
+        exec = "nautilus --new-window %U";
+        icon = "org.gnome.Nautilus";
+        terminal = false;
+        categories = [
+          "GNOME"
+          "GTK"
+          "Utility"
+          "Core"
+          "FileManager"
+        ];
+        mimeType = [ "inode/directory" ];
       };
       "org.jellyfin.JellyfinDesktop" = {
         name = "Jellyfin Media Player";
@@ -1498,7 +1781,7 @@ in
       };
       logout = {
         name = "Logout";
-        exec = "hyprctl dispatch exit";
+        exec = "niri msg action quit";
         icon = "system-log-out";
         comment = "End session and logout";
         terminal = false;
@@ -1506,7 +1789,7 @@ in
       };
       reboot = {
         name = "Reboot";
-        exec = "systemctl reboot";
+        exec = "pkexec systemctl reboot";
         icon = "system-reboot";
         comment = "Restart the system";
         terminal = false;
@@ -1514,7 +1797,7 @@ in
       };
       shutdown = {
         name = "Shutdown";
-        exec = "systemctl poweroff";
+        exec = "pkexec systemctl poweroff";
         icon = "system-shutdown";
         comment = "Power off the system";
         terminal = false;

@@ -1,5 +1,10 @@
 # Gaming configuration with Steam, Gamescope, and related tools
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Enable Steam
@@ -7,7 +12,6 @@
     enable = true;
     remotePlay.openFirewall = true;
     dedicatedServer.openFirewall = true;
-    gamescopeSession.enable = true;
   };
 
   # Gamescope compositor for gaming
@@ -49,7 +53,13 @@
 
   # Open firewall for Steam
   networking.firewall = {
-    allowedTCPPorts = [ 27036 27037 ];
-    allowedUDPPorts = [ 27031 27036 ];
+    allowedTCPPorts = [
+      27036
+      27037
+    ];
+    allowedUDPPorts = [
+      27031
+      27036
+    ];
   };
 }

@@ -1,6 +1,11 @@
 # Core system configuration
 # Networking, security, locale, and system essentials
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # ===================
@@ -132,6 +137,7 @@
 
   # D-Bus
   services.dbus.enable = true;
+  services.dbus.implementation = "broker";
 
   # UPower for power management info
   services.upower.enable = true;
@@ -248,7 +254,7 @@
   environment.variables = {
     EDITOR = "hx";
     VISUAL = "hx";
-    BROWSER = "zen";
+    BROWSER = "helium";
   };
 
   # Enable man pages

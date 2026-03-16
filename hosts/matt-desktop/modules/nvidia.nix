@@ -1,6 +1,11 @@
-# Nvidia GPU configuration for Wayland/Hyprland
+# Nvidia GPU configuration for Wayland
 # Best practices for 2024/2025 with explicit sync support
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Load nvidia driver for Xorg and Wayland
@@ -32,7 +37,10 @@
   # Required because NVIDIA's DPMS path is unreliable under Wayland
   hardware.i2c.enable = true;
 
-  boot.kernelModules = [ "i2c-dev" "i2c-nvidia-gpu" ];
+  boot.kernelModules = [
+    "i2c-dev"
+    "i2c-nvidia-gpu"
+  ];
 
   hardware.nvidia = {
     # Modesetting is required for Wayland
@@ -64,6 +72,6 @@
     libva-utils
     vulkan-tools
     mesa-demos
-    ddcutil  # Direct monitor control via DDC/CI (used by hypridle)
+    ddcutil # Direct monitor control via DDC/CI for monitor power management
   ];
 }

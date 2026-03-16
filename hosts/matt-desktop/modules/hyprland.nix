@@ -1,21 +1,13 @@
-# Hyprland desktop environment with UWSM session management
-{ config, lib, pkgs, ... }:
+# Shared desktop services and greetd configuration
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
-  # Enable Hyprland with UWSM for proper systemd integration
-  programs.hyprland = {
-    enable = true;
-    withUWSM = true;
-    xwayland.enable = true;
-  };
-
-  # XDG portal for screen sharing, file dialogs, etc.
-  xdg.portal = {
-    enable = true;
-    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-  };
-
-  # Login manager: greetd with tuigreet (launches UWSM session)
+  # Login manager: greetd with tuigreet
   services.greetd = {
     enable = true;
     useTextGreeter = true;
@@ -35,7 +27,7 @@
   security.pam.services.greetd.enableGnomeKeyring = true;
 
   # PAM service for hyprlock (required for authentication)
-  security.pam.services.hyprlock = {};
+  security.pam.services.hyprlock = { };
 
   # Audio via PipeWire
   services.pipewire = {
@@ -71,9 +63,8 @@
     # Notifications
     libnotify
 
-    # Lock screen and idle
+    # Lock screen
     hyprlock
-    hypridle
 
     # Polkit agent
     polkit_gnome
