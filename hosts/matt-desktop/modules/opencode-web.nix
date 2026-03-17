@@ -10,7 +10,10 @@ in
 {
   # Secret for HTTP basic auth
   age.secrets.opencode-server-password = {
-    file = ../../secrets/opencode-server-password.age;
+    file = ../../../secrets/opencode-server-password.age;
+    owner = "matt";
+    group = "users";
+  };
     owner = "matt";
     group = "users";
   };
