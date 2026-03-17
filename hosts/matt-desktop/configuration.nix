@@ -295,6 +295,109 @@
   # Fix Tailscale TPM issue after BIOS updates
   systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
 
+  # Evdev-based idle tracker (system service for proper input device access)
+  # WORKAROUND: See detailed comment in home.nix
+  systemd.services.evdev-idle-daemon = {
+    description = "Evdev-based idle tracker (workaround for Smithay idle bug)";
+    wantedBy = [ "graphical.target" ];
+    after = [ "display-manager.service" ];
+    serviceConfig = {
+      Type = "simple";
+      User = "matt";
+      Group = "users";
+      SupplementaryGroups = [ "input" ];
+      ExecStart = pkgs.writeShellScript "evdev-idle-daemon" ''
+        #!/usr/bin/env bash
+        # Evdev idle tracker - monitors input devices directly
+        
+        LOCK_TIMEOUT=1800000     # 30 minutes in ms
+        DISPLAY_TIMEOUT=3600000  # 60 minutes in ms
+        
+        last_activity=$(date +%s%3N)
+        state="active"  # active -> locked -> display_off
+        
+        # Find keyboard and mouse input devices
+        input_devices=$(find /dev/input -name 'event*' -readable 2>/dev/null | head -20)
+        
+        if [ -z "$input_devices" ]; then
+          echo "No input devices found, exiting"
+          exit 1
+        fi
+        
+        echo "Monitoring input devices: $input_devices"
+        
+        # Background process to update last_activity on input
+        for dev in $input_devices; do
+          ${pkgs.stdenv.shell} -c "
+            while ${pkgs.coreutils}/bin/true; do
+              if ${pkgs.coreutils}/bin/dd if=$dev bs=24 count=1 2>/dev/null | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.gnugrep}/bin/grep -q .; then
+                echo 'ACTIVITY' > /tmp/evdev-idle-activity
+              fi
+            done
+          " &
+        done
+        
+        while true; do
+          now=$(date +%s%3N)
+          idle_time=$((now - last_activity))
+          
+          # Check for activity from background monitors
+          if [ -f /tmp/evdev-idle-activity ]; then
+            rm -f /tmp/evdev-idle-activity
+            
+            # Wake display if it was off
+            if [ \"\$state\" = \"display_off\" ]; then
+              runtime_dir=\"/run/user/1000\"  # Hardcoded UID for matt"
+              for sock in \"\$runtime_dir\"/niri.*.sock; do
+                [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-on-monitors 2>/dev/null && break
+              done
+            fi
+            
+            last_activity=$now
+            state="active"
+          fi
+          
+          case \"\$state\" in
+            active)
+              if [ $idle_time -ge $DISPLAY_TIMEOUT ]; then
+                # 60 min: power off display
+                runtime_dir=\"/run/user/1000\""
+                for sock in \"\$runtime_dir\"/niri.*.sock; do
+                  [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-off-monitors 2>/dev/null && break
+                done
+                state="display_off"
+              elif [ $idle_time -ge $LOCK_TIMEOUT ]; then
+                # 30 min: lock session with hyprlock
+                export XDG_RUNTIME_DIR="/run/user/1000"
+                export WAYLAND_DISPLAY="wayland-1"
+                ${pkgs.hyprlock}/bin/hyprlock 2>/dev/null &
+                state="locked"
+              fi
+              ;;
+            locked)
+              if [ $idle_time -ge $DISPLAY_TIMEOUT ]; then
+                # 60 min: power off display
+                runtime_dir=\"/run/user/1000\""
+                for sock in \"\$runtime_dir\"/niri.*.sock; do
+                  [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-off-monitors 2>/dev/null && break
+                done
+                state="display_off"
+              fi
+              ;;
+            display_off)
+              # Just wait for activity (handled above)
+              ;;
+          esac
+          
+          # Check every 5 seconds
+          ${pkgs.coreutils}/bin/sleep 5
+        done
+      '';
+      Restart = "always";
+      RestartSec = 5;
+    };
+  };
+
   # Btrfs snapshot management for /home
   # Snapshots accessible at /btr_pool/@snapshots/@home.<date>
   services.btrbk.instances.home = {

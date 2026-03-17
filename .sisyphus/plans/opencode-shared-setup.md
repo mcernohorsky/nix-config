@@ -897,7 +897,7 @@ Max Concurrent: 5
 
   **Commit**: NO
 
-- [ ] 12. Run desktop remote-access smoke checks and capture evidence
+- [x] 12. Run desktop remote-access smoke checks and capture evidence
 
   **What to do**:
   - Verify the deployed desktop web UI end-to-end: service up, localhost auth challenge, Serve status, tailnet HTTPS reachability, and operator command usability.
@@ -974,7 +974,7 @@ Max Concurrent: 5
 - [x] F2. **Code Quality Review** - `unspecified-high`
   Run `nix build .#darwinConfigurations.macbook-pro-m2.system`, `nix build .#nixosConfigurations.matt-desktop.config.system.build.toplevel`, and `nix flake check`. Review for dead paths, stale plugin-pin references, accidental hardcoded macOS paths in shared code, and secret leakage.
 
-- [ ] F3. **Real Manual QA** - `unspecified-high`
+- [x] F3. **Real Manual QA** - `unspecified-high`
   Replay every QA scenario from T1-T12, collect evidence into `.sisyphus/evidence/final-qa/`, and verify the desktop web path works with Tailscale Serve and password protection.
 
 - [x] F4. **Scope Fidelity Check** - `deep`

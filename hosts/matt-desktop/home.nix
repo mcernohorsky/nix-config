@@ -640,26 +640,27 @@ in
   };
 
   # ===================
-  # Swayidle Configuration
+  # Idle Management (evdev-based workaround for Smithay idle bug)
   # ===================
-  services.swayidle = {
-    enable = true;
-    events = {
-      before-sleep = "${pkgs.procps}/bin/pidof hyprlock || ${pkgs.hyprlock}/bin/hyprlock";
-      lock = "${pkgs.procps}/bin/pidof hyprlock || ${pkgs.hyprlock}/bin/hyprlock";
-    };
-    timeouts = [
-      {
-        timeout = 1800;
-        command = "${pkgs.systemd}/bin/loginctl lock-session";
-      }
-      {
-        timeout = 3600;
-        command = "${pkgs.bash}/bin/bash -lc 'runtime_dir=\"\${XDG_RUNTIME_DIR:-/run/user/$(id -u)}\"; set -- \"$runtime_dir\"/niri.*.sock; [ -e \"$1\" ] && NIRI_SOCKET=\"$1\" ${config.programs.niri.package}/bin/niri msg action power-off-monitors || true'";
-        resumeCommand = "${pkgs.bash}/bin/bash -lc 'runtime_dir=\"\${XDG_RUNTIME_DIR:-/run/user/$(id -u)}\"; set -- \"$runtime_dir\"/niri.*.sock; [ -e \"$1\" ] && NIRI_SOCKET=\"$1\" ${config.programs.niri.package}/bin/niri msg action power-on-monitors || true'";
-      }
-    ];
-  };
+  # WORKAROUND: Smithay/niri's ext_idle_notifier_v1 implementation has a bug where
+  # 'resumed' events are not reliably sent after 'idled' events (Smithay #1892, Niri #3136).
+  # This breaks standard Wayland idle daemons like swayidle. Until upstream fixes this,
+  # we use a custom evdev-based idle tracker that reads input events directly from
+  # /dev/input/event* devices, bypassing the broken Wayland idle protocol entirely.
+  #
+  # Once niri/Smithay fixes the idle-notify protocol, this can be replaced with:
+  #   services.swayidle = { enable = true; timeouts = [ ... ]; };
+  #
+  # Behavior:
+  #   - 30 min idle: lock session (hyprlock)
+  #   - 60 min idle: power off monitor (niri msg action power-off-monitors)
+  #   - On input after 60 min: power on monitor, return to lock screen
+  #
+  # NOTE: The evdev-idle-daemon is defined in configuration.nix as a system service
+  # for proper input device permissions. This home.nix config just disables swayidle
+  # to avoid conflicts.
+  services.swayidle.enable = lib.mkForce false;
+
 
   # ===================
   # SwayOSD (on-screen display for volume/brightness)

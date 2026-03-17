@@ -43,7 +43,7 @@ in
       default = {
         auto_update = false;
         auto_commit = false;
-        hashline_edit = true;
+        model_fallback = true;
         runtime_fallback = true;
         disabledHooks = [ "auto-update-checker" ];
         disabled_mcps = [ ];
