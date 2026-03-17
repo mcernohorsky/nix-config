@@ -544,3 +544,87 @@ bunInstallFlags = "--linker=isolated --backend=copyfile";
 ```
 
 **Note**: Use `bunInstallFlags` (string) not `bunInstallFlagsArray` (Nix list). The hook's `concatTo` function doesn't properly handle Nix lists.
+
+---
+
+## Desktop OpenCode Web Service
+
+The `matt-desktop` host runs an always-on OpenCode web UI, accessible via Tailscale from any device on the tailnet.
+
+### Access
+
+- **URL**: `https://matt-desktop.tailc41cf5.ts.net`
+- **Local**: `http://127.0.0.1:4097` (on matt-desktop only)
+
+### One-Time Auth Bootstrap
+
+After the first deployment, you need to authenticate OpenCode:
+
+```bash
+ssh matt@matt-desktop.tailc41cf5.ts.net
+opencode auth login
+```
+
+Follow the prompts to authenticate with your preferred provider.
+
+### Service Management
+
+Use the `justfile` commands to manage the service:
+
+```bash
+# Check service status and Tailscale Serve config
+just desktop-opencode-status
+
+# View logs
+just desktop-opencode-logs
+
+# Restart both services
+just desktop-opencode-restart
+
+# Reset Tailscale Serve config
+just desktop-opencode-reset-serve
+```
+
+### Architecture
+
+- **Service**: `opencode-web.service` - Runs `opencode web --hostname 127.0.0.1 --port 4097`
+- **Tailscale Serve**: `opencode-web-serve.service` - Publishes localhost:4097 to the tailnet
+- **Auth**: HTTP Basic Auth via `OPENCODE_SERVER_PASSWORD` (managed by agenix)
+- **Working Directory**: `/home/matt/Developer`
+
+### Security
+
+- The service binds only to `127.0.0.1:4097` (localhost)
+- Tailscale Serve proxies requests from the tailnet
+- No firewall rules are opened for the OpenCode port
+- HTTP Basic Auth provides defense-in-depth
+
+### Deferred UI Evaluation
+
+> **Note**: Alternative mobile UIs (Portal, OpenChamber, etc.) are explicitly deferred until after the first shared setup works. The current implementation uses the default OpenCode web UI.
+
+Future evaluation may include:
+- Portal (mobile-first web UI)
+- OpenChamber
+- Other mobile-specific clients
+
+### Troubleshooting
+
+**Service not starting**:
+```bash
+ssh matt@matt-desktop.tailc41cf5.ts.net
+sudo systemctl status opencode-web
+sudo journalctl -u opencode-web -n 50
+```
+
+**Tailscale Serve not configured**:
+```bash
+ssh matt@matt-desktop.tailc41cf5.ts.net
+sudo systemctl status opencode-web-serve
+tailscale serve status
+```
+
+**Cannot access from iPhone**:
+1. Ensure Tailscale is running on iPhone
+2. Verify you're connected to the same tailnet
+3. Check `https://matt-desktop.tailc41cf5.ts.net` in Safari

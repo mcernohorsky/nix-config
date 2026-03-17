@@ -152,3 +152,28 @@ portal-restart:
 portal-reset-serve:
     tailscale serve reset
     tailscale serve --bg http://127.0.0.1:3000
+
+# Desktop OpenCode web service commands
+# Access from iPhone: https://matt-desktop.tailc41cf5.ts.net
+
+# Check Desktop OpenCode web service status
+desktop-opencode-status:
+    @echo "Desktop OpenCode web service:"
+    @ssh matt@{{desktop_host}} "systemctl status opencode-web --no-pager"
+    @echo ""
+    @echo "Tailscale Serve config:"
+    @ssh matt@{{desktop_host}} "tailscale serve status"
+
+# View Desktop OpenCode web service logs
+desktop-opencode-logs:
+    @ssh matt@{{desktop_host}} "journalctl -u opencode-web -f"
+
+# Restart Desktop OpenCode web service
+desktop-opencode-restart:
+    @ssh matt@{{desktop_host}} "sudo systemctl restart opencode-web opencode-web-serve"
+    @echo "✅ Restarted opencode-web and opencode-web-serve services"
+
+# Reset Desktop Tailscale Serve config
+desktop-opencode-reset-serve:
+    @ssh matt@{{desktop_host}} "tailscale serve reset && tailscale serve --bg http://127.0.0.1:4097"
+    @echo "✅ Reset Tailscale Serve to proxy to localhost:4097"

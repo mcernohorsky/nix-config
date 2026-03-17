@@ -1,17 +1,15 @@
 {
   pkgs,
   inputs,
-  config,
-  lib,
   ...
 }:
-let
-  opencode-plugins = builtins.fromJSON (builtins.readFile ./opencode-plugins.json);
-in
 {
   imports = [
+    ../../../modules/home/opencode-core.nix
     ../modules/portal.nix
   ];
+
+  modules.home.opencodeCore.enable = true;
 
   # Portal - Mobile-first web UI for OpenCode
   # Access from iPhone: https://macbook-pro-m2.tailc41cf5.ts.net
@@ -53,221 +51,6 @@ in
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
 
-      # OpenCode Core Configuration - Model and provider preferences (with fallbacks enabled)
-      ".config/opencode/config.json".text = builtins.toJSON {
-        model = "openrouter/moonshotai/kimi-k2.5";
-        provider = {
-          openrouter = {
-            models = {
-              "moonshotai/kimi-k2.5" = {
-                options = {
-                  provider = {
-                    only = [ "fireworks" ];
-                    allow_fallbacks = false;
-                  };
-                };
-              };
-            };
-          };
-        };
-      };
-
-      # Oh My OpenCode Configuration
-      # OpenAI handles most high-value GPT work, OpenCode Go handles cheap utility work,
-      # and GitHub Copilot provides selected Claude/Gemini fallbacks where they are strongest.
-      ".config/opencode/oh-my-opencode.json".text = builtins.toJSON {
-        auto_update = false; # Disable plugin self-update (use bun update in ~/.cache/opencode/)
-        auto_commit = false; # Agents only commit when explicitly asked (v3.11 default)
-        hashline_edit = true; # Hash-anchored edits for safer file modifications (v3.10)
-        runtime_fallback = true;
-        disabledHooks = [ "auto-update-checker" ]; # Prevents EROFS errors from config writes
-        disabled_mcps = [ ]; # websearch_exa re-enabled for research capabilities
-        disabled_skills = [ "playwright" ];
-
-        # Agent model assignments — tuned from OMO defaults plus local subscription constraints.
-        agents = {
-          # Orchestrators and planners
-          Sisyphus = {
-            model = "openai/gpt-5.4";
-            variant = "medium";
-            fallback_models = [
-              "github-copilot/claude-sonnet-4.6"
-              "opencode-go/kimi-k2.5"
-            ];
-            ultrawork = {
-              model = "github-copilot/claude-opus-4.6";
-              variant = "thinking";
-            };
-          };
-          prometheus = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
-            ];
-          };
-          metis = {
-            model = "github-copilot/claude-opus-4.6";
-            variant = "max";
-            fallback_models = [
-              "opencode-go/glm-5"
-              "openai/gpt-5.4"
-            ];
-          };
-          atlas = {
-            model = "opencode-go/glm-5";
-            fallback_models = [
-              "github-copilot/claude-sonnet-4.6"
-              "openai/gpt-5.4"
-            ];
-          };
-
-          # Specialists — GPT via OpenAI
-          oracle = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/gemini-3.1-pro-preview"
-              "opencode-go/glm-5"
-            ];
-          };
-          momus = {
-            model = "openai/gpt-5.4";
-            variant = "xhigh";
-            fallback_models = [
-              "github-copilot/gemini-3.1-pro-preview"
-              "opencode-go/glm-5"
-            ];
-          };
-          # Hephaestus — autonomous deep worker, Codex remains the default lane
-          hephaestus = {
-            model = "openai/gpt-5.3-codex";
-            variant = "medium";
-            fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
-            ];
-          };
-
-          # Visual/creative — Copilot Gemini/Claude where they remain strongest.
-          frontend-ui-ux-engineer = {
-            model = "github-copilot/claude-sonnet-4.6";
-            fallback_models = [
-              "opencode-go/kimi-k2.5"
-              "openai/gpt-5.4"
-            ];
-          };
-
-          document-writer = {
-            model = "opencode-go/minimax-m2.5";
-            fallback_models = [
-              "opencode/minimax-m2.5-free"
-              "opencode/nemotron-3-super-free"
-              "github-copilot/gemini-3-flash-preview"
-            ];
-          };
-
-          # Utility runners — MiniMax for cheap speed, Kimi for multimodal support
-          explore = {
-            model = "opencode-go/minimax-m2.5";
-            fallback_models = [
-              "opencode/minimax-m2.5-free"
-              "opencode/nemotron-3-super-free"
-              "github-copilot/gemini-3-flash-preview"
-            ];
-          };
-          librarian = {
-            model = "opencode-go/minimax-m2.5";
-            fallback_models = [
-              "opencode/minimax-m2.5-free"
-              "opencode/nemotron-3-super-free"
-              "github-copilot/gemini-3-flash-preview"
-            ];
-          };
-          multimodal-looker = {
-            model = "openai/gpt-5.4";
-            variant = "medium";
-            fallback_models = [ "opencode-go/kimi-k2.5" ];
-          };
-        };
-
-        # Category model defaults — used when agents delegate tasks
-        categories = {
-          quick = {
-            model = "opencode-go/minimax-m2.5";
-            fallback_models = [
-              "opencode/minimax-m2.5-free"
-              "opencode/nemotron-3-super-free"
-            ];
-          };
-          visual-engineering = {
-            model = "github-copilot/gemini-3.1-pro-preview";
-            fallback_models = [
-              "openai/gpt-5.4"
-              "opencode-go/glm-5"
-            ];
-          };
-          artistry = {
-            model = "github-copilot/gemini-3.1-pro-preview";
-            fallback_models = [ "openai/gpt-5.4" ];
-          };
-          writing = {
-            model = "github-copilot/gemini-3-flash-preview";
-            fallback_models = [
-              "opencode-go/glm-5"
-              "openai/gpt-5.4"
-            ];
-          };
-          unspecified-low = {
-            model = "openai/gpt-5.4";
-            variant = "low";
-            fallback_models = [
-              "opencode-go/kimi-k2.5"
-              "github-copilot/gemini-3-flash-preview"
-              "opencode/minimax-m2.5-free"
-            ];
-          };
-          unspecified-high = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
-            ];
-          };
-          ultrabrain = {
-            model = "openai/gpt-5.4";
-            variant = "xhigh";
-            fallback_models = [
-              "github-copilot/gemini-3.1-pro-preview"
-              "github-copilot/claude-opus-4.6"
-            ];
-          };
-          deep = {
-            model = "openai/gpt-5.3-codex";
-            variant = "medium";
-            fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
-            ];
-          };
-        };
-
-        # Concurrency limits — prevent runaway parallel requests
-        background_task = {
-          providerConcurrency = {
-            github-copilot = 3;
-            openai = 3;
-            opencode = 10;
-            "opencode-go" = 10;
-          };
-          modelConcurrency = {
-            "github-copilot/claude-opus-4.6" = 2;
-            "openai/gpt-5.4" = 2;
-          };
-        };
-      };
     };
 
     packages = with pkgs; [
@@ -512,21 +295,5 @@ in
       enable = true;
     };
 
-    # AI coding assistant - binary from llm-agents.nix, plugins auto-install to ~/.cache/opencode/
-    # Update binary: nix flake update llm-agents && darwin-rebuild switch
-    # Update plugins: just update-plugins && darwin-rebuild switch
-    # Auth tokens: ~/.local/share/opencode/auth.json (run `opencode auth login`)
-    opencode = {
-      enable = true;
-      package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode;
-      settings = {
-        autoupdate = false; # Prevent binary self-update (managed by nix flake update)
-        small_model = "opencode-go/minimax-m2.5";
-        plugin = [
-          "oh-my-opencode@${opencode-plugins.oh-my-opencode}"
-          "opencode-quotas@${opencode-plugins.opencode-quotas}"
-        ];
-      };
-    };
   };
 }

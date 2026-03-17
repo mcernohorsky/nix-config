@@ -18,6 +18,12 @@ let
 
 in
 {
+  imports = [
+    ../../modules/home/opencode-core.nix
+  ];
+
+  modules.home.opencodeCore.enable = true;
+
   home.username = "matt";
   home.homeDirectory = "/home/matt";
   home.stateVersion = "25.05";
@@ -1653,6 +1659,7 @@ in
     gh
     jq
     yq
+    opencode-desktop
 
     # System info
     fastfetch

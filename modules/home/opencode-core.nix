@@ -10,6 +10,7 @@ let
     mkEnableOption
     mkIf
     mkOption
+    optionalAttrs
     types
     ;
   cfg = config.modules.home.opencodeCore;
@@ -27,26 +28,13 @@ in
 
     model = mkOption {
       type = types.str;
-      default = "openrouter/moonshotai/kimi-k2.5";
+      default = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
       description = "Default OpenCode model written to config.json.";
     };
 
     provider = mkOption {
       type = types.attrs;
-      default = {
-        openrouter = {
-          models = {
-            "moonshotai/kimi-k2.5" = {
-              options = {
-                provider = {
-                  only = [ "fireworks" ];
-                  allow_fallbacks = false;
-                };
-              };
-            };
-          };
-        };
-      };
+      default = { };
       description = "Provider configuration written to config.json.";
     };
 
@@ -129,22 +117,16 @@ in
             ];
           };
           document-writer = {
-            model = "openrouter/moonshotai/kimi-k2.5";
-            fallback_models = [
-              "opencode-go/kimi-k2.5"
-            ];
+            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
+            fallback_models = [ "opencode-go/kimi-k2.5" ];
           };
           explore = {
-            model = "openrouter/moonshotai/kimi-k2.5";
-            fallback_models = [
-              "opencode-go/kimi-k2.5"
-            ];
+            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
+            fallback_models = [ "opencode-go/kimi-k2.5" ];
           };
           librarian = {
-            model = "openrouter/moonshotai/kimi-k2.5";
-            fallback_models = [
-              "opencode-go/kimi-k2.5"
-            ];
+            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
+            fallback_models = [ "opencode-go/kimi-k2.5" ];
           };
           multimodal-looker = {
             model = "openai/gpt-5.4";
@@ -155,10 +137,8 @@ in
 
         categories = {
           quick = {
-            model = "openrouter/moonshotai/kimi-k2.5";
-            fallback_models = [
-              "opencode-go/kimi-k2.5"
-            ];
+            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
+            fallback_models = [ "opencode-go/kimi-k2.5" ];
           };
           visual-engineering = {
             model = "github-copilot/gemini-3.1-pro-preview";
@@ -182,7 +162,7 @@ in
             model = "openai/gpt-5.4";
             variant = "low";
             fallback_models = [
-              "openrouter/moonshotai/kimi-k2.5"
+              "fireworks-ai/accounts/fireworks/models/kimi-k2p5"
               "github-copilot/gemini-3-flash-preview"
             ];
           };
@@ -263,10 +243,14 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.file.".config/opencode/config.json".text = builtins.toJSON {
-      model = cfg.model;
-      provider = cfg.provider;
-    };
+    home.file.".config/opencode/config.json".text = builtins.toJSON (
+      {
+        model = cfg.model;
+      }
+      // optionalAttrs (cfg.provider != { }) {
+        provider = cfg.provider;
+      }
+    );
 
     home.file.".config/opencode/oh-my-opencode.json".text = builtins.toJSON cfg.ohMyOpenCode;
 

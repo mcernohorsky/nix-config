@@ -13,6 +13,7 @@
     ./modules/hyprland.nix
     ./modules/gaming.nix
     ./modules/media.nix
+    ./modules/opencode-web.nix
     ./modules/niri.nix
   ];
 

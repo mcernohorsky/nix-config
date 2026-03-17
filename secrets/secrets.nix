@@ -32,4 +32,7 @@ in
 
   # PocketBase superuser password for repertoire-builder
   "pocketbase-superuser.age".publicKeys = all;
+
+  # OpenCode web server password (HTTP basic auth for matt-desktop)
+  "opencode-server-password.age".publicKeys = all;
 }

@@ -82,6 +82,7 @@
       "keka"
       "magicavoxel"
       "monodraw"
+      "opencode-desktop"
       "orbstack"
       "obsidian"
       "qbittorrent"
