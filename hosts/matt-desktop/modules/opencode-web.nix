@@ -14,9 +14,6 @@ in
     owner = "matt";
     group = "users";
   };
-    owner = "matt";
-    group = "users";
-  };
 
   # Ensure working directory exists
   systemd.tmpfiles.rules = [
