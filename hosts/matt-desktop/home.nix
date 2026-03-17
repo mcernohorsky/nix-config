@@ -649,8 +649,8 @@ in
       }
       {
         timeout = 3600;
-        command = "${config.programs.niri.package}/bin/niri msg action power-off-monitors";
-        resumeCommand = "${config.programs.niri.package}/bin/niri msg action power-on-monitors";
+        command = "${pkgs.bash}/bin/bash -lc 'runtime_dir=\"\${XDG_RUNTIME_DIR:-/run/user/$(id -u)}\"; set -- \"$runtime_dir\"/niri.*.sock; [ -e \"$1\" ] && NIRI_SOCKET=\"$1\" ${config.programs.niri.package}/bin/niri msg action power-off-monitors || true'";
+        resumeCommand = "${pkgs.bash}/bin/bash -lc 'runtime_dir=\"\${XDG_RUNTIME_DIR:-/run/user/$(id -u)}\"; set -- \"$runtime_dir\"/niri.*.sock; [ -e \"$1\" ] && NIRI_SOCKET=\"$1\" ${config.programs.niri.package}/bin/niri msg action power-on-monitors || true'";
       }
     ];
   };
