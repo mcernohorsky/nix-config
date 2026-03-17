@@ -24,8 +24,8 @@ update-plugins:
     echo "opencode-quotas: $QUOTAS_VERSION"
     jq -n --arg omo "$OMO_VERSION" --arg quotas "$QUOTAS_VERSION" \
         '{"oh-my-opencode": $omo, "opencode-quotas": $quotas}' \
-        > hosts/macbook-pro-m2/home/opencode-plugins.json
-    echo "✅ Updated hosts/macbook-pro-m2/home/opencode-plugins.json"
+        > modules/home/opencode-plugins.json
+    echo "✅ Updated modules/home/opencode-plugins.json"
 
 # Update just the repertoire-builder input
 update-app:
