@@ -295,37 +295,44 @@
   # Fix Tailscale TPM issue after BIOS updates
   systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
 
-  # Evdev-based idle tracker (system service for proper input device access)
+  # Evdev-based idle tracker (user service for session environment inheritance)
   # WORKAROUND: See detailed comment in home.nix
-  systemd.services.evdev-idle-daemon = {
+  systemd.user.services.evdev-idle-daemon = {
     description = "Evdev-based idle tracker (workaround for Smithay idle bug)";
-    wantedBy = [ "graphical.target" ];
-    after = [ "display-manager.service" ];
+    wantedBy = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
     serviceConfig = {
       Type = "simple";
-      User = "matt";
-      Group = "users";
-      SupplementaryGroups = [ "input" ];
       ExecStart = pkgs.writeShellScript "evdev-idle-daemon" ''
         #!/usr/bin/env bash
         # Evdev idle tracker - monitors input devices directly
-        
+        # Runs as user service - inherits Niri session environment
+
         LOCK_TIMEOUT=1800000     # 30 minutes in ms
         DISPLAY_TIMEOUT=3600000  # 60 minutes in ms
-        
+
         last_activity=$(date +%s%3N)
         state="active"  # active -> locked -> display_off
-        
+
         # Find keyboard and mouse input devices
         input_devices=$(find /dev/input -name 'event*' -readable 2>/dev/null | head -20)
-        
+
         if [ -z "$input_devices" ]; then
           echo "No input devices found, exiting"
           exit 1
         fi
-        
-        echo "Monitoring input devices: $input_devices"
-        
+
+        echo "idle-daemon: starting with devices: $input_devices" | systemd-cat -t evdev-idle
+        echo "idle-daemon: inherited env NIRI_SOCKET=$NIRI_SOCKET" | systemd-cat -t evdev-idle
+
+        # Cleanup function for child processes
+        cleanup() {
+          echo "idle-daemon: shutting down, killing child processes" | systemd-cat -t evdev-idle
+          kill -- -$$ 2>/dev/null  # Kill entire process group
+        }
+        trap cleanup EXIT INT TERM
+
         # Background process to update last_activity on input
         for dev in $input_devices; do
           ${pkgs.stdenv.shell} -c "
@@ -336,7 +343,7 @@
             done
           " &
         done
-        
+
         while true; do
           now=$(date +%s%3N)
           idle_time=$((now - last_activity))
@@ -347,8 +354,8 @@
             
             # Wake display if it was off
             if [ \"\$state\" = \"display_off\" ]; then
-              runtime_dir=\"/run/user/1000\"  # Hardcoded UID for matt"
-              for sock in \"\$runtime_dir\"/niri.*.sock; do
+              echo "idle-daemon: activity detected, waking monitors" | systemd-cat -t evdev-idle
+              for sock in /run/user/1000/niri.*.sock; do
                 [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-on-monitors 2>/dev/null && break
               done
             fi
@@ -361,15 +368,16 @@
             active)
               if [ $idle_time -ge $DISPLAY_TIMEOUT ]; then
                 # 60 min: power off display
-                runtime_dir=\"/run/user/1000\""
-                for sock in \"\$runtime_dir\"/niri.*.sock; do
+                echo "idle-daemon: 60min idle, powering off monitors" | systemd-cat -t evdev-idle
+                echo "idle-daemon: NIRI_SOCKET=$NIRI_SOCKET" | systemd-cat -t evdev-idle
+                for sock in /run/user/1000/niri.*.sock; do
                   [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-off-monitors 2>/dev/null && break
                 done
                 state="display_off"
               elif [ $idle_time -ge $LOCK_TIMEOUT ]; then
                 # 30 min: lock session with hyprlock
-                export XDG_RUNTIME_DIR="/run/user/1000"
-                export WAYLAND_DISPLAY="wayland-1"
+                echo "idle-daemon: 30min idle, locking screen" | systemd-cat -t evdev-idle
+                echo "idle-daemon: WAYLAND_DISPLAY=$WAYLAND_DISPLAY" | systemd-cat -t evdev-idle
                 ${pkgs.hyprlock}/bin/hyprlock 2>/dev/null &
                 state="locked"
               fi
@@ -377,8 +385,8 @@
             locked)
               if [ $idle_time -ge $DISPLAY_TIMEOUT ]; then
                 # 60 min: power off display
-                runtime_dir=\"/run/user/1000\""
-                for sock in \"\$runtime_dir\"/niri.*.sock; do
+                echo "idle-daemon: 60min idle (locked), powering off monitors" | systemd-cat -t evdev-idle
+                for sock in /run/user/1000/niri.*.sock; do
                   [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-off-monitors 2>/dev/null && break
                 done
                 state="display_off"
@@ -395,6 +403,8 @@
       '';
       Restart = "always";
       RestartSec = 5;
+      # Ensure children are killed on restart
+      KillMode = "process";
     };
   };
 
