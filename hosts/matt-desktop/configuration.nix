@@ -309,8 +309,8 @@
         # Evdev idle tracker - monitors input devices directly
         # Runs as user service - inherits Niri session environment
 
-        LOCK_TIMEOUT=1800000     # 30 minutes in ms
-        DISPLAY_TIMEOUT=3600000  # 60 minutes in ms
+        LOCK_TIMEOUT=60000       # 1 minute in ms (TESTING: was 1800000)
+        DISPLAY_TIMEOUT=120000   # 2 minutes in ms (TESTING: was 3600000)
 
         last_activity=$(date +%s%3N)
         state="active"  # active -> locked -> display_off
