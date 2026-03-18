@@ -52,10 +52,10 @@ in
         agents = {
           Sisyphus = {
             model = "openai/gpt-5.4";
-            variant = "medium";
+            variant = "high";
             fallback_models = [
-              "github-copilot/claude-sonnet-4.6"
-              "opencode-go/kimi-k2.5"
+              "github-copilot/claude-opus-4.6"
+              "opencode-go/minimax-m2.7"
             ];
             ultrawork = {
               model = "github-copilot/claude-opus-4.6";
@@ -66,117 +66,101 @@ in
             model = "openai/gpt-5.4";
             variant = "high";
             fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
+              "opencode-go/minimax-m2.7"
             ];
           };
           metis = {
             model = "github-copilot/claude-opus-4.6";
             variant = "max";
             fallback_models = [
-              "opencode-go/glm-5"
-              "openai/gpt-5.4"
+              "opencode-go/minimax-m2.7"
             ];
           };
           atlas = {
-            model = "opencode-go/glm-5";
-            fallback_models = [
-              "github-copilot/claude-sonnet-4.6"
-              "openai/gpt-5.4"
-            ];
+            model = "opencode-go/minimax-m2.7";
           };
           oracle = {
             model = "openai/gpt-5.4";
             variant = "high";
             fallback_models = [
               "github-copilot/gemini-3.1-pro-preview"
-              "opencode-go/glm-5"
+              "opencode-go/minimax-m2.7"
             ];
           };
           momus = {
             model = "openai/gpt-5.4";
-            variant = "xhigh";
+            variant = "high";
             fallback_models = [
               "github-copilot/gemini-3.1-pro-preview"
-              "opencode-go/glm-5"
+              "opencode-go/minimax-m2.7"
             ];
           };
           hephaestus = {
             model = "openai/gpt-5.3-codex";
-            variant = "medium";
+            variant = "high";
             fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
+              "opencode-go/minimax-m2.7"
             ];
           };
           frontend-ui-ux-engineer = {
-            model = "github-copilot/claude-sonnet-4.6";
+            model = "github-copilot/claude-opus-4.6";
             fallback_models = [
-              "opencode-go/kimi-k2.5"
-              "openai/gpt-5.4"
+              "opencode-go/minimax-m2.7"
             ];
-          };
-          document-writer = {
-            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
-            fallback_models = [ "opencode-go/kimi-k2.5" ];
-          };
-          explore = {
-            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
-            fallback_models = [ "opencode-go/kimi-k2.5" ];
-          };
-          librarian = {
-            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
-            fallback_models = [ "opencode-go/kimi-k2.5" ];
           };
           multimodal-looker = {
             model = "openai/gpt-5.4";
             variant = "medium";
-            fallback_models = [ "opencode-go/kimi-k2.5" ];
+          };
+          document-writer = {
+            model = "opencode-go/minimax-m2.7";
+          };
+          explore = {
+            model = "opencode-go/minimax-m2.7";
+          };
+          librarian = {
+            model = "opencode-go/minimax-m2.7";
           };
         };
 
         categories = {
           quick = {
-            model = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
-            fallback_models = [ "opencode-go/kimi-k2.5" ];
+            model = "opencode-go/minimax-m2.7";
           };
           visual-engineering = {
             model = "github-copilot/gemini-3.1-pro-preview";
             fallback_models = [
-              "openai/gpt-5.4"
-              "opencode-go/glm-5"
+              "github-copilot/claude-opus-4.6"
+              "opencode-go/minimax-m2.7"
             ];
           };
           artistry = {
             model = "github-copilot/gemini-3.1-pro-preview";
-            fallback_models = [ "openai/gpt-5.4" ];
+            fallback_models = [
+              "github-copilot/claude-opus-4.6"
+              "opencode-go/minimax-m2.7"
+            ];
           };
           writing = {
             model = "github-copilot/gemini-3-flash-preview";
             fallback_models = [
-              "opencode-go/glm-5"
-              "openai/gpt-5.4"
+              "opencode-go/minimax-m2.7"
             ];
           };
           unspecified-low = {
-            model = "openai/gpt-5.4";
-            variant = "low";
-            fallback_models = [
-              "fireworks-ai/accounts/fireworks/models/kimi-k2p5"
-              "github-copilot/gemini-3-flash-preview"
-            ];
+            model = "opencode-go/minimax-m2.7";
           };
           unspecified-high = {
             model = "openai/gpt-5.4";
             variant = "high";
             fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
+              "github-copilot/claude-opus-4.6"
+              "opencode-go/minimax-m2.7"
             ];
           };
           ultrabrain = {
             model = "openai/gpt-5.4";
-            variant = "xhigh";
+            variant = "high";
             fallback_models = [
               "github-copilot/gemini-3.1-pro-preview"
               "github-copilot/claude-opus-4.6"
@@ -184,10 +168,10 @@ in
           };
           deep = {
             model = "openai/gpt-5.3-codex";
-            variant = "medium";
+            variant = "high";
             fallback_models = [
-              "opencode-go/glm-5"
-              "github-copilot/claude-sonnet-4.6"
+              "github-copilot/claude-opus-4.6"
+              "opencode-go/minimax-m2.7"
             ];
           };
         };
@@ -216,7 +200,7 @@ in
 
     smallModel = mkOption {
       type = types.str;
-      default = "opencode-go/minimax-m2.5";
+      default = "opencode-go/minimax-m2.7";
       description = "Model used for programs.opencode.settings.small_model.";
     };
 
