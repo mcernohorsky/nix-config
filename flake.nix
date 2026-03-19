@@ -160,7 +160,6 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              extraSpecialArgs = { inherit inputs; };
               users.matt = {
                 imports = [
                   ./hosts/matt-desktop/home.nix

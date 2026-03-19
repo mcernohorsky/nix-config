@@ -1,10 +1,24 @@
 {
   config,
   pkgs,
+  lib,
+  inputs,
   ...
 }:
 
+let
+  # Session locker: hyprlock (default) or swaylock (Gruvbox swaylock-effects experiment in home.nix).
+  # Switch to "swaylock" and `just deploy-desktop` to try the alternate design.
+  mattSessionLockVariant = "hyprlock";
+in
 {
+
+  # Home Manager + evdev-idle-daemon both read this (must stay in sync).
+  home-manager.extraSpecialArgs = {
+    inherit inputs;
+    inherit mattSessionLockVariant;
+  };
+
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
@@ -299,6 +313,17 @@
   # WORKAROUND: See detailed comment in home.nix
   systemd.user.services.evdev-idle-daemon =
     let
+      evdevLockPaths =
+        if mattSessionLockVariant == "swaylock" then
+          {
+            exe = "${pkgs.swaylock-effects}/bin/swaylock";
+            proc = "swaylock";
+          }
+        else
+          {
+            exe = "${pkgs.hyprlock}/bin/hyprlock";
+            proc = "hyprlock";
+          };
       evdev-idle-script =
         pkgs.writers.writePython3Bin "evdev-idle-daemon"
           {
@@ -326,14 +351,14 @@
 
             DEBUG = os.environ.get("EVDEV_IDLE_DEBUG", "0") == "1"
 
+            LOCK_EXE = os.environ["EVDEV_LOCK_EXE"]
+            LOCK_PROC_NAME = os.environ["EVDEV_LOCK_PROC"]
+            LOCK_CMD = [LOCK_EXE]
 
             def debug(msg):
                 if DEBUG:
                     print(f"evdev-idle: {msg}", flush=True)
 
-            # Hyprlock: run in foreground for explicit process tracking.
-            LOCK_CMD = ["${pkgs.hyprlock}/bin/hyprlock"]
-            LOCK_PROC_NAME = "hyprlock"
             NIRI_CMD = "${config.programs.niri.package}/bin/niri"
             LOGINCTL_CMD = "${pkgs.systemd}/bin/loginctl"
             PGREP_CMD = "${pkgs.procps}/bin/pgrep"
@@ -553,7 +578,11 @@
       serviceConfig = {
         Type = "simple";
         ExecStart = "${evdev-idle-script}/bin/evdev-idle-daemon";
-        Environment = [ "PYTHONUNBUFFERED=1" ];
+        Environment = [
+          "PYTHONUNBUFFERED=1"
+          "EVDEV_LOCK_EXE=${evdevLockPaths.exe}"
+          "EVDEV_LOCK_PROC=${evdevLockPaths.proc}"
+        ];
         StandardOutput = "journal";
         StandardError = "journal";
         Restart = "always";
