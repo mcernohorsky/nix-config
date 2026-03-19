@@ -6,17 +6,10 @@
   ...
 }:
 
-let
-  # Session locker: hyprlock (default) or swaylock (Gruvbox swaylock-effects experiment in home.nix).
-  # Switch to "swaylock" and `just deploy-desktop` to try the alternate design.
-  mattSessionLockVariant = "hyprlock";
-in
 {
 
-  # Home Manager + evdev-idle-daemon both read this (must stay in sync).
   home-manager.extraSpecialArgs = {
     inherit inputs;
-    inherit mattSessionLockVariant;
   };
 
   imports = [
@@ -313,17 +306,6 @@ in
   # WORKAROUND: See detailed comment in home.nix
   systemd.user.services.evdev-idle-daemon =
     let
-      evdevLockPaths =
-        if mattSessionLockVariant == "swaylock" then
-          {
-            exe = "${pkgs.swaylock-effects}/bin/swaylock";
-            proc = "swaylock";
-          }
-        else
-          {
-            exe = "${pkgs.hyprlock}/bin/hyprlock";
-            proc = "hyprlock";
-          };
       evdev-idle-script =
         pkgs.writers.writePython3Bin "evdev-idle-daemon"
           {
@@ -580,8 +562,8 @@ in
         ExecStart = "${evdev-idle-script}/bin/evdev-idle-daemon";
         Environment = [
           "PYTHONUNBUFFERED=1"
-          "EVDEV_LOCK_EXE=${evdevLockPaths.exe}"
-          "EVDEV_LOCK_PROC=${evdevLockPaths.proc}"
+          "EVDEV_LOCK_EXE=${pkgs.hyprlock}/bin/hyprlock"
+          "EVDEV_LOCK_PROC=hyprlock"
         ];
         StandardOutput = "journal";
         StandardError = "journal";

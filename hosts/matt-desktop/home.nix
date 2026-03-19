@@ -4,7 +4,6 @@
   pkgs,
   inputs,
   lib,
-  mattSessionLockVariant ? "hyprlock",
   ...
 }:
 
@@ -17,18 +16,13 @@ let
     exec ${pkgs.jellyfin-media-player}/bin/jellyfin-desktop "$@"
   '';
 
-  lockExe =
-    if mattSessionLockVariant == "swaylock" then "${pkgs.swaylock-effects}/bin/swaylock" else "${pkgs.hyprlock}/bin/hyprlock";
-  lockProc = if mattSessionLockVariant == "swaylock" then "swaylock" else "hyprlock";
-
   lock-now = pkgs.writeShellApplication {
     name = "lock-now";
     runtimeInputs = [
       pkgs.systemd
       pkgs.procps
-    ]
-    ++ lib.optionals (mattSessionLockVariant == "hyprlock") [ pkgs.hyprlock ]
-    ++ lib.optionals (mattSessionLockVariant == "swaylock") [ pkgs.swaylock-effects ];
+      pkgs.hyprlock
+    ];
     text = ''
       set -euo pipefail
 
@@ -36,15 +30,15 @@ let
       # LockedHint can stay "yes" after a crash or tool mismatch, which made Walker launches no-op.
       if [ -n "''${XDG_SESSION_ID-}" ] &&
         [ "$(loginctl show-session "$XDG_SESSION_ID" -p LockedHint --value 2>/dev/null || true)" = "yes" ] &&
-        pgrep -xu "$USER" -x ${lockProc} >/dev/null 2>&1; then
+        pgrep -xu "$USER" -x hyprlock >/dev/null 2>&1; then
         exit 0
       fi
 
-      if pgrep -xu "$USER" -x ${lockProc} >/dev/null 2>&1; then
+      if pgrep -xu "$USER" -x hyprlock >/dev/null 2>&1; then
         exit 0
       fi
 
-      exec ${lockExe}
+      exec ${pkgs.hyprlock}/bin/hyprlock
     '';
   };
 
@@ -63,7 +57,7 @@ in
   # Let home-manager manage itself
   programs.home-manager.enable = true;
 
-  # Old generations could leave swayidle enabled; it still runs `swaylock` on idle and races evdev + hyprlock.
+  # Old generations could leave swayidle enabled; it can still run a legacy locker on idle and race evdev + hyprlock.
   home.activation.disableLegacySwayidle = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ${pkgs.systemd}/bin/systemctl --user stop swayidle.service 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user disable swayidle.service 2>/dev/null || true
@@ -598,84 +592,6 @@ in
   # ===================
   stylix.targets.hyprlock.enable = false;
 
-  programs.swaylock = {
-    enable = true;
-    settings = lib.mkForce (
-      if mattSessionLockVariant == "swaylock" then {
-        # Gruvbox-aligned experiment (pairs with walker/waybar theme); solid "paper" feel
-        color = "282828";
-        scaling = "solid_color";
-        show-failed-attempts = true;
-
-        indicator = true;
-        indicator-radius = 72;
-        indicator-thickness = 5;
-
-        line-color = "00000000";
-        separator-color = "00000000";
-
-        ring-color = "fabd2f";
-        ring-clear-color = "d79921";
-        ring-caps-lock-color = "fe8019";
-        ring-ver-color = "b8bb26";
-        ring-wrong-color = "fb4934";
-
-        inside-color = "3c3836aa";
-        inside-clear-color = "504945aa";
-        inside-caps-lock-color = "665c54aa";
-        inside-ver-color = "3c3836cc";
-        inside-wrong-color = "3c3836aa";
-
-        text-color = "ebdbb2";
-        text-clear-color = "d5c4a1";
-        text-caps-lock-color = "fe8019";
-        text-ver-color = "b8bb26";
-        text-wrong-color = "fb4934";
-
-        key-hl-color = "d79921";
-        bs-hl-color = "fb4934";
-        caps-lock-key-hl-color = "fe8019";
-        caps-lock-bs-hl-color = "fb4934";
-      }
-      else {
-        # Minimal fallback when hyprlock is primary (keeps sane defaults if you switch locker)
-        color = "000000";
-        scaling = "solid_color";
-        show-failed-attempts = true;
-
-        indicator = true;
-        indicator-radius = 50;
-        indicator-thickness = 4;
-
-        line-color = "00000000";
-        separator-color = "00000000";
-
-        ring-color = "666666";
-        ring-clear-color = "888888";
-        ring-caps-lock-color = "aaaaaa";
-        ring-ver-color = "888888";
-        ring-wrong-color = "cc6666";
-
-        inside-color = "1a1a1a88";
-        inside-clear-color = "1a1a1a88";
-        inside-caps-lock-color = "2a2a2a88";
-        inside-ver-color = "1a1a1a88";
-        inside-wrong-color = "2a1a1a88";
-
-        text-color = "cccccc";
-        text-clear-color = "aaaaaa";
-        text-caps-lock-color = "cccccc";
-        text-ver-color = "aaaaaa";
-        text-wrong-color = "cc6666";
-
-        key-hl-color = "888888";
-        bs-hl-color = "cc6666";
-        caps-lock-key-hl-color = "aaaaaa";
-        caps-lock-bs-hl-color = "cc6666";
-      }
-    );
-  };
-
   programs.hyprlock = {
     enable = true;
     settings = {
@@ -775,7 +691,7 @@ in
   #   services.swayidle = { enable = true; timeouts = [ ... ]; };
   #
   # Behavior:
-  #   - 30 min idle: lock session (see mattSessionLockVariant in configuration.nix)
+  #   - 30 min idle: lock session (hyprlock)
   #   - 60 min idle: power off monitor (niri msg action power-off-monitors)
   #   - On input after 60 min: power on monitor, return to lock screen
   #

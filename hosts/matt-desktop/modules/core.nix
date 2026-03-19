@@ -236,9 +236,6 @@
     # Text editors (fallback)
     nano
 
-    # Screen locker (used by idle daemon)
-    swaylock-effects
-
     # Version control
     git
 

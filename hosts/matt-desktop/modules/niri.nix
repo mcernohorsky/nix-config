@@ -10,7 +10,6 @@
   };
 
   security.pam.services.hyprlock = { };
-  security.pam.services.swaylock = { };
 
   xdg.portal.enable = true;
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gnome ];

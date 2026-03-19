@@ -58,9 +58,9 @@ just deploy-oracle
 just deploy-desktop
 ```
 
-### matt-desktop: session lock (hyprlock vs swaylock experiment)
+### matt-desktop: session lock (hyprlock)
 
-Idle locking and manual lock (`Super+Alt+L`, Walker “Lock Screen”) all follow `mattSessionLockVariant` in `hosts/matt-desktop/configuration.nix` (`"hyprlock"` or `"swaylock"`). Set `"swaylock"` to deploy the Gruvbox-styled `swaylock-effects` profile from `hosts/matt-desktop/home.nix`, then run `just deploy-desktop`. Walker uses the same `lock-now` helper as niri keybinds; `systemd.user.services.walker.Service.PassEnvironment` forwards `WAYLAND_DISPLAY`, `NIRI_SOCKET`, and related session variables so `.desktop` actions get a full graphical environment.
+Idle timeout and manual lock (`Super+Alt+L`, Walker “Lock Screen”) use **hyprlock** via the shared `lock-now` helper. Walker’s systemd unit uses `PassEnvironment` so `.desktop` launches get `WAYLAND_DISPLAY`, `NIRI_SOCKET`, and the rest of the graphical session.
 
 ## Vaultwarden & Backups
 
