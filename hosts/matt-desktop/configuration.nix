@@ -331,9 +331,9 @@
                 if DEBUG:
                     print(f"evdev-idle: {msg}", flush=True)
 
-            # Swaylock-effects: run in foreground for explicit process tracking.
-            LOCK_CMD = ["${pkgs.swaylock-effects}/bin/swaylock"]
-            LOCK_PROC_NAME = "swaylock"
+            # Hyprlock: run in foreground for explicit process tracking.
+            LOCK_CMD = ["${pkgs.hyprlock}/bin/hyprlock"]
+            LOCK_PROC_NAME = "hyprlock"
             NIRI_CMD = "${config.programs.niri.package}/bin/niri"
             LOGINCTL_CMD = "${pkgs.systemd}/bin/loginctl"
             PGREP_CMD = "${pkgs.procps}/bin/pgrep"

@@ -21,7 +21,7 @@ let
     runtimeInputs = [
       pkgs.systemd
       pkgs.procps
-      pkgs.swaylock-effects
+      pkgs.hyprlock
     ];
     text = ''
       set -euo pipefail
@@ -31,11 +31,11 @@ let
         exit 0
       fi
 
-      if pgrep -xu "$USER" -x swaylock >/dev/null 2>&1; then
+      if pgrep -xu "$USER" -x hyprlock >/dev/null 2>&1; then
         exit 0
       fi
 
-      exec ${pkgs.swaylock-effects}/bin/swaylock
+      exec ${pkgs.hyprlock}/bin/hyprlock
     '';
   };
 
@@ -660,7 +660,7 @@ in
           halign = "center";
           valign = "center";
           shadow_passes = 2;
-          shadow_size = 3;
+          shadow_size = 6;
         }
         # Date
         {
@@ -677,7 +677,7 @@ in
         # Greeting
         {
           monitor = "";
-          text = "Hi, $USER";
+          text = "$USER";
           font_size = 18;
           font_family = "JetBrains Mono";
           color = "rgb(83a598)"; # Gruvbox blue
