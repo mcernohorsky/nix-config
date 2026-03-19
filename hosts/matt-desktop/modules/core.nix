@@ -103,8 +103,9 @@
   # HiDPI Console Font
   console = {
     earlySetup = false; # Don't load in initrd to avoid red error
-    packages = [ pkgs.terminus_font ];
-    font = "ter-v32n";
+    # Leave default console font; custom terminus font caused early boot vconsole failures.
+    packages = [ ];
+    font = null;
     keyMap = "us";
   };
 
@@ -234,6 +235,9 @@
 
     # Text editors (fallback)
     nano
+
+    # Screen locker (used by idle daemon)
+    swaylock-effects
 
     # Version control
     git

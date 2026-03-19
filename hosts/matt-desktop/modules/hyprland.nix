@@ -28,6 +28,7 @@
 
   # PAM service for hyprlock (required for authentication)
   security.pam.services.hyprlock = { };
+  security.pam.services.swaylock = { };
 
   # Audio via PipeWire
   services.pipewire = {
@@ -63,8 +64,9 @@
     # Notifications
     libnotify
 
-    # Lock screen
+    # Lock screen helpers
     hyprlock
+    swaylock-effects
 
     # Polkit agent
     polkit_gnome

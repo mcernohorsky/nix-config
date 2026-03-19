@@ -230,7 +230,7 @@
   systemd.tmpfiles.rules = [
     "d /backups 0755 matt users -"
     "d /backups/oracle-0 0755 matt users -"
-    "d /backups/oracle-0/vaultwarden 0755 restic-rest-server restic-rest-server -"
+    "d /backups/oracle-0/vaultwarden 0755 restic restic -"
   ];
 
   # Local pruning of oracle-0 backups
@@ -295,118 +295,272 @@
   # Fix Tailscale TPM issue after BIOS updates
   systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
 
-  # Evdev-based idle tracker (user service for session environment inheritance)
+  # Evdev-based idle tracker using python-evdev with select() for efficient blocking I/O
   # WORKAROUND: See detailed comment in home.nix
-  systemd.user.services.evdev-idle-daemon = {
-    description = "Evdev-based idle tracker (workaround for Smithay idle bug)";
-    wantedBy = [ "graphical-session.target" ];
-    after = [ "graphical-session.target" ];
-    partOf = [ "graphical-session.target" ];
-    serviceConfig = {
-      Type = "simple";
-      ExecStart = pkgs.writeShellScript "evdev-idle-daemon" ''
-        #!/usr/bin/env bash
-        # Evdev idle tracker - monitors input devices directly
-        # Runs as user service - inherits Niri session environment
+  systemd.user.services.evdev-idle-daemon =
+    let
+      evdev-idle-script =
+        pkgs.writers.writePython3Bin "evdev-idle-daemon"
+          {
+            libraries = [ pkgs.python3Packages.evdev ];
+            flakeIgnore = [
+              "E302"
+              "E305"
+              "E501"
+            ];
+          }
+          ''
+            import os
+            import select
+            import subprocess
+            import time
 
-        LOCK_TIMEOUT=60000       # 1 minute in ms (TESTING: was 1800000)
-        DISPLAY_TIMEOUT=120000   # 2 minutes in ms (TESTING: was 3600000)
+            from evdev import InputDevice, ecodes, list_devices
 
-        last_activity=$(date +%s%3N)
-        state="active"  # active -> locked -> display_off
+            ACTIVITY_TYPES = {ecodes.EV_KEY, ecodes.EV_REL, ecodes.EV_ABS}
+            LOCK_AFTER = 30 * 60  # 30 minutes
+            DPMS_AFTER = 60 * 60  # 60 minutes
+            LOCK_GRACE = 3  # require lock to settle before monitor power-off
+            DISPLAY_RELOCK_DELAY = 15  # avoid immediate re-lock loops after display wake
+            LOCK_CHECK_INTERVAL = 1  # wake periodically to evaluate lock deadlines
 
-        # Find keyboard and mouse input devices
-        input_devices=$(find /dev/input -name 'event*' -readable 2>/dev/null | head -20)
+            DEBUG = os.environ.get("EVDEV_IDLE_DEBUG", "0") == "1"
 
-        if [ -z "$input_devices" ]; then
-          echo "No input devices found, exiting"
-          exit 1
-        fi
 
-        echo "idle-daemon: starting with devices: $input_devices" | systemd-cat -t evdev-idle
-        echo "idle-daemon: inherited env NIRI_SOCKET=$NIRI_SOCKET" | systemd-cat -t evdev-idle
+            def debug(msg):
+                if DEBUG:
+                    print(f"evdev-idle: {msg}", flush=True)
 
-        # Cleanup function for child processes
-        cleanup() {
-          echo "idle-daemon: shutting down, killing child processes" | systemd-cat -t evdev-idle
-          kill -- -$$ 2>/dev/null  # Kill entire process group
-        }
-        trap cleanup EXIT INT TERM
+            # Swaylock-effects: run in foreground for explicit process tracking.
+            LOCK_CMD = ["${pkgs.swaylock-effects}/bin/swaylock"]
+            LOCK_PROC_NAME = "swaylock"
+            NIRI_CMD = "${config.programs.niri.package}/bin/niri"
+            LOGINCTL_CMD = "${pkgs.systemd}/bin/loginctl"
+            PGREP_CMD = "${pkgs.procps}/bin/pgrep"
+            PKILL_CMD = "${pkgs.procps}/bin/pkill"
 
-        # Background process to update last_activity on input
-        for dev in $input_devices; do
-          ${pkgs.stdenv.shell} -c "
-            while ${pkgs.coreutils}/bin/true; do
-              if ${pkgs.coreutils}/bin/dd if=$dev bs=24 count=1 2>/dev/null | ${pkgs.coreutils}/bin/od -An -tx1 | ${pkgs.gnugrep}/bin/grep -q .; then
-                echo 'ACTIVITY' > /tmp/evdev-idle-activity
-              fi
-            done
-          " &
-        done
 
-        while true; do
-          now=$(date +%s%3N)
-          idle_time=$((now - last_activity))
-          
-          # Check for activity from background monitors
-          if [ -f /tmp/evdev-idle-activity ]; then
-            rm -f /tmp/evdev-idle-activity
-            
-            # Wake display if it was off
-            if [ \"\$state\" = \"display_off\" ]; then
-              echo "idle-daemon: activity detected, waking monitors" | systemd-cat -t evdev-idle
-              for sock in /run/user/1000/niri.*.sock; do
-                [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-on-monitors 2>/dev/null && break
-              done
-            fi
-            
-            last_activity=$now
-            state="active"
-          fi
-          
-          case \"\$state\" in
-            active)
-              if [ $idle_time -ge $DISPLAY_TIMEOUT ]; then
-                # 60 min: power off display
-                echo "idle-daemon: 60min idle, powering off monitors" | systemd-cat -t evdev-idle
-                echo "idle-daemon: NIRI_SOCKET=$NIRI_SOCKET" | systemd-cat -t evdev-idle
-                for sock in /run/user/1000/niri.*.sock; do
-                  [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-off-monitors 2>/dev/null && break
-                done
-                state="display_off"
-              elif [ $idle_time -ge $LOCK_TIMEOUT ]; then
-                # 30 min: lock session with hyprlock
-                echo "idle-daemon: 30min idle, locking screen" | systemd-cat -t evdev-idle
-                echo "idle-daemon: WAYLAND_DISPLAY=$WAYLAND_DISPLAY" | systemd-cat -t evdev-idle
-                ${pkgs.hyprlock}/bin/hyprlock 2>/dev/null &
-                state="locked"
-              fi
-              ;;
-            locked)
-              if [ $idle_time -ge $DISPLAY_TIMEOUT ]; then
-                # 60 min: power off display
-                echo "idle-daemon: 60min idle (locked), powering off monitors" | systemd-cat -t evdev-idle
-                for sock in /run/user/1000/niri.*.sock; do
-                  [ -e \"\$sock\" ] && NIRI_SOCKET=\"\$sock\" ${pkgs.niri}/bin/niri msg action power-off-monitors 2>/dev/null && break
-                done
-                state="display_off"
-              fi
-              ;;
-            display_off)
-              # Just wait for activity (handled above)
-              ;;
-          esac
-          
-          # Check every 5 seconds
-          ${pkgs.coreutils}/bin/sleep 5
-        done
-      '';
-      Restart = "always";
-      RestartSec = 5;
-      # Ensure children are killed on restart
-      KillMode = "process";
+            def run_niri_action(action):
+                try:
+                    debug(f"running niri action: {action}")
+                    subprocess.run(
+                        [NIRI_CMD, "msg", "action", action],
+                        capture_output=True,
+                        timeout=5,
+                        check=False,
+                    )
+                    return True
+                except Exception as err:
+                    print(f"evdev-idle: niri action '{action}' failed: {err}", flush=True)
+                    return False
+
+
+            def is_session_locked():
+                session_id = os.environ.get("XDG_SESSION_ID")
+                if not session_id:
+                    return False
+
+                try:
+                    result = subprocess.run(
+                        [LOGINCTL_CMD, "show-session", session_id, "-p", "LockedHint", "--value"],
+                        capture_output=True,
+                        text=True,
+                        timeout=2,
+                        check=False,
+                    )
+                    return result.returncode == 0 and result.stdout.strip().lower() == "yes"
+                except Exception:
+                    return False
+
+
+            def find_input_devices():
+                devices = {}
+                for path in list_devices():
+                    dev = InputDevice(path)
+                    caps = dev.capabilities()
+                    debug(f"considering {path} {dev.name} caps={sorted(caps.keys())}")
+                    if ACTIVITY_TYPES & set(caps.keys()):
+                        devices[dev.fd] = dev
+                return devices
+
+
+            def lock_process_running(lock_proc):
+                return lock_proc is not None and lock_proc.poll() is None
+
+
+            def now_locked(lock_proc):
+                return is_session_locked() or lock_process_running(lock_proc)
+
+
+            def cleanup_stale_locker():
+                try:
+                    subprocess.run(
+                        [PKILL_CMD, "-x", LOCK_PROC_NAME],
+                        capture_output=True,
+                        timeout=2,
+                        check=False,
+                    )
+                    time.sleep(0.2)
+                except Exception:
+                    pass
+
+
+            def locker_process_exists():
+                try:
+                    result = subprocess.run(
+                        [PGREP_CMD, "-x", LOCK_PROC_NAME],
+                        capture_output=True,
+                        text=True,
+                        timeout=2,
+                        check=False,
+                    )
+                    return result.returncode == 0 and bool(result.stdout.strip())
+                except Exception:
+                    return False
+
+
+            def start_lock(lock_proc):
+                if lock_process_running(lock_proc) or is_session_locked():
+                    debug("locker already active, skipping new lock launch")
+                    return lock_proc
+
+                if locker_process_exists():
+                    debug("stale locker process detected, cleaning up")
+                    cleanup_stale_locker()
+                    if locker_process_exists():
+                        print("evdev-idle: stale locker remains; skipping new lock launch", flush=True)
+                        return lock_proc
+
+                try:
+                    proc = subprocess.Popen(
+                        LOCK_CMD,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                    print(f"evdev-idle: lock process started pid={proc.pid}", flush=True)
+                    return proc
+                except Exception as err:
+                    print(f"evdev-idle: failed to start locker: {err}", flush=True)
+                    return None
+
+
+            def main():
+                devices = find_input_devices()
+                if not devices:
+                    print("evdev-idle: no input devices found, exiting", flush=True)
+                    return 1
+
+                print(f"evdev-idle: monitoring {len(devices)} input devices", flush=True)
+
+                last_activity = time.monotonic()
+                monitors_off = False
+                lock_proc = None
+                next_lock_attempt = 0.0
+                lock_confirmed_at = None
+
+                while True:
+                    if lock_proc is not None and lock_proc.poll() is not None:
+                        print(f"evdev-idle: lock process exited rc={lock_proc.returncode}", flush=True)
+                        lock_proc = None
+
+                    now = time.monotonic()
+                    locked_hint_initial = is_session_locked()
+                    lock_active = now_locked(lock_proc)
+                    if locked_hint_initial:
+                        if lock_confirmed_at is None:
+                            lock_confirmed_at = now
+                    else:
+                        lock_confirmed_at = None
+
+                    next_lock = (last_activity + LOCK_AFTER) if not lock_active else float("inf")
+                    next_dpms = last_activity + DPMS_AFTER
+                    timeout = max(0, min(min(next_lock, next_dpms) - now, LOCK_CHECK_INTERVAL))
+
+                    try:
+                        ready, _, _ = select.select(list(devices.values()), [], [], timeout)
+                    except Exception:
+                        ready = []
+
+                    if ready:
+                        saw_activity = False
+                        for dev in ready:
+                            try:
+                                for ev in dev.read():
+                                    if ev.type in ACTIVITY_TYPES:
+                                        saw_activity = True
+                                        debug(f"activity from {dev.path} {dev.name}: type={ev.type} code={ev.code} value={ev.value}")
+                            except BlockingIOError:
+                                pass
+
+                        if saw_activity:
+                            last_activity = time.monotonic()
+                            next_lock_attempt = 0.0
+                            if monitors_off and run_niri_action("power-on-monitors"):
+                                print("evdev-idle: monitors woke from activity", flush=True)
+                                monitors_off = False
+                                lock_confirmed_at = None
+                                # Give compositor/locker time to settle after wake.
+                                last_activity = max(last_activity, time.monotonic() - LOCK_AFTER + DISPLAY_RELOCK_DELAY)
+                            continue
+
+                    now = time.monotonic()
+                    locked_hint = is_session_locked()
+                    lock_active = now_locked(lock_proc)
+                    if locked_hint:
+                        if lock_confirmed_at is None:
+                            lock_confirmed_at = now
+                    else:
+                        lock_confirmed_at = None
+
+                    should_lock = (not lock_active) and (now - last_activity >= LOCK_AFTER) and (now >= next_lock_attempt)
+
+                    if should_lock:
+                        debug("lock timeout reached, starting locker")
+                        lock_proc = start_lock(lock_proc)
+                        next_lock_attempt = now + 5.0
+                        continue
+
+                    if not monitors_off and now - last_activity >= DPMS_AFTER:
+                        # Ensure session is locked before powering monitors off.
+                        if not locked_hint:
+                            if not lock_process_running(lock_proc) and now >= next_lock_attempt:
+                                debug("dpms timeout reached without lock hint, retrying locker")
+                                lock_proc = start_lock(lock_proc)
+                                next_lock_attempt = now + 5.0
+                            continue
+
+                        # Prevent race where monitor powers off exactly at lock acquisition.
+                        if lock_confirmed_at is None or (now - lock_confirmed_at) < LOCK_GRACE:
+                            debug("lock confirmed too recently; delaying monitor power-off")
+                            continue
+
+                        if run_niri_action("power-off-monitors"):
+                            print("evdev-idle: monitors powered off", flush=True)
+                            monitors_off = True
+
+                return 0
+
+
+            if __name__ == "__main__":
+                exit(main())
+          '';
+    in
+    {
+      description = "Evdev-based idle tracker (workaround for Smithay idle bug)";
+      wantedBy = [ "graphical-session.target" ];
+      after = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = "${evdev-idle-script}/bin/evdev-idle-daemon";
+        Environment = [ "PYTHONUNBUFFERED=1" ];
+        StandardOutput = "journal";
+        StandardError = "journal";
+        Restart = "always";
+        RestartSec = 5;
+        KillMode = "mixed";
+      };
     };
-  };
 
   # Btrfs snapshot management for /home
   # Snapshots accessible at /btr_pool/@snapshots/@home.<date>

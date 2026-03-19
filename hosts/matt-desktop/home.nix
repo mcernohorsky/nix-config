@@ -16,6 +16,29 @@ let
     exec ${pkgs.jellyfin-media-player}/bin/jellyfin-desktop "$@"
   '';
 
+  lock-now = pkgs.writeShellApplication {
+    name = "lock-now";
+    runtimeInputs = [
+      pkgs.systemd
+      pkgs.procps
+      pkgs.swaylock-effects
+    ];
+    text = ''
+      set -euo pipefail
+
+      if [ -n "''${XDG_SESSION_ID-}" ] &&
+        [ "$(loginctl show-session "$XDG_SESSION_ID" -p LockedHint --value 2>/dev/null || true)" = "yes" ]; then
+        exit 0
+      fi
+
+      if pgrep -xu "$USER" -x swaylock >/dev/null 2>&1; then
+        exit 0
+      fi
+
+      exec ${pkgs.swaylock-effects}/bin/swaylock
+    '';
+  };
+
 in
 {
   imports = [
@@ -170,7 +193,7 @@ in
         "$mainMod, C, exec, helium"
 
         # Lock screen (use SUPER+Escape to avoid conflict with vim navigation)
-        "$mainMod, Escape, exec, hyprlock"
+        "$mainMod, Escape, exec, ${lib.getExe lock-now}"
 
         # Notification center
         "$mainMod, N, exec, swaync-client -t -sw"
@@ -346,7 +369,13 @@ in
       "Mod+T".action.spawn = "ghostty";
       "Mod+Space".action.spawn = "walker";
       "Mod+B".action.spawn = "helium";
-      "Super+Alt+L".action.spawn = "hyprlock";
+      "Super+Alt+L" = {
+        allow-inhibiting = false;
+        allow-when-locked = false;
+        repeat = false;
+        hotkey-overlay.title = "Lock the Screen";
+        action.spawn = [ (lib.getExe lock-now) ];
+      };
 
       "XF86AudioRaiseVolume".allow-when-locked = true;
       "XF86AudioRaiseVolume".action.spawn = [
@@ -553,6 +582,52 @@ in
   # ===================
   stylix.targets.hyprlock.enable = false;
 
+  programs.swaylock = {
+    enable = true;
+    settings = lib.mkForce {
+      # Solid black background with minimal indicator
+      color = "000000";
+      scaling = "solid_color";
+      show-failed-attempts = true;
+
+      # Minimal indicator
+      indicator = true;
+      indicator-radius = 50;
+      indicator-thickness = 4;
+
+      # Transparent separators
+      line-color = "00000000";
+      separator-color = "00000000";
+
+      # Subtle gray ring
+      ring-color = "666666";
+      ring-clear-color = "888888";
+      ring-caps-lock-color = "aaaaaa";
+      ring-ver-color = "888888";
+      ring-wrong-color = "cc6666";
+
+      # Translucent dark inside
+      inside-color = "1a1a1a88";
+      inside-clear-color = "1a1a1a88";
+      inside-caps-lock-color = "2a2a2a88";
+      inside-ver-color = "1a1a1a88";
+      inside-wrong-color = "2a1a1a88";
+
+      # Neutral text
+      text-color = "cccccc";
+      text-clear-color = "aaaaaa";
+      text-caps-lock-color = "cccccc";
+      text-ver-color = "aaaaaa";
+      text-wrong-color = "cc6666";
+
+      # Key highlights
+      key-hl-color = "888888";
+      bs-hl-color = "cc6666";
+      caps-lock-key-hl-color = "aaaaaa";
+      caps-lock-bs-hl-color = "cc6666";
+    };
+  };
+
   programs.hyprlock = {
     enable = true;
     settings = {
@@ -660,7 +735,6 @@ in
   # for proper input device permissions. This home.nix config just disables swayidle
   # to avoid conflicts.
   services.swayidle.enable = lib.mkForce false;
-
 
   # ===================
   # SwayOSD (on-screen display for volume/brightness)
@@ -1781,7 +1855,7 @@ in
       # Power actions (searchable in walker)
       lock-screen = {
         name = "Lock Screen";
-        exec = "hyprlock";
+        exec = lib.getExe lock-now;
         icon = "system-lock-screen";
         comment = "Lock the screen";
         terminal = false;
