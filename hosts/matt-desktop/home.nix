@@ -4,6 +4,7 @@
   pkgs,
   inputs,
   lib,
+  stylixWallpaperImage,
   ...
 }:
 
@@ -49,6 +50,7 @@ in
   ];
 
   modules.home.opencodeCore.enable = true;
+  nix.package = lib.mkForce null;
 
   home.username = "matt";
   home.homeDirectory = "/home/matt";
@@ -56,6 +58,12 @@ in
 
   # Let home-manager manage itself
   programs.home-manager.enable = true;
+
+  manual = {
+    manpages.enable = false;
+    html.enable = false;
+    json.enable = false;
+  };
 
   # Old generations could leave swayidle enabled; it can still run a legacy locker on idle and race evdev + hyprlock.
   home.activation.disableLegacySwayidle = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -604,7 +612,8 @@ in
       background = [
         {
           monitor = "";
-          path = "screenshot";
+          # Same image as Stylix desktop wallpaper (see configuration.nix stylixWallpaperImage)
+          path = "${stylixWallpaperImage}";
           blur_passes = 3;
           blur_size = 6;
           noise = 0.02;
@@ -1712,6 +1721,7 @@ in
     jq
     yq
     opencode-desktop
+    nodejs # `node` on PATH: opencode-cursor-oauth h2-bridge child; npm globals with #!/usr/bin/env node
 
     # System info
     fastfetch

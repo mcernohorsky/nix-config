@@ -24,6 +24,7 @@
         "nix-command"
         "flakes"
       ];
+      eval-cores = 1;
       extra-substituters = [
         "https://deploy-rs.cachix.org"
       ];
@@ -116,6 +117,12 @@
   age.secrets.pocketbase-superuser = {
     file = ../../secrets/pocketbase-superuser.age;
     mode = "0400";
+  };
+  age.secrets.grafana-secret-key = {
+    file = ../../secrets/grafana-secret-key.age;
+    mode = "0400";
+    owner = "grafana";
+    group = "grafana";
   };
 
   # Tailscale VPN

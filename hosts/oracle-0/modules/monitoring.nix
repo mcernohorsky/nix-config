@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   grafanaPort = 3010;
   prometheusPort = 3020;
@@ -20,11 +25,13 @@ in
     scrapeConfigs = [
       {
         job_name = "node";
-        static_configs = [{ targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.node.port}" ]; }];
+        static_configs = [
+          { targets = [ "127.0.0.1:${toString config.services.prometheus.exporters.node.port}" ]; }
+        ];
       }
       {
         job_name = "prometheus";
-        static_configs = [{ targets = [ "127.0.0.1:${toString prometheusPort}" ]; }];
+        static_configs = [ { targets = [ "127.0.0.1:${toString prometheusPort}" ]; } ];
       }
     ];
   };
@@ -47,6 +54,7 @@ in
         allow_embedding = false;
         cookie_secure = true;
         cookie_samesite = "lax";
+        secret_key = "$__file{${config.age.secrets.grafana-secret-key.path}}";
       };
     };
     provision = {

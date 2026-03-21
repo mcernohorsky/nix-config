@@ -10,11 +10,39 @@ let
     mkEnableOption
     mkIf
     mkOption
-    optionalAttrs
+    recursiveUpdate
     types
     ;
   cfg = config.modules.home.opencodeCore;
   opencode-plugins = builtins.fromJSON (builtins.readFile ./opencode-plugins.json);
+
+  defaultAgents = {
+    build = {
+      mode = "primary";
+      model = "cursor/composer-2";
+      tools = {
+        "context7_*" = true;
+        "exa_*" = true;
+      };
+    };
+    plan = {
+      mode = "primary";
+      model = "openai/gpt-5.4";
+      reasoningEffort = "high";
+    };
+    explore = {
+      mode = "subagent";
+      model = "opencode-go/minimax-m2.7";
+      tools = {
+        "context7_*" = true;
+        "exa_*" = true;
+      };
+    };
+    general = {
+      mode = "subagent";
+      model = "opencode-go/minimax-m2.7";
+    };
+  };
 in
 {
   options.modules.home.opencodeCore = {
@@ -29,173 +57,50 @@ in
     model = mkOption {
       type = types.str;
       default = "fireworks-ai/accounts/fireworks/models/kimi-k2p5";
-      description = "Default OpenCode model written to config.json.";
+      description = "Default OpenCode model written to opencode.json.";
     };
 
     provider = mkOption {
       type = types.attrs;
       default = { };
-      description = "Provider configuration written to config.json.";
-    };
-
-    ohMyOpenCode = mkOption {
-      type = types.attrs;
-      default = {
-        auto_update = false;
-        auto_commit = false;
-        model_fallback = true;
-        runtime_fallback = true;
-        disabledHooks = [ "auto-update-checker" ];
-        disabled_mcps = [ ];
-        disabled_skills = [ "playwright" ];
-
-        agents = {
-          Sisyphus = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/claude-opus-4.6"
-              "opencode-go/minimax-m2.7"
-            ];
-            ultrawork = {
-              model = "github-copilot/claude-opus-4.6";
-              variant = "thinking";
-            };
-          };
-          prometheus = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          metis = {
-            model = "github-copilot/claude-opus-4.6";
-            variant = "max";
-            fallback_models = [
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          atlas = {
-            model = "opencode-go/minimax-m2.7";
-          };
-          oracle = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/gemini-3.1-pro-preview"
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          momus = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/gemini-3.1-pro-preview"
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          hephaestus = {
-            model = "openai/gpt-5.3-codex";
-            variant = "high";
-            fallback_models = [
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          frontend-ui-ux-engineer = {
-            model = "github-copilot/claude-opus-4.6";
-            fallback_models = [
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          multimodal-looker = {
-            model = "openai/gpt-5.4";
-            variant = "medium";
-          };
-          document-writer = {
-            model = "opencode-go/minimax-m2.7";
-          };
-          explore = {
-            model = "opencode-go/minimax-m2.7";
-          };
-          librarian = {
-            model = "opencode-go/minimax-m2.7";
-          };
-        };
-
-        categories = {
-          quick = {
-            model = "opencode-go/minimax-m2.7";
-          };
-          visual-engineering = {
-            model = "github-copilot/gemini-3.1-pro-preview";
-            fallback_models = [
-              "github-copilot/claude-opus-4.6"
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          artistry = {
-            model = "github-copilot/gemini-3.1-pro-preview";
-            fallback_models = [
-              "github-copilot/claude-opus-4.6"
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          writing = {
-            model = "github-copilot/gemini-3-flash-preview";
-            fallback_models = [
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          unspecified-low = {
-            model = "opencode-go/minimax-m2.7";
-          };
-          unspecified-high = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/claude-opus-4.6"
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-          ultrabrain = {
-            model = "openai/gpt-5.4";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/gemini-3.1-pro-preview"
-              "github-copilot/claude-opus-4.6"
-            ];
-          };
-          deep = {
-            model = "openai/gpt-5.3-codex";
-            variant = "high";
-            fallback_models = [
-              "github-copilot/claude-opus-4.6"
-              "opencode-go/minimax-m2.7"
-            ];
-          };
-        };
-
-        background_task = {
-          providerConcurrency = {
-            github-copilot = 3;
-            openai = 3;
-            opencode = 10;
-            "opencode-go" = 10;
-          };
-          modelConcurrency = {
-            "github-copilot/claude-opus-4.6" = 2;
-            "openai/gpt-5.4" = 2;
-          };
-        };
-      };
-      description = "Settings written to oh-my-opencode.json.";
+      description = ''
+        Extra provider entries merged into opencode.json, on top of the
+        {literal}`cursor` stub required by
+        [opencode-cursor-oauth](https://github.com/ephraimduncan/opencode-cursor).
+      '';
     };
 
     autoupdate = mkOption {
       type = types.bool;
       default = false;
       description = "Whether programs.opencode autoupdate is enabled.";
+    };
+
+    permission = mkOption {
+      type = types.oneOf [
+        types.str
+        types.attrs
+      ];
+      default = {
+        "*" = "allow";
+        bash = {
+          "*" = "allow";
+          "rm -rf /" = "ask";
+          "rm -rf /*" = "ask";
+          "mkfs*" = "ask";
+          "dd * of=/dev/*" = "ask";
+          "diskutil erase*" = "ask";
+          "git reset --hard*" = "ask";
+          "git clean -fd*" = "ask";
+          "git push --force*" = "ask";
+        };
+      };
+      description = ''
+        OpenCode permission policy written to
+        {literal}`programs.opencode.settings.permission`.
+        Defaults to allow-by-default with explicit prompts for
+        especially destructive bash commands.
+      '';
     };
 
     smallModel = mkOption {
@@ -207,14 +112,13 @@ in
     pluginPins = mkOption {
       type = types.attrsOf types.str;
       default = opencode-plugins;
-      description = "Plugin version pins keyed by plugin name.";
+      description = "Plugin version pins keyed by npm package name.";
     };
 
     pinnedPlugins = mkOption {
       type = types.listOf types.str;
       default = [
-        "oh-my-opencode"
-        "opencode-quotas"
+        "opencode-cursor-oauth"
       ];
       description = "Plugins resolved from pluginPins and rendered as name@version.";
     };
@@ -224,19 +128,21 @@ in
       default = [ ];
       description = "Additional literal plugin entries appended to programs.opencode.settings.plugin.";
     };
+
+    agents = mkOption {
+      type = types.attrs;
+      default = defaultAgents;
+      description = ''
+        Per-agent overrides written to {literal}`programs.opencode.settings.agent`
+        (build, plan, explore, general). Replace the default attrset in your home
+        config to customize; there is no deep merge.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
-    home.file.".config/opencode/config.json".text = builtins.toJSON (
-      {
-        model = cfg.model;
-      }
-      // optionalAttrs (cfg.provider != { }) {
-        provider = cfg.provider;
-      }
-    );
-
-    home.file.".config/opencode/oh-my-opencode.json".text = builtins.toJSON cfg.ohMyOpenCode;
+    # Prefer Bun for JS tooling; OpenCode’s own runtime is Bun-based.
+    home.packages = [ pkgs.bun ];
 
     programs.opencode = {
       enable = true;
@@ -244,7 +150,31 @@ in
       settings = {
         autoupdate = cfg.autoupdate;
         small_model = cfg.smallModel;
+        model = cfg.model;
+        provider = recursiveUpdate {
+          cursor = {
+            name = "Cursor";
+          };
+        } cfg.provider;
         plugin = (map (name: "${name}@${cfg.pluginPins.${name}}") cfg.pinnedPlugins) ++ cfg.extraPlugins;
+        mcp = {
+          context7 = {
+            type = "remote";
+            url = "https://mcp.context7.com/mcp";
+            enabled = true;
+          };
+          exa = {
+            type = "remote";
+            url = "https://mcp.exa.ai/mcp";
+            enabled = true;
+          };
+        };
+        permission = cfg.permission;
+        tools = {
+          "context7_*" = false;
+          "exa_*" = false;
+        };
+        agent = cfg.agents;
       };
     };
   };

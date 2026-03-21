@@ -18,12 +18,10 @@ update-plugins:
     #!/usr/bin/env bash
     set -e
     echo "🔍 Checking for latest opencode plugin versions via registry..."
-    OMO_VERSION=$(curl -s https://registry.npmjs.org/oh-my-opencode/latest | jq -r '.version')
-    QUOTAS_VERSION=$(curl -s https://registry.npmjs.org/opencode-quotas/latest | jq -r '.version')
-    echo "oh-my-opencode: $OMO_VERSION"
-    echo "opencode-quotas: $QUOTAS_VERSION"
-    jq -n --arg omo "$OMO_VERSION" --arg quotas "$QUOTAS_VERSION" \
-        '{"oh-my-opencode": $omo, "opencode-quotas": $quotas}' \
+    CURSOR_OAUTH_VERSION=$(curl -s https://registry.npmjs.org/opencode-cursor-oauth/latest | jq -r '.version')
+    echo "opencode-cursor-oauth: $CURSOR_OAUTH_VERSION"
+    jq -n --arg cursor "$CURSOR_OAUTH_VERSION" \
+        '{"opencode-cursor-oauth": $cursor}' \
         > modules/home/opencode-plugins.json
     echo "✅ Updated modules/home/opencode-plugins.json"
 
@@ -54,7 +52,7 @@ deploy-oracle:
         -v ~/.ssh:/root/.ssh:ro \
         -w /workspace \
         --network host \
-        -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true" \
+        -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true"$'\n'"extra-substituters = https://install.determinate.systems"$'\n'"extra-trusted-public-keys = cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM=" \
         -e NIX_SSHOPTS="-o ServerAliveInterval=2 -o ServerAliveCountMax=30 -o ConnectTimeout=10 -o ConnectionAttempts=6" \
         nixos/nix:latest \
         nix run .#deploy-rs -- --skip-checks .#oracle-0

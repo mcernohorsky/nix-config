@@ -72,6 +72,7 @@
 
       # fonts
       jetbrains-mono
+      iosevka
       nerd-fonts.jetbrains-mono
       inter
       merriweather
@@ -90,6 +91,12 @@
   };
 
   programs.home-manager.enable = true;
+
+  manual = {
+    manpages.enable = false;
+    html.enable = false;
+    json.enable = false;
+  };
 
   programs = {
     helix = {

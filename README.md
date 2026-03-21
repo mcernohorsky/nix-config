@@ -6,9 +6,9 @@ This repository contains my personal Nix configuration for macOS using nix-darwi
 
 ### Prerequisites
 
-1. Install Nix:
+1. Install Determinate Nix on macOS:
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+open https://install.determinate.systems/determinate-pkg/stable/Universal
 ```
 
 2. Rename Computer:
@@ -26,7 +26,13 @@ git clone git@github.com:mcernohorsky/nix-config.git ~/.config/nix-config
 
 2. Build and switch to the configuration:
 ```bash
-nix run nix-darwin -- switch --flake ~/.config/nix-config
+just deploy-mac
+```
+
+3. Verify Determinate Nix:
+```bash
+nix --version
+determinate-nixd version
 ```
 
 ## Structure

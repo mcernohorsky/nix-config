@@ -6,10 +6,26 @@
   ...
 }:
 
+let
+  # Single source of truth for Stylix + hyprlock (same file as desktop wallpaper).
+  stylixWallpaperImage =
+    pkgs.runCommand "gruvbox-wallpaper.png"
+      {
+        nativeBuildInputs = [ pkgs.imagemagick ];
+      }
+      ''
+        magick -size 3840x2160 \
+          -define gradient:angle=135 \
+          gradient:'#1d2021-#282828' \
+          -blur 0x2 \
+          $out
+      '';
+in
+
 {
 
   home-manager.extraSpecialArgs = {
-    inherit inputs;
+    inherit inputs stylixWallpaperImage;
   };
 
   imports = [
@@ -70,21 +86,8 @@
     polarity = "dark";
     # Gruvbox dark palette
     base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
-    # Wallpaper: Replace with path to your preferred image
-    # Example: image = ./wallpapers/painting.jpg;
-    # For now, using a generated Gruvbox gradient
-    image =
-      pkgs.runCommand "gruvbox-wallpaper.png"
-        {
-          nativeBuildInputs = [ pkgs.imagemagick ];
-        }
-        ''
-          magick -size 3840x2160 \
-            -define gradient:angle=135 \
-            gradient:'#1d2021-#282828' \
-            -blur 0x2 \
-            $out
-        '';
+    # Wallpaper: Replace stylixWallpaperImage in the let-block above (or point to a local file).
+    image = stylixWallpaperImage;
 
     # Fonts (Using JetBrains Mono for everything)
     fonts = {
@@ -276,6 +279,7 @@
         "nix-command"
         "flakes"
       ];
+      eval-cores = 0;
       substituters = [
         "https://cache.nixos.org"
         "https://nix-community.cachix.org"

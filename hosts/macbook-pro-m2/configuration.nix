@@ -5,9 +5,9 @@
     primaryUser = "matt";
   };
 
-  nix = {
+  determinateNix = {
     enable = true;
-    settings = {
+    customSettings = {
       experimental-features = [
         "nix-command"
         "flakes"
@@ -18,6 +18,7 @@
         "matt"
       ];
       download-buffer-size = 524288000; # 500 MiB
+      eval-cores = 0;
 
       # Binary caches for faster builds
       extra-substituters = [
@@ -29,15 +30,8 @@
         "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       ];
     };
-    optimise.automatic = true;
-    gc = {
-      automatic = true;
-      interval = {
-        Weekday = 0;
-        Hour = 0;
-        Minute = 0;
-      };
-      options = "--delete-older-than 30d";
+    determinateNixd = {
+      builder.state = "enabled";
     };
   };
 

@@ -11,7 +11,10 @@ let
 
   # Key groups
   allUsers = [ macbook-pro-m2 ];
-  allHosts = [ matt-desktop oracle-0 ];
+  allHosts = [
+    matt-desktop
+    oracle-0
+  ];
   all = allUsers ++ allHosts;
 in
 {
@@ -35,4 +38,7 @@ in
 
   # OpenCode web server password (HTTP basic auth for matt-desktop)
   "opencode-server-password.age".publicKeys = all;
+
+  # Grafana secret key for oracle-0 (NixOS 26.05 requires explicit value)
+  "grafana-secret-key.age".publicKeys = all;
 }

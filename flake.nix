@@ -6,16 +6,19 @@
     extra-substituters = [
       "https://nix-community.cachix.org"
       "https://deploy-rs.cachix.org"
+      "https://install.determinate.systems"
     ];
     extra-trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
+      "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
     ];
   };
 
   inputs = {
     # Core
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
     darwin = {
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -102,6 +105,9 @@
         system = "aarch64-darwin";
         specialArgs = { inherit inputs; };
         modules = [
+          # Determinate nix-darwin compatibility module
+          inputs.determinate.darwinModules.default
+
           # System configuration
           ./hosts/macbook-pro-m2/configuration.nix
 
@@ -141,6 +147,7 @@
         system = "aarch64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          inputs.determinate.nixosModules.default
           inputs.agenix.nixosModules.default
           ./hosts/oracle-0/configuration.nix
         ];
@@ -150,6 +157,7 @@
         system = "x86_64-linux";
         specialArgs = { inherit inputs; };
         modules = [
+          inputs.determinate.nixosModules.default
           inputs.agenix.nixosModules.default
           inputs.disko.nixosModules.disko
           inputs.stylix.nixosModules.stylix
