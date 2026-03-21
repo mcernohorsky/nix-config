@@ -1148,11 +1148,11 @@
         "nixpkgs": "nixpkgs_8"
       },
       "locked": {
-        "lastModified": 1767824270,
-        "narHash": "sha256-3teKBGHATJ+haSRox70irrdatbSYFcA8zdCZ6cf0vjg=",
+        "lastModified": 1774066947,
+        "narHash": "sha256-1QNj6SRbPa77DcDW4XryNyJhYdEr1ABvdmmjsnOGGu4=",
         "ref": "refs/heads/main",
-        "rev": "cff51730ae29829fc7381936a9ed845bbb241f4b",
-        "revCount": 129,
+        "rev": "4d987ef79d9757aa68a6a4018723f01bc314e2ef",
+        "revCount": 137,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/repertoire-builder"
       },
