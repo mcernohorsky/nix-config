@@ -181,6 +181,11 @@
 
           encode gzip
 
+          # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
+          header Cache-Control "no-store"
+          # Allow long-lived caching for content-hashed JS/CSS assets
+          header /_app/immutable/* Cache-Control "public, max-age=31536000, immutable"
+
           header {
             X-Content-Type-Options "nosniff"
             X-Frame-Options "DENY"

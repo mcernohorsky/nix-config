@@ -47,9 +47,11 @@ in
 {
   imports = [
     ../../modules/home/opencode-core.nix
+    ../../modules/home/dev-templates.nix
   ];
 
   modules.home.opencodeCore.enable = true;
+  modules.home.devTemplates.enable = true;
   nix.package = lib.mkForce null;
 
   home.username = "matt";
@@ -1721,7 +1723,7 @@ in
     jq
     yq
     opencode-desktop
-    nodejs # `node` on PATH: opencode-cursor-oauth h2-bridge child; npm globals with #!/usr/bin/env node
+    nodejs # `node` on PATH: TS/Svelte language servers, opencode-cursor-oauth h2-bridge child, npm globals
 
     # System info
     fastfetch

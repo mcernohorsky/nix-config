@@ -1,0 +1,5 @@
+[alias]
+t = "nextest run"
+tt = "nextest run --all-targets --all-features"
+cov = "llvm-cov nextest --html"
+deny-all = "deny check"

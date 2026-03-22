@@ -156,14 +156,14 @@
   services.tailscale.enable = true;
 
   # Enable Tailscale SSH (nix-darwin doesn't have extraUpFlags)
-  # Also configure Tailscale Serve for Portal web UI (accessible at https://macbook-pro-m2.tailc41cf5.ts.net)
+  # Also configure Tailscale Serve for OpenChamber web UI (accessible at https://macbook-pro-m2.tailc41cf5.ts.net)
   system.activationScripts.postActivation.text = ''
     ${pkgs.tailscale}/bin/tailscale up --ssh
 
-    # Configure Tailscale Serve for Portal (mobile-first OpenCode UI)
+    # Configure Tailscale Serve for OpenChamber (OpenCode web UI)
     # Only configure if Tailscale is logged in and running
     if ${pkgs.tailscale}/bin/tailscale status >/dev/null 2>&1; then
-      echo "Configuring Tailscale Serve for Portal..."
+      echo "Configuring Tailscale Serve for OpenChamber..."
       ${pkgs.tailscale}/bin/tailscale serve --bg http://127.0.0.1:3000
     fi
   '';

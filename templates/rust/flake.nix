@@ -3,44 +3,136 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    crane.url = "github:ipetkov/crane";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # Rust tools
-            rustc
-            cargo
-            rust-analyzer
-            clippy
-            rustfmt
-            
-            # Common tools
-            git
-          ];
+  outputs =
+    inputs@{
+      crane,
+      flake-parts,
+      nixpkgs,
+      rust-overlay,
+      ...
+    }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
 
-          shellHook = ''
-            echo "🦀 Rust development environment activated!"
-            echo "Available tools:"
-            echo "  - rustc: $(rustc --version)"
-            echo "  - cargo: $(cargo --version)"
-            echo "  - rust-analyzer: Language server ready"
-            echo "  - clippy: Linter ready"
-            echo "  - rustfmt: Formatter ready"
-            echo ""
-            echo "Quick start:"
-            echo "  cargo new my-project  # Create new binary project"
-            echo "  cargo new --lib my-lib # Create new library"
-            echo "  cargo build           # Build the project"
-            echo "  cargo test            # Run tests"
-            echo "  cargo clippy          # Run linter"
-          '';
+      perSystem =
+        { system, lib, ... }:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ rust-overlay.overlays.default ];
+          };
+
+          rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+          craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+          hasCargoProject = builtins.pathExists ./Cargo.toml;
+          src = craneLib.cleanCargoSource ./.;
+
+          commonArgs = {
+            inherit src;
+            strictDeps = true;
+            nativeBuildInputs = with pkgs; [ pkg-config ];
+            buildInputs = lib.optionals pkgs.stdenv.isDarwin [ pkgs.libiconv ];
+          };
+
+          cargoArtifacts = if hasCargoProject then craneLib.buildDepsOnly commonArgs else null;
+          package =
+            if hasCargoProject then
+              craneLib.buildPackage (
+                commonArgs
+                // {
+                  inherit cargoArtifacts;
+                  doCheck = false;
+                }
+              )
+            else
+              null;
+        in
+        {
+          formatter = pkgs.nixfmt;
+
+          packages = lib.optionalAttrs hasCargoProject {
+            default = package;
+            coverage = craneLib.cargoLlvmCov (
+              commonArgs
+              // {
+                inherit cargoArtifacts;
+                cargoLlvmCovExtraArgs = "--html";
+              }
+            );
+          };
+
+          checks = lib.optionalAttrs hasCargoProject {
+            build = package;
+            fmt = craneLib.cargoFmt { inherit src; };
+            clippy = craneLib.cargoClippy (
+              commonArgs
+              // {
+                inherit cargoArtifacts;
+                cargoClippyExtraArgs = "--all-targets --all-features -- -D warnings";
+              }
+            );
+            nextest = craneLib.cargoNextest (
+              commonArgs
+              // {
+                inherit cargoArtifacts;
+              }
+            );
+            doctests = craneLib.cargoDocTest (
+              commonArgs
+              // {
+                inherit cargoArtifacts;
+              }
+            );
+          };
+
+          devShells.default = pkgs.mkShell {
+            inputsFrom = lib.optionals hasCargoProject [ package ];
+
+            packages = with pkgs; [
+              rustToolchain
+              cargo-nextest
+              cargo-llvm-cov
+              cargo-deny
+              bacon
+              sccache
+              nixd
+              nixfmt
+              git
+            ];
+
+            RUSTC_WRAPPER = "sccache";
+
+            shellHook = ''
+              export SCCACHE_DIR="''${HOME}/.cache/sccache"
+
+              echo "Rust dev shell ready"
+              echo "  rustc: $(rustc --version)"
+              echo "  cargo: $(cargo --version)"
+              echo ""
+              echo "Checks:"
+              echo "  cargo nextest run"
+              echo "  cargo llvm-cov nextest --html"
+              echo "  cargo deny check"
+              echo "  nix flake check"
+              ${lib.optionalString (!hasCargoProject) ''
+                echo ""
+                echo "Bootstrap the crate with: cargo init --vcs none --name $(basename "$PWD")"
+              ''}
+            '';
+          };
         };
-      });
+    };
 }

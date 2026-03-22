@@ -6,47 +6,37 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    { flake-utils, nixpkgs, ... }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # GHC and core tools
+          packages = with pkgs; [
             ghc
             cabal-install
-            stack
             haskell-language-server
-            
-            # Development tools
-            hpack
+            ghcid
             hlint
-            ormolu
-            
-            # Common tools
+            fourmolu
             git
           ];
 
           shellHook = ''
-            echo "λ Haskell development environment activated!"
-            echo "Available tools:"
-            echo "  - ghc: $(ghc --version)"
-            echo "  - cabal: $(cabal --version)"
-            echo "  - stack: $(stack --version)"
-            echo "  - hls: Language server ready"
-            echo "  - hlint: Linter ready"
-            echo "  - ormolu: Formatter ready"
+            echo "Haskell dev shell ready"
+            echo "  ghc: $(ghc --version)"
+            echo "  cabal: $(cabal --version | head -n1)"
             echo ""
             echo "Quick start:"
-            echo "  stack new my-project  # Create new project"
-            echo "  stack build           # Build the project"
-            echo "  stack test            # Run tests"
-            echo "  stack ghci            # Start REPL"
-            echo "  hlint .               # Lint code"
-            echo "  ormolu -i src/**/*.hs # Format code"
+            echo "  cabal init"
+            echo "  cabal build"
+            echo "  cabal test"
+            echo "  ghcid --command \"cabal repl\""
           '';
         };
-      });
+      }
+    );
 }

@@ -1,51 +1,51 @@
 {
-  description = "Python development environment";
+  description = "Python development environment (uv-first)";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            # Python and core tools
             python313
-            python313Packages.pip
-            python313Packages.virtualenv
-            poetry
+            uv
             ruff
-
-            # Language server and debugging
-            python313Packages.python-lsp-server
+            basedpyright
             python313Packages.debugpy
-
-            # Common tools
+            nixd
+            nixfmt
             git
           ];
 
+          UV_PYTHON_DOWNLOADS = "never";
+
           shellHook = ''
-            echo "🐍 Python development environment activated!"
-            echo "Available tools:"
-            echo "  - python: $(python --version)"
-            echo "  - pip: $(pip --version)"
-            echo "  - poetry: $(poetry --version)"
-            echo "  - ruff: Linter and formatter ready"
-            echo "  - python-lsp-server: Language server ready"
+            echo "Python dev shell (uv + ruff + basedpyright)"
+            echo "  python: $(python --version)"
+            echo "  uv: $(uv --version)"
+            echo "  ruff: $(ruff --version)"
             echo ""
             echo "Quick start:"
-            echo "  poetry new my-project  # Create new project"
-            echo "  poetry add package     # Add dependency"
-            echo "  poetry install         # Install dependencies"
-            echo "  poetry run python      # Run Python"
-            echo "  ruff check .           # Lint code"
-            echo "  ruff format .          # Format code"
+            echo "  uv init --no-python-downloads"
+            echo "  uv add ruff pytest         # add deps"
+            echo "  uv run pytest              # run tests"
+            echo "  uv run ruff check .        # lint"
+            echo "  uv run ruff format .       # format"
           '';
         };
-      });
+      }
+    );
 }

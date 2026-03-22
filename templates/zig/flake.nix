@@ -6,25 +6,27 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # Zig tools
+        devShells.default = pkgs.mkShellNoCC {
+          packages = with pkgs; [
             zig
             zls
-            
-            # Common tools
             git
           ];
 
           shellHook = ''
-            echo "⚡ Zig development environment activated!"
-            echo "Available tools:"
+            echo "Zig dev shell ready"
             echo "  - zig: $(zig version)"
             echo "  - zls: Language server ready"
             echo ""
@@ -35,5 +37,6 @@
             echo "  zig build test  # Run tests"
           '';
         };
-      });
+      }
+    );
 }

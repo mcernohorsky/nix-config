@@ -6,18 +6,20 @@
 {
   imports = [
     ../../../modules/home/opencode-core.nix
-    ../modules/portal.nix
+    ../../../modules/home/dev-templates.nix
+    ../modules/openchamber.nix
   ];
 
   modules.home.opencodeCore.enable = true;
+  modules.home.devTemplates.enable = true;
 
-  # Portal - Mobile-first web UI for OpenCode
+  # OpenChamber — web UI for OpenCode (https://github.com/openchamber/openchamber)
   # Access from iPhone: https://macbook-pro-m2.tailc41cf5.ts.net
   # Uses port 4097 to avoid conflicts with manual `opencode` sessions (which use 4096)
-  services.portal = {
+  services.openchamber = {
     enable = true;
     workingDirectory = "/Users/matt/Developer";
-    opencodePort = 4097; # Dedicated port for Portal (avoids conflict with terminal sessions)
+    opencodePort = 4097; # Dedicated port for OpenChamber (avoids conflict with terminal sessions)
   };
 
   # User Configuration
@@ -39,10 +41,6 @@
     file = {
       ".hushlogin".text = ""; # Disable login messages in the terminal.
       "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
-      ".local/bin/dev" = {
-        source = ./bin/dev;
-        executable = true;
-      };
       # Make the helix background transparent.
       ".config/helix/themes/custom.toml".text = ''
         inherits = "gruvbox_dark_hard"
@@ -67,8 +65,8 @@
       nixd
       nixfmt
 
-      bun # for bunx and general bun usage
-      nodejs # needed for running globally installed npm packages (they use #!/usr/bin/env node)
+      bun # bun / bunx for daily JS/TS work
+      nodejs # still needed for Node-targeted npm CLIs, language servers, and opencode child processes
 
       # fonts
       jetbrains-mono
@@ -215,6 +213,7 @@
 
     git = {
       enable = true;
+      signing.format = "openpgp";
       settings = {
         user.name = "Matt Cernohorsky";
         user.email = "matt@cernohorsky.ca";

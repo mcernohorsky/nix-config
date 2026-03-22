@@ -1,39 +1,39 @@
 {
-  description = "Go Development Environment";
+  description = "Go development environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    gomod2nix = {
-      url = "github:nix-community/gomod2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
-    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, gomod2nix }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    { flake-utils, nixpkgs, ... }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        gomod2nixPkgs = gomod2nix.legacyPackages.${system};
       in
       {
-        packages.default = pkgs.buildGoModule {
-          pname = "my-go-project";
-          version = "0.1.0";
-          pwd = ./.;
-          src = ./.;
-          modules = ./gomod2nix.toml;
-        };
-
-        devShells.default = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [
+        devShells.default = pkgs.mkShellNoCC {
+          packages = with pkgs; [
             go
             gopls
+            gotools
+            golangci-lint
             delve
-            go-tools
-            gomod2nixPkgs.gomod2nix
+            git
           ];
+
+          shellHook = ''
+            echo "Go dev shell ready"
+            echo "  go: $(go version)"
+            echo ""
+            echo "Quick start:"
+            echo "  go mod init example.com/myapp"
+            echo "  go test ./..."
+            echo "  golangci-lint run"
+          '';
         };
-      });
+      }
+    );
 }

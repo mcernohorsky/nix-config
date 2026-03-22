@@ -605,11 +605,10 @@ just desktop-opencode-reset-serve
 
 ### Deferred UI Evaluation
 
-> **Note**: Alternative mobile UIs (Portal, OpenChamber, etc.) are explicitly deferred until after the first shared setup works. The current implementation uses the default OpenCode web UI.
+> **Note**: Alternative mobile UIs beyond the default OpenCode web UI were deferred on the Linux desktop until the first shared setup worked. macbook-pro-m2 uses [OpenChamber](https://github.com/openchamber/openchamber) via Home Manager (`services.openchamber`).
 
 Future evaluation may include:
-- Portal (mobile-first web UI)
-- OpenChamber
+- OpenChamber (also an option for other hosts)
 - Other mobile-specific clients
 
 ### Troubleshooting
