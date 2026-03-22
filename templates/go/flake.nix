@@ -15,8 +15,10 @@
       in
       {
         devShells.default = pkgs.mkShellNoCC {
+          GOTOOLCHAIN = "local";
+
           packages = with pkgs; [
-            go
+            go_latest
             gopls
             gotools
             golangci-lint

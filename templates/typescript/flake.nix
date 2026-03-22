@@ -21,7 +21,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             bun
-            nodejs_22
+            nodejs
             typescript
             nodePackages.typescript-language-server
             biome
