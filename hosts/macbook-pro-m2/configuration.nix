@@ -37,6 +37,19 @@
 
   nixpkgs.config.allowUnfree = true;
 
+  # direnv 2.37.1 + CGO_ENABLED=0: Darwin GNUmakefile still adds -linkmode=external, which
+  # requires CGO (nixpkgs#502953). Fixed upstream in nixpkgs PR #502769 — drop this overlay
+  # after `nix flake update` pulls a nixpkgs revision whose direnv has matching postPatch.
+  nixpkgs.overlays = [
+    (_final: prev: {
+      direnv = prev.direnv.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace GNUmakefile --replace-fail " -linkmode=external" ""
+        '';
+      });
+    })
+  ];
+
   users.users.matt = {
     home = "/Users/matt";
   };

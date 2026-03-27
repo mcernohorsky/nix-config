@@ -37,7 +37,9 @@
 
           rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
           craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
-          hasCargoProject = builtins.pathExists ./Cargo.toml;
+          hasCargoToml = builtins.pathExists ./Cargo.toml;
+          # Crane needs a lockfile to vendor deps; `cargo init` does not create one yet.
+          hasCargoProject = hasCargoToml && builtins.pathExists ./Cargo.lock;
           src = craneLib.cleanCargoSource ./.;
 
           commonArgs = {
@@ -127,9 +129,13 @@
               echo "  cargo llvm-cov nextest --html"
               echo "  cargo deny check"
               echo "  nix flake check"
-              ${lib.optionalString (!hasCargoProject) ''
+              ${lib.optionalString (!hasCargoToml) ''
                 echo ""
                 echo "Bootstrap the crate with: cargo init --vcs none --name $(basename "$PWD")"
+              ''}
+              ${lib.optionalString (hasCargoToml && !hasCargoProject) ''
+                echo ""
+                echo "Create Cargo.lock (e.g. cargo generate-lockfile or cargo build) so Nix/Crane can build the package and checks."
               ''}
             '';
           };

@@ -73,267 +73,6 @@ in
     ${pkgs.systemd}/bin/systemctl --user disable swayidle.service 2>/dev/null || true
   '';
 
-  # ===================
-  # Hyprland Configuration
-  # ===================
-  wayland.windowManager.hyprland = {
-    enable = false;
-    # Disable systemd integration since we use UWSM
-    systemd.enable = false;
-
-    settings = {
-      # Monitor configuration (1.5x scaling for HiDPI)
-      monitor = [
-        ",preferred,auto,1.5"
-      ];
-
-      # XWayland scaling fix
-      xwayland = {
-        force_zero_scaling = true;
-      };
-
-      # Startup applications
-      # Note: idle is managed via systemd user service (services.swayidle.enable)
-      exec-once = [
-        # UWSM is not activating graphical-session.target here, so start the
-        # expected user services explicitly once the Wayland session is ready.
-        # (swayidle is intentionally omitted — idle locking is evdev-idle-daemon on niri.)
-        "systemctl --user start hyprpaper.service swayosd.service swaync.service elephant.service walker.service"
-        "waybar"
-        "nm-applet"
-        "blueman-applet"
-        "wl-paste --type text --watch cliphist store"
-        "wl-paste --type image --watch cliphist store"
-      ];
-
-      # Environment variables
-      env = [
-        "XCURSOR_SIZE,24"
-        "HYPRCURSOR_SIZE,24"
-      ];
-
-      # General settings
-      general = {
-        gaps_in = 5;
-        gaps_out = 10;
-        border_size = 2;
-        "col.active_border" = lib.mkForce "rgb(d79921) rgb(fe8019) 45deg";
-        "col.inactive_border" = lib.mkForce "rgb(3c3836)";
-        layout = "dwindle";
-        allow_tearing = true;
-      };
-
-      # Decorations
-      decoration = {
-        rounding = 10;
-        active_opacity = 1.0;
-        inactive_opacity = 0.85;
-        blur = {
-          enabled = true;
-          size = 3;
-          passes = 3;
-          xray = false;
-          ignore_opacity = true;
-        };
-        shadow = {
-          enabled = true;
-          range = 12;
-          render_power = 3;
-          color = lib.mkForce "rgba(1d202188)";
-        };
-      };
-
-      # Animations - fast and subtle
-      animations = {
-        enabled = true;
-        bezier = [
-          "easeOutQuint, 0.23, 1, 0.32, 1"
-          "easeOutExpo, 0.16, 1, 0.3, 1"
-          "linear, 0, 0, 1, 1"
-        ];
-        animation = [
-          "windows, 1, 4, easeOutQuint, popin 90%"
-          "windowsOut, 1, 3, easeOutExpo, popin 90%"
-          "windowsMove, 1, 3, easeOutQuint"
-          "border, 1, 4, easeOutQuint"
-          "borderangle, 1, 30, linear, loop"
-          "fade, 1, 3, easeOutQuint"
-          "workspaces, 1, 4, easeOutQuint, slide"
-          "specialWorkspace, 1, 4, easeOutQuint, slidefadevert"
-        ];
-      };
-
-      # Layout settings
-      dwindle = {
-        pseudotile = true;
-        preserve_split = true;
-      };
-
-      master = {
-        new_status = "master";
-      };
-
-      # Input settings
-      input = {
-        kb_layout = "us";
-        kb_options = "caps:escape";
-        follow_mouse = 1;
-        sensitivity = 0;
-        touchpad = {
-          natural_scroll = true;
-        };
-      };
-
-      # Misc
-      misc = {
-        force_default_wallpaper = 0;
-        disable_hyprland_logo = true;
-      };
-
-      # Nvidia specific
-      cursor = {
-        no_hardware_cursors = true;
-      };
-
-      # Keybindings
-      "$mainMod" = "SUPER";
-
-      bind = [
-        # Core
-        "$mainMod, Return, exec, ghostty"
-        "$mainMod, Q, killactive,"
-        "$mainMod SHIFT, E, exit,"
-        "$mainMod, E, exec, ghostty -e yazi"
-        "$mainMod SHIFT, E, exec, nautilus"
-        "$mainMod, V, togglefloating,"
-        "$mainMod, Space, exec, walker"
-        "$mainMod, P, pseudo,"
-        "$mainMod, T, layoutmsg, togglesplit"
-        "$mainMod, F, fullscreen,"
-        "$mainMod, C, exec, helium"
-
-        # Lock screen (use SUPER+Escape to avoid conflict with vim navigation)
-        "$mainMod, Escape, exec, ${lib.getExe lock-now}"
-
-        # Notification center
-        "$mainMod, N, exec, swaync-client -t -sw"
-
-        # Screenshots
-        ", Print, exec, grim -g \"$(slurp)\" - | swappy -f -"
-        "SHIFT, Print, exec, grim - | swappy -f -"
-
-        # Clipboard history (walker has built-in clipboard module)
-        "$mainMod SHIFT, V, exec, walker -m clipboard"
-
-        # Color picker (copies hex to clipboard)
-        "$mainMod SHIFT, C, exec, hyprpicker -a"
-
-        # Move focus with vim keys
-        "$mainMod, H, movefocus, l"
-        "$mainMod, L, movefocus, r"
-        "$mainMod, K, movefocus, u"
-        "$mainMod, J, movefocus, d"
-
-        # Move focus with arrow keys
-        "$mainMod, left, movefocus, l"
-        "$mainMod, right, movefocus, r"
-        "$mainMod, up, movefocus, u"
-        "$mainMod, down, movefocus, d"
-
-        # Move windows with vim keys
-        "$mainMod SHIFT, H, movewindow, l"
-        "$mainMod SHIFT, L, movewindow, r"
-        "$mainMod SHIFT, K, movewindow, u"
-        "$mainMod SHIFT, J, movewindow, d"
-
-        # Workspaces
-        "$mainMod, 1, workspace, 1"
-        "$mainMod, 2, workspace, 2"
-        "$mainMod, 3, workspace, 3"
-        "$mainMod, 4, workspace, 4"
-        "$mainMod, 5, workspace, 5"
-        "$mainMod, 6, workspace, 6"
-        "$mainMod, 7, workspace, 7"
-        "$mainMod, 8, workspace, 8"
-        "$mainMod, 9, workspace, 9"
-        "$mainMod, 0, workspace, 10"
-
-        # Move to workspace
-        "$mainMod SHIFT, 1, movetoworkspace, 1"
-        "$mainMod SHIFT, 2, movetoworkspace, 2"
-        "$mainMod SHIFT, 3, movetoworkspace, 3"
-        "$mainMod SHIFT, 4, movetoworkspace, 4"
-        "$mainMod SHIFT, 5, movetoworkspace, 5"
-        "$mainMod SHIFT, 6, movetoworkspace, 6"
-        "$mainMod SHIFT, 7, movetoworkspace, 7"
-        "$mainMod SHIFT, 8, movetoworkspace, 8"
-        "$mainMod SHIFT, 9, movetoworkspace, 9"
-        "$mainMod SHIFT, 0, movetoworkspace, 10"
-
-        # Special workspace (scratchpad)
-        "$mainMod, S, togglespecialworkspace, magic"
-        "$mainMod SHIFT, S, movetoworkspace, special:magic"
-
-        # Scroll through workspaces
-        "$mainMod, mouse_down, workspace, e+1"
-        "$mainMod, mouse_up, workspace, e-1"
-
-        # Resize mode
-        "$mainMod, R, submap, resize"
-      ];
-
-      # Mouse bindings
-      bindm = [
-        "$mainMod, mouse:272, movewindow"
-        "$mainMod, mouse:273, resizewindow"
-      ];
-
-      # Media keys - using swayosd for visual feedback
-      bindel = [
-        ", XF86AudioRaiseVolume, exec, swayosd-client --output-volume raise"
-        ", XF86AudioLowerVolume, exec, swayosd-client --output-volume lower"
-      ];
-
-      # Window rules (Hyprland 0.53+ syntax)
-      windowrule = [
-        "suppress_event maximize, match:class .*"
-        "float 1, match:class ^(pavucontrol)$"
-        "float 1, match:class ^(pwvucontrol)$"
-        "float 1, match:class ^(blueman-manager)$"
-        "float 1, match:class ^(nm-connection-editor)$"
-        "float 1, match:title ^(Picture-in-Picture)$"
-        "pin 1, match:title ^(Picture-in-Picture)$"
-        # Steam rules
-        "float 1, match:class ^(steam)$, match:title ^(Friends List)$"
-        "float 1, match:class ^(steam)$, match:title ^(Steam Settings)$"
-        # Game rules - allow tearing for better latency
-        "immediate 1, match:class ^(cs2)$"
-        "immediate 1, match:class ^(steam_app_.*)$"
-      ];
-
-      # Layer rules for blur (Hyprland 0.53+ syntax)
-      layerrule = [
-        "blur 1, match:namespace ^(waybar)$"
-        "blur 1, match:namespace ^(walker)$"
-        "blur 1, match:namespace ^(launcher)$"
-        "blur 1, match:namespace ^(gtk-layer-shell)$"
-        "blur 1, match:namespace ^(logout_dialog)$"
-        "blur 1, match:namespace ^(swaync-control-center)$"
-        "blur 1, match:namespace ^(swaync-notification-window)$"
-        # ignore_alpha is critical - blur only pixels above 50% opacity
-        "ignore_alpha 0.5, match:namespace ^(waybar)$"
-        "ignore_alpha 0.5, match:namespace ^(walker)$"
-        "ignore_alpha 0.5, match:namespace ^(launcher)$"
-        "ignore_alpha 0.5, match:namespace ^(gtk-layer-shell)$"
-        "ignore_alpha 0.5, match:namespace ^(logout_dialog)$"
-        "ignore_alpha 0.5, match:namespace ^(swaync-control-center)$"
-        "ignore_alpha 0.5, match:namespace ^(swaync-notification-window)$"
-        # Walker prefers no animation to avoid flicker during layout changes
-        "no_anim 1, match:namespace ^(walker)$"
-      ];
-    };
-  };
-
   programs.niri.settings = {
     prefer-no-csd = true;
 
@@ -1749,9 +1488,12 @@ in
   # ===================
   # GTK Icon Theme
   # ===================
-  gtk.iconTheme = {
-    name = "Papirus-Dark";
-    package = pkgs.papirus-icon-theme;
+  gtk = {
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
+    gtk4.theme = config.gtk.theme;
   };
 
   # ===================
@@ -1762,6 +1504,7 @@ in
     userDirs = {
       enable = true;
       createDirectories = true;
+      setSessionVariables = true;
       desktop = "${config.home.homeDirectory}/Desktop";
       documents = "${config.home.homeDirectory}/Documents";
       download = "${config.home.homeDirectory}/Downloads";
@@ -1861,7 +1604,7 @@ in
       };
       reboot = {
         name = "Reboot";
-        exec = "pkexec systemctl reboot";
+        exec = "/run/wrappers/bin/sudo -n ${pkgs.systemd}/bin/systemctl reboot";
         icon = "system-reboot";
         comment = "Restart the system";
         terminal = false;
@@ -1869,7 +1612,7 @@ in
       };
       shutdown = {
         name = "Shutdown";
-        exec = "pkexec systemctl poweroff";
+        exec = "/run/wrappers/bin/sudo -n ${pkgs.systemd}/bin/systemctl poweroff";
         icon = "system-shutdown";
         comment = "Power off the system";
         terminal = false;

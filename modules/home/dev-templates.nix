@@ -11,8 +11,10 @@ let
   supportedLanguagesString = lib.concatStringsSep " " supportedLanguages;
   devCommand = pkgs.writeShellApplication {
     name = "dev";
+    # Intentionally omit pkgs.nix: writeShellApplication prepends runtimeInputs to PATH, which
+    # would shadow Determinate Nix with upstream nixpkgs Nix. Upstream then warns on
+    # Determinate-only settings in /etc/nix/nix.conf (eval-cores, lazy-trees, etc.).
     runtimeInputs = with pkgs; [
-      nix
       direnv
       coreutils
       git

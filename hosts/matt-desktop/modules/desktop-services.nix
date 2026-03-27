@@ -35,7 +35,31 @@
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
-    wireplumber.enable = true;
+    wireplumber = {
+      enable = true;
+      extraConfig."90-studio-display-capture" = {
+        "wireplumber.settings" = {
+          "node.stream.default-capture-volume" = 1.0;
+          "node.stream.restore-props" = false;
+        };
+        "monitor.alsa.rules" = [
+          {
+            matches = [
+              {
+                "node.name" = "~alsa_input.usb-Apple_Inc._Studio_Display_.*";
+              }
+            ];
+            actions.update-props = {
+              "session.suspend-timeout-seconds" = 0;
+              "audio.rate" = 48000;
+              "api.alsa.disable-mmap" = true;
+              "api.alsa.multi-rate" = false;
+              "api.alsa.soft-mixer" = true;
+            };
+          }
+        ];
+      };
+    };
   };
 
   # Bluetooth

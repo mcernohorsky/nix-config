@@ -200,13 +200,22 @@
         language = [
           {
             name = "nix";
-            auto-format = true;
             formatter.command = "nixfmt";
             language-servers = [ "nixd" ];
           }
+          {
+            name = "rust";
+            formatter.command = "rustfmt";
+          }
         ];
         language-server = {
-          nixd.command = "nixd";
+          rust-analyzer = {
+            config = {
+              files = {
+                watcher = "client";
+              };
+            };
+          };
         };
       };
     };

@@ -33,7 +33,7 @@ in
     ./disk-config.nix
     ./modules/core.nix
     ./modules/nvidia.nix
-    ./modules/hyprland.nix
+    ./modules/desktop-services.nix
     ./modules/gaming.nix
     ./modules/media.nix
     ./modules/opencode-web.nix
