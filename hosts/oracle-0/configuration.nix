@@ -5,6 +5,62 @@
   inputs,
   ...
 }:
+let
+  # External Linux builds see the physical macOS store, where Nix rewrites
+  # case-colliding ncurses directories. Copy only the four entries needed by
+  # systemd stage 1 into a collision-free output. `nix copy` restores normal
+  # names on Linux; this is needed only while assembling the initrd locally.
+  initrdTerminfo = pkgs.runCommand "initrd-terminfo" { } ''
+    mkdir -p "$out/l" "$out/v"
+
+    for entry in linux vt100 vt102 vt220; do
+      source="$(find ${pkgs.ncurses}/share/terminfo -type f -name "$entry" -print -quit)"
+      test -n "$source"
+      if test "$entry" = linux; then
+        cp "$source" "$out/l/$entry"
+      else
+        cp "$source" "$out/v/$entry"
+      fi
+    done
+  '';
+
+  # An explicit Caddyfile is a supported NixOS configuration path and avoids
+  # nixpkgs' optional formatting derivation, whose `cp --no-preserve=mode`
+  # attempts a chmod that the Determinate native builder's output mount rejects.
+  caddyConfigFile = pkgs.writeText "Caddyfile" ''
+    {
+      auto_https off
+    }
+
+    http://cernohorsky.ca {
+      bind 127.0.0.1
+      respond "Matt's website will be here someday." 200
+    }
+
+    http://chess.cernohorsky.ca {
+      bind 127.0.0.1
+      reverse_proxy repertoire-builder:8090
+
+      encode gzip
+
+      # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
+      header Cache-Control "no-store"
+      # Allow long-lived caching for content-hashed JS/CSS assets
+      header /_app/immutable/* Cache-Control "public, max-age=31536000, immutable"
+
+      header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Required for SharedArrayBuffer (Stockfish WASM threading)
+        # Using credentialless instead of require-corp for broader compatibility
+        # with external resources (fonts, analytics, etc.)
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "credentialless"
+      }
+    }
+  '';
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -45,7 +101,15 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-    initrd.systemd.enable = true;
+    initrd.systemd = {
+      enable = true;
+      contents = {
+        "/etc/terminfo/l/linux".source = lib.mkForce "${initrdTerminfo}/l/linux";
+        "/etc/terminfo/v/vt100".source = lib.mkForce "${initrdTerminfo}/v/vt100";
+        "/etc/terminfo/v/vt102".source = lib.mkForce "${initrdTerminfo}/v/vt102";
+        "/etc/terminfo/v/vt220".source = lib.mkForce "${initrdTerminfo}/v/vt220";
+      };
+    };
   };
 
   systemd.targets.multi-user.enable = true;
@@ -160,43 +224,7 @@
 
   services.caddy = {
     enable = true;
-    # Disable auto HTTPS - Cloudflare tunnels terminate TLS, Tailscale uses WireGuard
-    globalConfig = ''
-      auto_https off
-    '';
-    virtualHosts = {
-      "http://cernohorsky.ca" = {
-        listenAddresses = [ "127.0.0.1" ];
-        extraConfig = ''
-          respond "Matt's website will be here someday." 200
-        '';
-      };
-      # stats.* removed; use metrics.cernohorsky.ca for Grafana
-      "http://chess.cernohorsky.ca" = {
-        listenAddresses = [ "127.0.0.1" ];
-        extraConfig = ''
-          reverse_proxy repertoire-builder:8090
-
-          encode gzip
-
-          # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
-          header Cache-Control "no-store"
-          # Allow long-lived caching for content-hashed JS/CSS assets
-          header /_app/immutable/* Cache-Control "public, max-age=31536000, immutable"
-
-          header {
-            X-Content-Type-Options "nosniff"
-            X-Frame-Options "DENY"
-            Referrer-Policy "strict-origin-when-cross-origin"
-            # Required for SharedArrayBuffer (Stockfish WASM threading)
-            # Using credentialless instead of require-corp for broader compatibility
-            # with external resources (fonts, analytics, etc.)
-            Cross-Origin-Opener-Policy "same-origin"
-            Cross-Origin-Embedder-Policy "credentialless"
-          }
-        '';
-      };
-    };
+    configFile = caddyConfigFile;
   };
 
   # Provide built frontend to the repertoire-builder container module

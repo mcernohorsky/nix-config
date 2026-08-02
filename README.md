@@ -54,7 +54,7 @@ Deployments are handled via `deploy-rs` over Tailscale.
 # Deploy to desktop
 just deploy-desktop
 
-# Deploy to Oracle VPS (via Docker)
+# Deploy to Oracle VPS (Determinate native Linux builder)
 just deploy-oracle
 ```
 

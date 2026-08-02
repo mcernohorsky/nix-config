@@ -45,10 +45,6 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
-    homebrew-bundle = {
-      url = "github:homebrew/homebrew-bundle";
-      flake = false;
-    };
 
     # Additional packages
     helix-master.url = "github:helix-editor/helix";
@@ -130,7 +126,6 @@
               taps = {
                 "homebrew/homebrew-core" = inputs.homebrew-core;
                 "homebrew/homebrew-cask" = inputs.homebrew-cask;
-                "homebrew/homebrew-bundle" = inputs.homebrew-bundle;
               };
             };
           }
@@ -175,7 +170,7 @@
       };
 
       # Deploy-rs configuration (using Tailscale MagicDNS hostnames)
-      # We deploy via OpenSSH (sshd) over the Tailscale network, NOT Tailscale SSH.
+      # Oracle uses Tailscale SSH; matt-desktop uses OpenSSH over Tailscale.
       #
       # IMPORTANT: magicRollback is disabled because the SSH connection drops during
       # activation (sysinit-reactivation.target restarts network services). This is
@@ -211,6 +206,10 @@
       apps.aarch64-linux.deploy-rs = {
         type = "app";
         program = "${inputs.deploy-rs.packages.aarch64-linux.deploy-rs}/bin/deploy";
+      };
+      apps.aarch64-darwin.deploy-rs = {
+        type = "app";
+        program = "${inputs.deploy-rs.packages.aarch64-darwin.deploy-rs}/bin/deploy";
       };
       apps.x86_64-linux.deploy-rs = {
         type = "app";

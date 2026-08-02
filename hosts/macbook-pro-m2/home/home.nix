@@ -269,6 +269,8 @@
 
     fzf = {
       enable = true;
+      # Atuin owns Ctrl-R; keep FZF enabled without a shadowed history binding.
+      historyWidget.command = "";
     };
 
     zellij = {

@@ -22,7 +22,8 @@ The deployment consists of:
 1. Oracle Cloud VPS running NixOS
 2. Tailscale installed and authenticated on your local machine
 3. SSH public keys added to `secrets/secrets.nix` for agenix encryption
-4. Nix with flakes enabled on your local machine
+4. Determinate Nix authenticated to a FlakeHub account with native Linux
+   builder access (`determinate-nixd auth login`)
 
 ## Setup Steps
 
@@ -454,23 +455,20 @@ ssh matt@oracle-0 "ls /run/booted-system/etc/systemd/system/sshd.service" # Shou
 
 After reboot, `/run/booted-system` points to the new system without sshd, and future activations work cleanly.
 
-### Docker Deploy Performance
+### Native Linux Builder
 
-**Problem**: Deploys taking 15-20+ minutes instead of seconds.
+`just deploy-oracle` builds the `aarch64-linux` closure from macOS using
+Determinate Nix's native Linux builder, then deploys it with deploy-rs. Docker
+and OrbStack are not involved.
 
-**Cause**: The persistent `/nix` volume was removed from the Docker deploy command, forcing fresh downloads every time.
+If a cross-platform build reports a platform mismatch, verify authentication
+and restart the daemon after logging in:
 
-**Solution**: The justfile now mounts a persistent nix store volume (`-v nix-config-store:/nix`).
-
-**Performance**:
-| Deploy Type | Time |
-|-------------|------|
-| Cached (no changes) | ~16 seconds |
-| Cold cache (first build) | ~5 minutes |
-
-**Cache Management**:
-- If "split brain" issues occur (stale cache causing wrong files to deploy): `docker volume rm nix-config-store`
-- Then run deploy again to rebuild from scratch
+```bash
+determinate-nixd status
+determinate-nixd auth login
+sudo launchctl kickstart -k system/systems.determinate.nix-daemon
+```
 
 ### Caddy Not Starting After Deployment
 
@@ -554,15 +552,18 @@ Expected: No "missing assets" window, services come up cleanly
 
 If `/version.json` shows an old commit after deployment:
 
-1. **Clear Docker nix store volume** (on build machine):
+1. **Make sure the application input points at the expected revision**:
    ```bash
-   docker volume rm nix-config-store
+   nix flake metadata | grep -A2 repertoire-builder
+   just update-app  # only if the lock file is actually behind
    just deploy-oracle
    ```
 
 2. **Do NOT** bump version numbers or modify derivation inputs as a workaround.
 
-The root cause is usually Docker volume cache corruption. Clearing the volume forces a fresh evaluation and build.
+Nix store paths are content-addressed by their derivation inputs, so a stale
+deployment usually means the flake input or application derivation did not
+change, not that a Docker cache needs clearing.
 
 ---
 
@@ -577,7 +578,7 @@ EPERM: Operation not permitted: failed to link package: glob-parent@5.1.2 (link)
 
 **Cause**: 
 1. bun2nix hook defaults to `--backend=symlink` which uses hardlinks
-2. In Nix sandboxes (especially Docker), `/tmp` (bun cache) and `/build` (build dir) are separate mount points
+2. In some Nix sandboxes, `/tmp` (bun cache) and `/build` (build dir) are separate mount points
 3. Linux forbids hardlinks across mount points → EPERM
 
 **Failed attempt**: Setting `BUN_CONFIG_INSTALL_BACKEND = "copyfile";` env var doesn't work because CLI flags override env vars, and the hook explicitly passes `--backend=symlink`.

@@ -27,7 +27,7 @@ update-plugins:
 
 # Update just the repertoire-builder input
 update-app:
-    nix flake lock --update-input repertoire-builder
+    nix flake update repertoire-builder
 
 # Enter development shell with deploy-rs
 dev:
@@ -37,30 +37,15 @@ dev:
 build-oracle:
     nix build .#nixosConfigurations.oracle-0.config.system.build.toplevel
 
-# Deploy to Oracle VPS using NixOS Docker container
-#
-# Notes:
-# - Persistent /nix volume for build cache (dramatically faster deploys)
-# - If "split brain" issues occur (stale cache), clear with: docker volume rm nix-config-store
-# - Binary caches in flake.nix provide additional speedup
+# Deploy to Oracle VPS with Determinate Nix's native Linux builder.
 deploy-oracle:
-    docker run --rm \
-        --platform linux/arm64 \
-        --security-opt seccomp=unconfined \
-        -v $(pwd):/workspace \
-        -v nix-config-store:/nix \
-        -v ~/.ssh:/root/.ssh:ro \
-        -w /workspace \
-        --network host \
-        -e NIX_CONFIG="experimental-features = nix-command flakes"$'\n'"accept-flake-config = true"$'\n'"extra-substituters = https://install.determinate.systems"$'\n'"extra-trusted-public-keys = cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM=" \
-        -e NIX_SSHOPTS="-o ServerAliveInterval=2 -o ServerAliveCountMax=30 -o ConnectTimeout=10 -o ConnectionAttempts=6" \
-        nixos/nix:latest \
-        nix run .#deploy-rs -- --skip-checks .#oracle-0
+    @echo "🚀 Deploying to oracle-0 with the native Linux builder..."
+    nix run .#deploy-rs -- .#oracle-0 --skip-checks
 
 # Deploy to Linux Desktop (remote build via Tailscale)
 deploy-desktop:
     @echo "🚀 Deploying to matt-desktop..."
-    nix run nixpkgs#deploy-rs -- .#matt-desktop --skip-checks
+    nix run .#deploy-rs -- .#matt-desktop --skip-checks
 
 # Deploy to macbook (this machine)
 deploy-mac:
