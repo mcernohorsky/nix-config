@@ -155,17 +155,21 @@ install -o vaultwarden -g vaultwarden -m 0600 \
 The repertoire-builder runs in a native NixOS container with:
 
 - **Network**: Private network with NAT
-  - Host IP: `192.168.100.10`  
-  - Container IP: `192.168.100.11`
+  - Attached to `br-containers`
+  - Receives a private address from the bridge's DHCP server; the address is
+    intentionally not pinned
 - **Port**: Application serves on port `8090`
 - **Data**: Persistent storage in `/var/lib/containers/repertoire-builder/data`
 - **User**: Runs as `pocketbase` user for security
 
 ## Accessing the Application
 
-Once deployed, you can access your repertoire-builder via Tailscale:
-- External: `http://oracle-0:8090`
-- PocketBase Admin: `http://oracle-0:8090/_/`
+The host's Caddy service resolves the container as `repertoire-builder` and
+proxies to port `8090`; the host does not expose a separate `:8090` listener.
+
+- Application: `https://chess.cernohorsky.ca`
+- PocketBase Admin: `https://chess.cernohorsky.ca/_/`
+- Host-side health check: `curl http://repertoire-builder:8090/api/health`
 
 ## Container Management
 
