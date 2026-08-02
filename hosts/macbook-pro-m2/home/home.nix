@@ -221,7 +221,13 @@
       };
     };
 
-    zsh.enable = true;
+    zsh = {
+      enable = true;
+      profileExtra = ''
+        # OrbStack CLI integration (kept declarative so Home Manager owns .zprofile).
+        source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+      '';
+    };
     bash.enable = true;
     nushell = {
       enable = true;
