@@ -42,10 +42,12 @@ deploy-oracle:
     @echo "🚀 Deploying to oracle-0 with the native Linux builder..."
     nix run .#deploy-rs -- .#oracle-0 --skip-checks
 
-# Build on and deploy to the Linux desktop over Tailscale.
+# Build on the Linux desktop and stage the result for its next boot. Boot-only
+# activation avoids mixing a new NVIDIA userspace with the loaded kernel module.
 deploy-desktop:
-    @echo "🚀 Deploying to matt-desktop..."
-    nix run .#deploy-rs -- .#matt-desktop --skip-checks
+    @echo "🚀 Building and staging matt-desktop for its next boot..."
+    nix run .#deploy-rs -- --boot .#matt-desktop --skip-checks
+    @echo "✅ matt-desktop is staged; reboot it when convenient to activate the new generation"
 
 # Deploy to macbook (this machine)
 deploy-mac:
@@ -55,7 +57,7 @@ deploy-mac:
 # Deploy all hosts in parallel; failures propagate through Just's dependency graph.
 [parallel]
 deploy-all: deploy-oracle deploy-desktop deploy-mac
-    @echo "✅ All deployments complete"
+    @echo "✅ Deployments complete; matt-desktop will activate on its next reboot"
 
 # Show container status on remote server
 container-status host=oracle_host:
