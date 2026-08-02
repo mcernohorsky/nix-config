@@ -1,0 +1,128 @@
+# Declarative CoolerControl policy for matt-desktop.
+#
+# The NCT6687D device UID and the CPU/GPU device UIDs are stable CoolerControl
+# identifiers generated from the detected hardware. The fan channels are:
+# fan1 = CPU_FAN1, fan3 = SYS_FAN1 bottom intake, fan4 = SYS_FAN2 rear exhaust,
+# and fan5 = SYS_FAN3 top exhaust. Unused headers are intentionally unmanaged.
+
+[devices]
+e8691a9a278410b3ece2f9f98dc8cffe19e3a8a247dbc02f9317af5697f642ba = "NVIDIA GeForce RTX 4080"
+631becd7b71957c2c91892d40e47448c55dda8710a760abe103e79d17caf37f1 = "AMD Ryzen 7 5700X3D 8-Core Processor"
+7bfee7e15e0af819a1c74ac2f088d69197bdae5f361d2af4da2960c931be3cc7 = "nct6687"
+
+[legacy690]
+
+[device-settings]
+
+[device-settings.7bfee7e15e0af819a1c74ac2f088d69197bdae5f361d2af4da2960c931be3cc7]
+fan1 = { profile_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b101" }
+fan3 = { profile_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b501" }
+fan4 = { profile_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b801" }
+fan5 = { profile_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b901" }
+
+[[profiles]]
+uid = "0"
+name = "Unmanaged"
+p_type = "Default"
+function = "0"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b101"
+name = "Matt CPU Fan Curve"
+p_type = "Graph"
+speed_profile = [[40.0, 25], [60.0, 40], [75.0, 65], [85.0, 100]]
+temp_source = { temp_name = "temp1", device_uid = "631becd7b71957c2c91892d40e47448c55dda8710a760abe103e79d17caf37f1" }
+temp_min = 40.0
+temp_max = 85.0
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b301"
+name = "Matt Bottom CPU Curve"
+p_type = "Graph"
+speed_profile = [[40.0, 30], [60.0, 40], [75.0, 65], [85.0, 100]]
+temp_source = { temp_name = "temp1", device_uid = "631becd7b71957c2c91892d40e47448c55dda8710a760abe103e79d17caf37f1" }
+temp_min = 40.0
+temp_max = 85.0
+function_uid = "0"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b601"
+name = "Matt Rear CPU Curve"
+p_type = "Graph"
+speed_profile = [[40.0, 25], [60.0, 35], [75.0, 60], [85.0, 100]]
+temp_source = { temp_name = "temp1", device_uid = "631becd7b71957c2c91892d40e47448c55dda8710a760abe103e79d17caf37f1" }
+temp_min = 40.0
+temp_max = 85.0
+function_uid = "0"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b901"
+name = "Matt Top Exhaust Offset"
+p_type = "Overlay"
+function_uid = "0"
+member_profile_uids = ["a4c6d201-51b9-4c40-8b6c-1dcb70f3b501"]
+offset_profile = [[0, -5], [30, -5], [40, -10], [80, -10], [90, -5], [100, 0]]
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b401"
+name = "Matt Bottom GPU Curve"
+p_type = "Graph"
+speed_profile = [[35.0, 30], [50.0, 40], [60.0, 55], [70.0, 75], [80.0, 100]]
+temp_source = { temp_name = "GPU Temp", device_uid = "e8691a9a278410b3ece2f9f98dc8cffe19e3a8a247dbc02f9317af5697f642ba" }
+temp_min = 35.0
+temp_max = 80.0
+function_uid = "0"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b501"
+name = "Matt Bottom CPU+GPU Maximum"
+p_type = "Mix"
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
+member_profile_uids = ["a4c6d201-51b9-4c40-8b6c-1dcb70f3b301", "a4c6d201-51b9-4c40-8b6c-1dcb70f3b401"]
+mix_function_type = "Max"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b701"
+name = "Matt Rear GPU Curve"
+p_type = "Graph"
+speed_profile = [[35.0, 25], [55.0, 30], [70.0, 45], [80.0, 70], [85.0, 100]]
+temp_source = { temp_name = "GPU Temp", device_uid = "e8691a9a278410b3ece2f9f98dc8cffe19e3a8a247dbc02f9317af5697f642ba" }
+temp_min = 35.0
+temp_max = 85.0
+function_uid = "0"
+
+[[profiles]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b801"
+name = "Matt Rear CPU+GPU Maximum"
+p_type = "Mix"
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
+member_profile_uids = ["a4c6d201-51b9-4c40-8b6c-1dcb70f3b601", "a4c6d201-51b9-4c40-8b6c-1dcb70f3b701"]
+mix_function_type = "Max"
+
+[[functions]]
+uid = "0"
+name = "Default Function"
+f_type = "Identity"
+
+[[functions]]
+uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
+name = "Matt Smooth Fan Response"
+f_type = "Standard"
+duty_minimum = 2
+duty_maximum = 10
+step_size_min_decreasing = 1
+step_size_max_decreasing = 4
+response_delay = 2
+deviance = 1.0
+only_downward = false
+threshold_hopping = false
+
+[settings]
+apply_on_boot = true
+liquidctl_integration = true
+hide_duplicate_devices = true
+no_init = false
+startup_delay = 2
+compress_payload = true
+drivetemp_suspend = false
