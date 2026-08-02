@@ -44,7 +44,7 @@ speed_profile = [[40.0, 30], [60.0, 40], [75.0, 65], [85.0, 100]]
 temp_source = { temp_name = "temp1", device_uid = "631becd7b71957c2c91892d40e47448c55dda8710a760abe103e79d17caf37f1" }
 temp_min = 40.0
 temp_max = 85.0
-function_uid = "0"
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
 
 [[profiles]]
 uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b601"
@@ -54,7 +54,7 @@ speed_profile = [[40.0, 25], [60.0, 35], [75.0, 60], [85.0, 100]]
 temp_source = { temp_name = "temp1", device_uid = "631becd7b71957c2c91892d40e47448c55dda8710a760abe103e79d17caf37f1" }
 temp_min = 40.0
 temp_max = 85.0
-function_uid = "0"
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
 
 [[profiles]]
 uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b901"
@@ -72,13 +72,13 @@ speed_profile = [[35.0, 30], [50.0, 40], [60.0, 55], [70.0, 75], [80.0, 100]]
 temp_source = { temp_name = "GPU Temp", device_uid = "e8691a9a278410b3ece2f9f98dc8cffe19e3a8a247dbc02f9317af5697f642ba" }
 temp_min = 35.0
 temp_max = 80.0
-function_uid = "0"
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
 
 [[profiles]]
 uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b501"
 name = "Matt Bottom CPU+GPU Maximum"
 p_type = "Mix"
-function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
+function_uid = "0"
 member_profile_uids = ["a4c6d201-51b9-4c40-8b6c-1dcb70f3b301", "a4c6d201-51b9-4c40-8b6c-1dcb70f3b401"]
 mix_function_type = "Max"
 
@@ -90,13 +90,13 @@ speed_profile = [[35.0, 25], [55.0, 30], [70.0, 45], [80.0, 70], [85.0, 100]]
 temp_source = { temp_name = "GPU Temp", device_uid = "e8691a9a278410b3ece2f9f98dc8cffe19e3a8a247dbc02f9317af5697f642ba" }
 temp_min = 35.0
 temp_max = 85.0
-function_uid = "0"
+function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
 
 [[profiles]]
 uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b801"
 name = "Matt Rear CPU+GPU Maximum"
 p_type = "Mix"
-function_uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
+function_uid = "0"
 member_profile_uids = ["a4c6d201-51b9-4c40-8b6c-1dcb70f3b601", "a4c6d201-51b9-4c40-8b6c-1dcb70f3b701"]
 mix_function_type = "Max"
 
@@ -109,14 +109,16 @@ f_type = "Identity"
 uid = "a4c6d201-51b9-4c40-8b6c-1dcb70f3b001"
 name = "Matt Smooth Fan Response"
 f_type = "Standard"
+# CoolerControl applies functions while evaluating Graph profiles, before Mix
+# and Overlay composition. Keep this function on each constituent Graph.
 duty_minimum = 2
 duty_maximum = 10
 step_size_min_decreasing = 1
 step_size_max_decreasing = 4
-response_delay = 2
-deviance = 1.0
-only_downward = false
-threshold_hopping = false
+response_delay = 4
+deviance = 0.5
+only_downward = true
+threshold_hopping = true
 
 [settings]
 apply_on_boot = true
