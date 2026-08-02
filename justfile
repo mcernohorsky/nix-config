@@ -46,6 +46,7 @@ deploy-oracle:
 deploy-desktop:
     @echo "🚀 Deploying to matt-desktop..."
     nix run .#deploy-rs -- .#matt-desktop --skip-checks
+    @ssh matt@{{desktop_host}} 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ Running kernel and NVIDIA stack do not require a reboot"; fi'
 
 # Deploy to macbook (this machine)
 deploy-mac:
