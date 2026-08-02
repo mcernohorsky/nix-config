@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ config, pkgs, ... }:
 {
   # Firewall - all ports closed; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
   networking.firewall = {
@@ -35,11 +30,11 @@
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     wantedBy = [ "multi-user.target" ];
+    unitConfig.StartLimitIntervalSec = 0;
     serviceConfig = {
       ExecStart = "${pkgs.cloudflared}/bin/cloudflared tunnel --no-autoupdate run --token-file ${config.age.secrets.cloudflared-token.path}";
-      Restart = lib.mkOverride 50 "always";
+      Restart = "always";
       RestartSec = "5s";
-      StartLimitIntervalSec = 0;
       User = "cloudflared";
       Group = "cloudflared";
     };
