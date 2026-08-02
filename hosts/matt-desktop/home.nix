@@ -1656,6 +1656,8 @@ in
   # ===================
   # GTK Icon Theme
   # ===================
+  home.pointerCursor.enable = true;
+
   gtk = {
     iconTheme = {
       name = "Papirus-Dark";
