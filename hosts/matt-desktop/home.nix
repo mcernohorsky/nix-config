@@ -43,6 +43,76 @@ let
     '';
   };
 
+  brightness-control = pkgs.writeShellApplication {
+    name = "brightness-control";
+    runtimeInputs = [
+      pkgs.asdbctl
+      pkgs.gawk
+      pkgs.libnotify
+      pkgs.swayosd
+    ];
+    text = ''
+      set -euo pipefail
+
+      studio_display_available() {
+        asdbctl get >/dev/null 2>&1
+      }
+
+      current_brightness() {
+        asdbctl get | awk 'END { gsub(/[^0-9]/, "", $NF); print $NF }'
+      }
+
+      notify_brightness() {
+        local brightness
+        brightness="$(current_brightness)"
+        notify-send \
+          -h string:x-canonical-private-synchronous:studio-display-brightness \
+          -h int:value:"$brightness" \
+          "Studio Display brightness" \
+          "$brightness%"
+      }
+
+      command="''${1:-get}"
+
+      case "$command" in
+        up|down)
+          if studio_display_available; then
+            asdbctl "$command"
+            notify_brightness
+          else
+            swayosd-client --brightness "$command"
+          fi
+          ;;
+        get)
+          if studio_display_available; then
+            current_brightness
+          else
+            printf 'No Apple Studio Display detected for asdbctl.\n' >&2
+            exit 1
+          fi
+          ;;
+        set)
+          if [ $# -lt 2 ]; then
+            printf 'Usage: brightness-control set <percent>\n' >&2
+            exit 2
+          fi
+
+          if studio_display_available; then
+            asdbctl set "$2"
+            notify_brightness
+          else
+            printf 'No Apple Studio Display detected for asdbctl.\n' >&2
+            exit 1
+          fi
+          ;;
+        *)
+          printf 'Usage: brightness-control [get|up|down|set <percent>]\n' >&2
+          exit 2
+          ;;
+      esac
+    '';
+  };
+
 in
 {
   imports = [
@@ -71,6 +141,114 @@ in
   home.activation.disableLegacySwayidle = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ${pkgs.systemd}/bin/systemctl --user stop swayidle.service 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user disable swayidle.service 2>/dev/null || true
+  '';
+
+  home.activation.removeLegacyZenProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    rm -rf "${config.home.homeDirectory}/.zen"
+  '';
+
+  home.activation.configureCemu = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        cemu_config_dir="${config.home.homeDirectory}/.config/Cemu"
+        cemu_settings="$cemu_config_dir/settings.xml"
+        cemu_library_dir="${config.home.homeDirectory}/Games/WiiU"
+        cemu_game_dir="$cemu_library_dir/games"
+        cemu_legacy_game_dir="$cemu_library_dir"
+        xmlstarlet="${pkgs.xmlstarlet}/bin/xmlstarlet"
+
+        seed_cemu_settings() {
+          cat > "$cemu_settings" <<'EOF'
+    <?xml version="1.0" encoding="UTF-8"?>
+    <content>
+      <console_language>1</console_language>
+      <disable_screensaver>true</disable_screensaver>
+      <play_boot_sound>false</play_boot_sound>
+      <feral_gamemode>true</feral_gamemode>
+      <check_update>false</check_update>
+      <receive_untested_updates>false</receive_untested_updates>
+      <GamePaths/>
+      <Graphic>
+        <api>1</api>
+        <VSync>0</VSync>
+        <GX2DrawdoneSync>true</GX2DrawdoneSync>
+        <UpscaleFilter>1</UpscaleFilter>
+        <DownscaleFilter>0</DownscaleFilter>
+        <FullscreenScaling>0</FullscreenScaling>
+        <AsyncCompile>true</AsyncCompile>
+        <vkAccurateBarriers>true</vkAccurateBarriers>
+      </Graphic>
+      <Audio>
+        <api>3</api>
+        <delay>2</delay>
+        <TVChannels>1</TVChannels>
+        <PadChannels>1</PadChannels>
+        <InputChannels>0</InputChannels>
+        <TVVolume>100</TVVolume>
+        <PadVolume>100</PadVolume>
+        <InputVolume>100</InputVolume>
+        <PortalVolume>100</PortalVolume>
+        <TVDevice>default</TVDevice>
+        <PadDevice>default</PadDevice>
+        <InputDevice/>
+        <PortalDevice/>
+      </Audio>
+      <Input>
+        <DSUC host="127.0.0.1" port="26760"/>
+      </Input>
+    </content>
+    EOF
+        }
+
+        ensure_element() {
+          path="$1"
+          parent="$2"
+          name="$3"
+          if [ "$("$xmlstarlet" sel -t -v "count($path)" "$cemu_settings")" = "0" ]; then
+            "$xmlstarlet" ed -L -s "$parent" -t elem -n "$name" -v "" "$cemu_settings"
+          fi
+        }
+
+        set_value() {
+          path="$1"
+          parent="$2"
+          name="$3"
+          value="$4"
+          ensure_element "$path" "$parent" "$name"
+          "$xmlstarlet" ed -L -u "$path" -v "$value" "$cemu_settings"
+        }
+
+        install -d "$cemu_config_dir"
+        install -d "$cemu_game_dir"
+        install -d "$cemu_library_dir/installers/updates"
+        install -d "$cemu_library_dir/installers/dlc"
+
+        if [ ! -s "$cemu_settings" ]; then
+          seed_cemu_settings
+        elif ! "$xmlstarlet" val "$cemu_settings" >/dev/null 2>&1 || [ "$("$xmlstarlet" sel -t -v 'count(/content)' "$cemu_settings")" = "0" ]; then
+          mv "$cemu_settings" "$cemu_settings.invalid"
+          seed_cemu_settings
+        fi
+
+        ensure_element "/content/Graphic" "/content" "Graphic"
+        ensure_element "/content/Audio" "/content" "Audio"
+        ensure_element "/content/Input" "/content" "Input"
+        ensure_element "/content/GamePaths" "/content" "GamePaths"
+
+        "$xmlstarlet" ed -L -d "/content/GamePaths/Entry[text()='$cemu_legacy_game_dir']" "$cemu_settings"
+
+        if [ "$("$xmlstarlet" sel -t -v "count(/content/GamePaths/Entry[text()='$cemu_game_dir'])" "$cemu_settings")" = "0" ]; then
+          "$xmlstarlet" ed -L -s "/content/GamePaths" -t elem -n "Entry" -v "$cemu_game_dir" "$cemu_settings"
+        fi
+
+        set_value "/content/feral_gamemode" "/content" "feral_gamemode" "true"
+        set_value "/content/check_update" "/content" "check_update" "false"
+        set_value "/content/receive_untested_updates" "/content" "receive_untested_updates" "false"
+        set_value "/content/disable_screensaver" "/content" "disable_screensaver" "true"
+        set_value "/content/Graphic/api" "/content/Graphic" "api" "1"
+        set_value "/content/Graphic/VSync" "/content/Graphic" "VSync" "0"
+        set_value "/content/Graphic/AsyncCompile" "/content/Graphic" "AsyncCompile" "true"
+        set_value "/content/Audio/api" "/content/Audio" "api" "3"
+        set_value "/content/Audio/TVVolume" "/content/Audio" "TVVolume" "100"
+        set_value "/content/Audio/PadVolume" "/content/Audio" "PadVolume" "100"
   '';
 
   programs.niri.settings = {
@@ -186,15 +364,13 @@ in
       ];
       "XF86MonBrightnessUp".allow-when-locked = true;
       "XF86MonBrightnessUp".action.spawn = [
-        "swayosd-client"
-        "--brightness"
-        "raise"
+        (lib.getExe brightness-control)
+        "up"
       ];
       "XF86MonBrightnessDown".allow-when-locked = true;
       "XF86MonBrightnessDown".action.spawn = [
-        "swayosd-client"
-        "--brightness"
-        "lower"
+        (lib.getExe brightness-control)
+        "down"
       ];
 
       "Mod+O".action.toggle-overview = [ ];
@@ -1455,6 +1631,8 @@ in
   home.packages = with pkgs; [
     # Browser
     inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
+    solaar
+    brightness-control
 
     # Development
     lazygit
@@ -1526,6 +1704,18 @@ in
       };
     };
     desktopEntries = {
+      "info.cemu.Cemu" = {
+        name = "Cemu";
+        genericName = "Wii U Emulator";
+        comment = "Wii U emulator";
+        exec = "${pkgs.coreutils}/bin/env GDK_BACKEND=x11 SDL_VIDEODRIVER=x11 /run/current-system/sw/bin/Cemu";
+        icon = "info.cemu.Cemu";
+        terminal = false;
+        categories = [
+          "Game"
+          "Emulator"
+        ];
+      };
       "Helix" = {
         name = "Helix";
         genericName = "Text Editor";

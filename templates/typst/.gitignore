@@ -1,0 +1,6 @@
+.direnv/
+result
+result-*
+*.pdf
+*.svg
+*.png

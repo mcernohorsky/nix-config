@@ -45,6 +45,10 @@ in
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.timeout = 2; # Faster boot menu
 
+  # Allow the systemd initrd to unlock the LUKS2 system volume with its
+  # enrolled TPM2 token. The existing passphrase slot remains available.
+  boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [ "tpm2-device=auto" ];
+
   networking.hostName = "matt-desktop";
 
   # Fix slow shutdown
@@ -52,6 +56,11 @@ in
 
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.nvidia.acceptLicense = true;
+
+  services.udev.packages = [
+    pkgs.solaar
+    pkgs.asdbctl
+  ];
 
   users.users.matt = {
     isNormalUser = true;
@@ -306,8 +315,9 @@ in
   # Fix Tailscale TPM issue after BIOS updates
   systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
 
-  # Evdev-based idle tracker using python-evdev with select() for efficient blocking I/O
-  # WORKAROUND: See detailed comment in home.nix
+  # Evdev-based idle tracker using python-evdev with select() for efficient blocking I/O.
+  # WORKAROUND: See detailed comment in home.nix. Keep the implementation small and
+  # robust against USB hotplug because the Bolt receiver may move between ports/hubs.
   systemd.user.services.evdev-idle-daemon =
     let
       evdev-idle-script =
@@ -334,6 +344,7 @@ in
             LOCK_GRACE = 3  # require lock to settle before monitor power-off
             DISPLAY_RELOCK_DELAY = 15  # avoid immediate re-lock loops after display wake
             LOCK_CHECK_INTERVAL = 1  # wake periodically to evaluate lock deadlines
+            DEVICE_RESCAN_INTERVAL = 2  # keep device set fresh across USB hotplug/replug
 
             DEBUG = os.environ.get("EVDEV_IDLE_DEBUG", "0") == "1"
 
@@ -387,12 +398,53 @@ in
             def find_input_devices():
                 devices = {}
                 for path in list_devices():
-                    dev = InputDevice(path)
-                    caps = dev.capabilities()
+                    try:
+                        dev = InputDevice(path)
+                        caps = dev.capabilities()
+                    except OSError as err:
+                        debug(f"skipping {path}: {err}")
+                        continue
+
                     debug(f"considering {path} {dev.name} caps={sorted(caps.keys())}")
                     if ACTIVITY_TYPES & set(caps.keys()):
-                        devices[dev.fd] = dev
+                        devices[dev.path] = dev
+                    else:
+                        dev.close()
+
                 return devices
+
+
+            def close_devices(devices):
+                for dev in devices.values():
+                    try:
+                        dev.close()
+                    except Exception:
+                        pass
+
+
+            def refresh_input_devices(devices, reason):
+                new_devices = find_input_devices()
+                old_paths = set(devices.keys())
+                new_paths = set(new_devices.keys())
+
+                if new_paths == old_paths:
+                    close_devices(new_devices)
+                    return devices, False
+
+                close_devices(devices)
+
+                added = sorted(new_paths - old_paths)
+                removed = sorted(old_paths - new_paths)
+                print(
+                    f"evdev-idle: input topology changed ({reason}); monitoring {len(new_devices)} input devices",
+                    flush=True,
+                )
+                if added:
+                    debug(f"added input devices: {added}")
+                if removed:
+                    debug(f"removed input devices: {removed}")
+
+                return new_devices, True
 
 
             def lock_process_running(lock_proc):
@@ -468,6 +520,7 @@ in
                 lock_proc = None
                 next_lock_attempt = 0.0
                 lock_confirmed_at = None
+                next_device_scan = last_activity + DEVICE_RESCAN_INTERVAL
 
                 while True:
                     if lock_proc is not None and lock_proc.poll() is not None:
@@ -475,6 +528,13 @@ in
                         lock_proc = None
 
                     now = time.monotonic()
+                    if now >= next_device_scan:
+                        devices, topology_changed = refresh_input_devices(devices, "periodic rescan")
+                        next_device_scan = now + DEVICE_RESCAN_INTERVAL
+                        if topology_changed:
+                            last_activity = now
+                            next_lock_attempt = 0.0
+
                     locked_hint_initial = is_session_locked()
                     lock_active = now_locked(lock_proc)
                     if locked_hint_initial:
@@ -489,11 +549,19 @@ in
 
                     try:
                         ready, _, _ = select.select(list(devices.values()), [], [], timeout)
-                    except Exception:
+                    except Exception as err:
+                        debug(f"select failed, refreshing input devices: {err}")
                         ready = []
+                        devices, topology_changed = refresh_input_devices(devices, f"select error: {err}")
+                        next_device_scan = time.monotonic() + DEVICE_RESCAN_INTERVAL
+                        if topology_changed:
+                            last_activity = time.monotonic()
+                            next_lock_attempt = 0.0
+                            continue
 
                     if ready:
                         saw_activity = False
+                        refresh_reason = None
                         for dev in ready:
                             try:
                                 for ev in dev.read():
@@ -502,6 +570,17 @@ in
                                         debug(f"activity from {dev.path} {dev.name}: type={ev.type} code={ev.code} value={ev.value}")
                             except BlockingIOError:
                                 pass
+                            except OSError as err:
+                                debug(f"read failed for {dev.path}, refreshing input devices: {err}")
+                                refresh_reason = f"read error: {err}"
+
+                        if refresh_reason is not None:
+                            devices, topology_changed = refresh_input_devices(devices, refresh_reason)
+                            next_device_scan = time.monotonic() + DEVICE_RESCAN_INTERVAL
+                            if topology_changed:
+                                last_activity = time.monotonic()
+                                next_lock_attempt = 0.0
+                                continue
 
                         if saw_activity:
                             last_activity = time.monotonic()
@@ -573,7 +652,8 @@ in
         StandardError = "journal";
         Restart = "always";
         RestartSec = 5;
-        KillMode = "mixed";
+        # Do not kill an active lock screen if this helper restarts.
+        KillMode = "process";
       };
     };
 

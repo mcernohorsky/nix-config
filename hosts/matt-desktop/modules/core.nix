@@ -97,6 +97,7 @@
       "loglevel=3"
       "rd.udev.log_level=3"
       "vt.global_cursor_default=0"
+      "amd_pstate=guided"
     ];
   };
 
@@ -272,6 +273,25 @@
   # Enable firmware updates and microcode
   hardware.enableRedistributableFirmware = true;
   hardware.cpu.amd.updateMicrocode = true;
+
+  # This is a plugged-in desktop. Keep CPU policy latency-oriented and ensure
+  # boost is enabled under amd-pstate guided mode.
+  powerManagement.cpuFreqGovernor = "performance";
+
+  systemd.services.enable-cpu-boost = {
+    description = "Enable CPU boost";
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      boost=/sys/devices/system/cpu/cpufreq/boost
+      if [ -w "$boost" ]; then
+        echo 1 > "$boost"
+      fi
+    '';
+  };
 
   # Allow running unpatched dynamic binaries
   programs.nix-ld.enable = true;

@@ -87,6 +87,9 @@
     # Notifications
     libnotify
 
+    # External display brightness
+    asdbctl
+
     # Lock screen
     hyprlock
 

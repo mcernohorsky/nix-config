@@ -1,0 +1,19 @@
+set dotenv-load
+
+source := "main.typ"
+output := "proposal.pdf"
+
+default:
+    just build
+
+build:
+    typst compile {{source}} {{output}}
+
+watch:
+    typst watch {{source}} {{output}}
+
+format:
+    typstyle -i {{source}}
+
+check:
+    nix flake check

@@ -69,12 +69,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Desktop-specific inputs
-    zen-browser = {
-      url = "github:youwen5/zen-browser-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     stylix = {
       url = "github:danth/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -168,6 +162,7 @@
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
+              backupFileExtension = "hm-bak";
               users.matt = {
                 imports = [
                   ./hosts/matt-desktop/home.nix
