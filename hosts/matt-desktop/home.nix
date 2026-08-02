@@ -501,6 +501,7 @@ in
   };
 
   services.hyprpaper.enable = lib.mkForce false;
+  services.wpaperd.enable = true;
 
   # ===================
   # Hyprlock Configuration

@@ -7,19 +7,13 @@
 }:
 
 let
-  # Single source of truth for Stylix + hyprlock (same file as desktop wallpaper).
-  stylixWallpaperImage =
-    pkgs.runCommand "gruvbox-wallpaper.png"
-      {
-        nativeBuildInputs = [ pkgs.imagemagick ];
-      }
-      ''
-        magick -size 3840x2160 \
-          -define gradient:angle=135 \
-          gradient:'#1d2021-#282828' \
-          -blur 0x2 \
-          $out
-      '';
+  # NASA Artemis II Earthset, original 5568×3712 image from NASA's Flickr.
+  # Single source of truth for the desktop, greeter, and lock screen.
+  stylixWallpaperImage = pkgs.fetchurl {
+    name = "artemis-ii-earthset.jpg";
+    url = "https://www.flickr.com/photo_download.gne?id=55192132107&secret=00dc598014&size=o&source=photoPageEngagement";
+    hash = "sha256-nsaMkJZmtPQjmkQcWbpZ0DNZvGSzUKzw/1LxhFwGScM=";
+  };
 in
 
 {
@@ -96,8 +90,8 @@ in
     polarity = "dark";
     # Gruvbox dark palette
     base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
-    # Wallpaper: Replace stylixWallpaperImage in the let-block above (or point to a local file).
     image = stylixWallpaperImage;
+    imageScalingMode = "fill";
 
     # Fonts (Using JetBrains Mono for everything)
     fonts = {
