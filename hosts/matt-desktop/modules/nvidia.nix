@@ -1,11 +1,5 @@
-# Nvidia GPU configuration for Wayland
 # NVIDIA configuration for Wayland with explicit sync support
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 
 {
   # Load nvidia driver for Xorg and Wayland
@@ -49,8 +43,8 @@
     # Enable power management (fixes suspend/resume)
     powerManagement.enable = true;
 
-    # Use production drivers
-    package = config.boot.kernelPackages.nvidiaPackages.production;
+    # Track NVIDIA's current production branch for stability and regular fixes.
+    branch = "production";
   };
 
   # Environment variables for Wayland + Nvidia

@@ -156,6 +156,13 @@
 
   services.tailscale.enable = true;
 
+  # Tailscale is the management path to the NixOS hosts. Keep its daemon alive
+  # across crashes just like other long-running launchd services.
+  launchd.daemons.tailscaled.serviceConfig = {
+    KeepAlive = true;
+    ThrottleInterval = 5;
+  };
+
   # Enable Tailscale SSH (nix-darwin doesn't have extraUpFlags).
   # Do not run `tailscale up` during every activation: it can block forever when
   # the machine is not authenticated. `set` changes only the SSH preference.

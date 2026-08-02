@@ -42,7 +42,7 @@ deploy-oracle:
     @echo "🚀 Deploying to oracle-0 with the native Linux builder..."
     nix run .#deploy-rs -- .#oracle-0 --skip-checks
 
-# Deploy to Linux Desktop (remote build via Tailscale)
+# Build on and deploy to the Linux desktop over Tailscale.
 deploy-desktop:
     @echo "🚀 Deploying to matt-desktop..."
     nix run .#deploy-rs -- .#matt-desktop --skip-checks

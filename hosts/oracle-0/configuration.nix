@@ -174,7 +174,13 @@ in
   age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
   # Don't restart these during activation. Updates take effect on next reboot.
-  systemd.services.tailscaled.restartIfChanged = false;
+  # Tailscale is the only management path, so retry daemon failures indefinitely
+  # instead of exhausting systemd's default five-start burst.
+  systemd.services.tailscaled = {
+    restartIfChanged = false;
+    unitConfig.StartLimitIntervalSec = 0;
+    serviceConfig.RestartSec = lib.mkForce "5s";
+  };
   systemd.services.systemd-networkd.restartIfChanged = false;
   systemd.services.systemd-resolved.restartIfChanged = false;
 

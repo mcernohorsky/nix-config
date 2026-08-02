@@ -42,6 +42,18 @@
     '';
   };
 
+  # The calendar timers provide the normal six-hour cadence. If either remote
+  # destination is temporarily unavailable, retry that pipeline independently
+  # instead of waiting for the next scheduled run.
+  systemd.services.restic-backups-vaultwarden-r2.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = "15min";
+  };
+  systemd.services.restic-backups-vaultwarden-desktop.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = "15min";
+  };
+
   # Restic backup configuration
   services.restic.backups = {
     # Primary backup to Cloudflare R2

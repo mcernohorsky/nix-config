@@ -317,8 +317,20 @@ in
     };
   };
 
-  # Fix Tailscale TPM issue after BIOS updates
-  systemd.services.tailscaled.serviceConfig.Environment = [ "TS_NO_TPM=1" ];
+  # Keep the management path stable across live activations.
+  systemd.services.NetworkManager.restartIfChanged = false;
+  systemd.services.systemd-resolved.restartIfChanged = false;
+  systemd.services.tailscaled = {
+    restartIfChanged = false;
+    unitConfig.StartLimitIntervalSec = 0;
+    serviceConfig = {
+      # Avoid exhausting systemd's default five-start burst during a persistent
+      # failure; retry slowly until the underlying problem is corrected.
+      RestartSec = lib.mkForce "5s";
+      # Fix Tailscale TPM state invalidation after BIOS updates.
+      Environment = [ "TS_NO_TPM=1" ];
+    };
+  };
 
   # Evdev-based idle tracker using python-evdev with select() for efficient blocking I/O.
   # WORKAROUND: See detailed comment in home.nix. Keep the implementation small and
