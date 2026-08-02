@@ -33,6 +33,7 @@ in
     ./disk-config.nix
     ./modules/core.nix
     ./modules/nvidia.nix
+    ./modules/fan-control.nix
     ./modules/desktop-services.nix
     ./modules/gaming.nix
     ./modules/media.nix
