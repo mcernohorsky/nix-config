@@ -9,6 +9,8 @@
 }:
 
 let
+  colors = config.lib.stylix.colors;
+
   # Fixed wrapper for Jellyfin Media Player (Forces XWayland and Fusion style to avoid crashes)
   jellyfin-wrapped = pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
     export QT_QPA_PLATFORM=xcb
@@ -276,8 +278,8 @@ in
         focus-ring.off = { };
         border = {
           width = 4;
-          active-color = "#83a598";
-          inactive-color = "#665c54";
+          active-color = colors.withHashtag.base0D;
+          inactive-color = colors.withHashtag.base03;
         };
         default-column-width = { };
         center-focused-column = "never";
@@ -559,8 +561,9 @@ in
         {
           layer-rule = {
             match._props.namespace = "^walker$";
-            geometry-corner-radius = 12;
-            background-effect.blur = true;
+            # Walker supplies the exact launcher-panel blur region. Disable xray
+            # so that region blurs the windows beneath it, not just the wallpaper.
+            background-effect.xray = false;
           };
         }
         {
@@ -623,7 +626,7 @@ in
           text = "$TIME";
           font_size = 120;
           font_family = "JetBrains Mono";
-          color = "rgb(ebdbb2)"; # Gruvbox fg
+          color = "rgb(${colors.base06})";
           position = "0, 200";
           halign = "center";
           valign = "center";
@@ -636,7 +639,7 @@ in
           text = ''cmd[update:3600000] date +"%A, %B %d"'';
           font_size = 24;
           font_family = "JetBrains Mono";
-          color = "rgb(a89984)"; # Gruvbox gray
+          color = "rgb(${colors.base04})";
           position = "0, 80";
           halign = "center";
           valign = "center";
@@ -648,7 +651,7 @@ in
           text = "$USER";
           font_size = 18;
           font_family = "JetBrains Mono";
-          color = "rgb(83a598)"; # Gruvbox blue
+          color = "rgb(${colors.base0D})";
           position = "0, -80";
           halign = "center";
           valign = "center";
@@ -671,11 +674,11 @@ in
           dots_spacing = 0.3;
           dots_center = true;
           rounding = 10;
-          outer_color = "rgb(458588)"; # Gruvbox blue
-          inner_color = "rgb(282828)"; # Gruvbox bg
-          font_color = "rgb(ebdbb2)"; # Gruvbox fg
-          check_color = "rgb(b8bb26)"; # Gruvbox green
-          fail_color = "rgb(fb4934)"; # Gruvbox red
+          outer_color = "rgb(${colors.base0D})";
+          inner_color = "rgb(${colors.base00})";
+          font_color = "rgb(${colors.base06})";
+          check_color = "rgb(${colors.base0B})";
+          fail_color = "rgb(${colors.base08})";
           shadow_passes = 2;
         }
       ];
@@ -750,6 +753,14 @@ in
       script-fail-notify = true;
     };
     style = ''
+      @define-color surface ${colors.withHashtag.base00};
+      @define-color surface-raised ${colors.withHashtag.base01};
+      @define-color surface-hover ${colors.withHashtag.base02};
+      @define-color text ${colors.withHashtag.base06};
+      @define-color text-muted ${colors.withHashtag.base05};
+      @define-color accent ${colors.withHashtag.base0A};
+      @define-color danger ${colors.withHashtag.base08};
+
       * {
         font-family: "JetBrains Mono";
         font-size: 13px;
@@ -760,8 +771,8 @@ in
       }
 
       .notification {
-        background-color: rgba(40, 40, 40, 0.86);
-        border: 1px solid rgba(215, 153, 33, 0.35);
+        background-color: alpha(@surface, 0.86);
+        border: 1px solid alpha(@accent, 0.35);
         border-radius: 12px;
         margin: 6px;
       }
@@ -771,17 +782,17 @@ in
       }
 
       .summary {
-        color: #ebdbb2;
+        color: @text;
         font-weight: bold;
       }
 
       .body {
-        color: #d5c4a1;
+        color: @text-muted;
       }
 
       .control-center {
-        background-color: rgba(40, 40, 40, 0.84);
-        border: 1px solid rgba(215, 153, 33, 0.45);
+        background-color: alpha(@surface, 0.84);
+        border: 1px solid alpha(@accent, 0.45);
         border-radius: 12px;
       }
 
@@ -790,48 +801,52 @@ in
       }
 
       .widget-title {
-        color: #ebdbb2;
+        color: @text;
         font-weight: bold;
       }
 
       .widget-title > button {
-        background: #3c3836;
-        border-radius: 6px;
-        color: #ebdbb2;
+        background: alpha(@surface-raised, 0.82);
+        border-radius: 8px;
+        color: @text;
         padding: 4px 10px;
       }
 
       .widget-title > button:hover {
-        background: #504945;
+        background: alpha(@surface-hover, 0.90);
       }
 
       .widget-dnd > switch {
-        background: #3c3836;
-        border-radius: 6px;
+        background: alpha(@surface-raised, 0.82);
+        border-radius: 8px;
       }
 
       .widget-dnd > switch:checked {
-        background: #d79921;
+        background: @accent;
       }
 
       .notification-action {
-        background: #3c3836;
-        border-radius: 6px;
-        color: #ebdbb2;
+        background: alpha(@surface-raised, 0.82);
+        border-radius: 8px;
+        color: @text;
         margin: 4px;
         padding: 6px;
       }
 
       .notification-action:hover {
-        background: #504945;
+        background: alpha(@surface-hover, 0.90);
       }
 
       .close-button {
-        background: #fb4934;
-        border-radius: 6px;
-        color: #282828;
+        background: alpha(@danger, 0.88);
+        border-radius: 8px;
+        color: @surface;
         margin: 4px;
         padding: 2px 6px;
+      }
+
+      .close-button:hover {
+        background: @danger;
       }
     '';
   };
@@ -945,28 +960,35 @@ in
       };
     };
     style = ''
+      @define-color surface ${colors.withHashtag.base00};
+      @define-color surface-hover ${colors.withHashtag.base02};
+      @define-color text ${colors.withHashtag.base06};
+      @define-color text-muted ${colors.withHashtag.base04};
+      @define-color accent ${colors.withHashtag.base0A};
+
       * {
         font-family: "JetBrains Mono";
         font-size: 13px;
       }
 
       window#waybar {
-        background-color: rgba(40, 40, 40, 0.80);
-        border-bottom: 1px solid rgba(215, 153, 33, 0.30);
-        color: #ebdbb2;
+        background-color: alpha(@surface, 0.80);
+        border-bottom: 1px solid alpha(@accent, 0.30);
+        color: @text;
       }
 
       #workspaces button {
-        color: #a89984;
+        color: @text-muted;
         padding: 0 6px;
       }
 
       #workspaces button.active {
-        color: #ebdbb2;
+        background-color: alpha(@accent, 0.12);
+        color: @text;
       }
 
       #workspaces button:hover {
-        background-color: #3c3836;
+        background-color: alpha(@surface-hover, 0.82);
       }
 
       /* Right-side modules spacing */
@@ -1001,7 +1023,7 @@ in
 
       /* Separator */
       #custom-sep {
-        color: #504945;
+        color: @surface-hover;
         padding: 0 2px;
       }
     '';
@@ -1015,6 +1037,7 @@ in
     runAsService = true;
     config = {
       theme = "gruvbox";
+      ext_background_effect_blur = true;
       force_keyboard_focus = true;
       selection_wrap = true;
       hide_action_hints = true;
@@ -1025,7 +1048,7 @@ in
         };
         files = {
           input = " Search Files...";
-          list = "                                                       No Results                                                       ";
+          list = "No Results";
         };
       };
       keybinds.quick_activate = [ ];
@@ -1065,13 +1088,11 @@ in
     };
     themes.gruvbox = {
       style = ''
-        /* Gruvbox color definitions */
-        @define-color selected-text #fabd2f;
-        @define-color text #ebdbb2;
-        @define-color base #282828;
-        @define-color border #d79921;
-        @define-color foreground #ebdbb2;
-        @define-color background #282828;
+        @define-color selected-text ${colors.withHashtag.base0A};
+        @define-color text ${colors.withHashtag.base06};
+        @define-color base ${colors.withHashtag.base00};
+        @define-color border ${colors.withHashtag.base0A};
+        @define-color foreground ${colors.withHashtag.base06};
 
         * {
           all: unset;
@@ -1096,7 +1117,7 @@ in
         }
 
         .box-wrapper {
-          background: alpha(@base, 0.82);
+          background: alpha(@base, 0.80);
           padding: 20px;
           border: 1px solid alpha(@border, 0.55);
           border-radius: 12px;
@@ -1104,6 +1125,7 @@ in
 
         .search-container {
           background: alpha(@base, 0.55);
+          border: 1px solid alpha(@foreground, 0.10);
           border-radius: 8px;
           padding: 10px;
         }
@@ -1122,7 +1144,13 @@ in
           color: @selected-text;
         }
 
+        child:selected .item-box {
+          background: alpha(@border, 0.14);
+        }
+
         .item-box {
+          border-radius: 8px;
+          margin: 2px 0;
           padding-left: 14px;
         }
 
@@ -1148,15 +1176,16 @@ in
         }
 
         .keybind-hints {
-          background: @background;
+          background: alpha(@base, 0.55);
+          border-radius: 8px;
           padding: 10px;
           margin-top: 10px;
         }
 
         .preview {
           padding: 20px;
-          background: @background;
-          border-radius: 0 10px 10px 0;
+          background: alpha(@base, 0.55);
+          border-radius: 0 8px 8px 0;
         }
 
         .preview image {
@@ -1428,7 +1457,7 @@ in
   systemd.user.services.walker.Service = {
     Environment = [
       "GDK_BACKEND=wayland"
-      "GSK_RENDERER=ngl"
+      "GSK_RENDERER=gl"
     ];
     # Propagate graphical session into the walker process so .desktop Exec (e.g. hyprlock) matches keybinds.
     PassEnvironment = [
