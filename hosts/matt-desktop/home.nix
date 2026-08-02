@@ -576,14 +576,12 @@ in
           layer-rule = {
             match._props.namespace = "^swaync-control-center$";
             geometry-corner-radius = 10;
-            background-effect.blur = true;
           };
         }
         {
           layer-rule = {
             match._props.namespace = "^swaync-notification-window$";
             geometry-corner-radius = 10;
-            background-effect.blur = true;
           };
         }
       ];
