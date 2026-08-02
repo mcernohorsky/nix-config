@@ -12,7 +12,6 @@ default:
 update:
     nix flake update
     just update-plugins
-    just update-openchamber
 
 # Update opencode plugins versions in JSON
 update-plugins:
@@ -25,32 +24,6 @@ update-plugins:
         '{"opencode-cursor-oauth": $cursor}' \
         > modules/home/opencode-plugins.json
     echo "✅ Updated modules/home/opencode-plugins.json"
-
-# Update OpenChamber web pin + lockfile from the latest npm release
-update-openchamber:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    TMPDIR=$(mktemp -d)
-    trap 'rm -rf "$TMPDIR"' EXIT
-    META_JSON="$TMPDIR/openchamber-meta.json"
-
-    echo "🔍 Checking for latest @openchamber/web version via registry..."
-    bun -e 'const out = process.argv[1]; const res = await fetch("https://registry.npmjs.org/@openchamber/web/latest"); if (!res.ok) throw new Error(`registry request failed: ${res.status}`); const pkg = await res.json(); await Bun.write(out, `${JSON.stringify({ version: pkg.version, url: pkg.dist.tarball, srcHash: pkg.dist.integrity }, null, 2)}\n`)' "$META_JSON"
-
-    VERSION=$(jq -r '.version' "$META_JSON")
-    URL=$(jq -r '.url' "$META_JSON")
-    echo "@openchamber/web: $VERSION"
-
-    mkdir -p "$TMPDIR/extract"
-    curl -fsSL "$URL" | tar -xzf - -C "$TMPDIR/extract"
-    (cd "$TMPDIR/extract/package" && npm install --package-lock-only --ignore-scripts >/dev/null)
-    cp "$TMPDIR/extract/package/package-lock.json" hosts/macbook-pro-m2/modules/openchamber-package-lock.json
-
-    NPM_DEPS_HASH=$(nix run nixpkgs#prefetch-npm-deps -- hosts/macbook-pro-m2/modules/openchamber-package-lock.json)
-    jq --arg npmDepsHash "$NPM_DEPS_HASH" '. + { npmDepsHash: $npmDepsHash }' "$META_JSON" > hosts/macbook-pro-m2/modules/openchamber-pin.json
-
-    echo "✅ Updated hosts/macbook-pro-m2/modules/openchamber-pin.json"
-    echo "✅ Updated hosts/macbook-pro-m2/modules/openchamber-package-lock.json"
 
 # Update just the repertoire-builder input
 update-app:
@@ -94,12 +67,9 @@ deploy-mac:
     @echo "🚀 Deploying to macbook-pro-m2..."
     sudo env NIX_CONFIG='accept-flake-config = true' darwin-rebuild switch --flake .
 
-# Deploy everything (parallel)
-deploy-all:
-    just deploy-oracle &
-    just deploy-desktop &
-    just deploy-mac
-    @wait
+# Deploy all hosts in parallel; failures propagate through Just's dependency graph.
+[parallel]
+deploy-all: deploy-oracle deploy-desktop deploy-mac
     @echo "✅ All deployments complete"
 
 # Show container status on remote server
@@ -153,30 +123,6 @@ ping-all:
     @ping -c 1 {{oracle_host}} > /dev/null && echo "✅ oracle-0 reachable" || echo "❌ oracle-0 unreachable"
     @echo "Pinging matt-desktop..."
     @ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || echo "❌ matt-desktop unreachable"
-
-# OpenChamber (OpenCode web UI) commands
-# Access from iPhone: https://macbook-pro-m2.tailc41cf5.ts.net
-
-# Check OpenChamber service status
-openchamber-status:
-    @echo "OpenChamber launchd agent:"
-    @launchctl list | grep openchamber || echo "Not running"
-    @echo ""
-    @echo "Tailscale Serve config:"
-    @tailscale serve status
-
-# View OpenChamber logs
-openchamber-logs:
-    @tail -f ~/Library/Logs/openchamber.log
-
-# Restart OpenChamber service
-openchamber-restart:
-    launchctl kickstart -k gui/$(id -u)/org.nix-community.home.openchamber
-
-# Reset Tailscale Serve config (useful after port changes)
-openchamber-reset-serve:
-    tailscale serve reset
-    tailscale serve --bg http://127.0.0.1:3000
 
 # Desktop OpenCode web service commands
 # Access from iPhone: https://matt-desktop.tailc41cf5.ts.net

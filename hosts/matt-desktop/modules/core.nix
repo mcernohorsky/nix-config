@@ -196,13 +196,6 @@
   programs.bash.completion.enable = true;
 
   environment.systemPackages = with pkgs; [
-    # Core utilities
-    coreutils
-    findutils
-    gnugrep
-    gnused
-    gawk
-
     # File management
     file
     tree
@@ -212,7 +205,6 @@
     xdg-utils
 
     # Networking tools
-    curl
     wget
     dig
     nmap

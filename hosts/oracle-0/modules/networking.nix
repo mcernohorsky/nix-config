@@ -1,9 +1,4 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ ... }:
 {
   networking = {
     # Enable systemd-networkd for proper container networking
@@ -87,7 +82,4 @@
     ];
   };
 
-  # Enable container hostname resolution via nss-mymachines
-  system.nssModules = [ pkgs.systemd ];
-  system.nssDatabases.hosts = lib.mkBefore [ "mymachines" ];
 }

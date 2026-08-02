@@ -157,16 +157,15 @@
 
   services.tailscale.enable = true;
 
-  # Enable Tailscale SSH (nix-darwin doesn't have extraUpFlags)
-  # Also configure Tailscale Serve for OpenChamber web UI (accessible at https://macbook-pro-m2.tailc41cf5.ts.net)
+  # Enable Tailscale SSH (nix-darwin doesn't have extraUpFlags).
+  # Do not run `tailscale up` during every activation: it can block forever when
+  # the machine is not authenticated. `set` changes only the SSH preference.
   system.activationScripts.postActivation.text = ''
-    ${pkgs.tailscale}/bin/tailscale up --ssh
-
-    # Configure Tailscale Serve for OpenChamber (OpenCode web UI)
-    # Only configure if Tailscale is logged in and running
     if ${pkgs.tailscale}/bin/tailscale status >/dev/null 2>&1; then
-      echo "Configuring Tailscale Serve for OpenChamber..."
-      ${pkgs.tailscale}/bin/tailscale serve --bg http://127.0.0.1:3000
+      ${pkgs.tailscale}/bin/tailscale set --ssh || \
+        echo "Tailscale is running but SSH preference could not be updated"
+    else
+      echo "Tailscale is not authenticated; skipping Tailscale SSH preference"
     fi
   '';
 }

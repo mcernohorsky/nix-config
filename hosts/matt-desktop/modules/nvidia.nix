@@ -1,5 +1,5 @@
 # Nvidia GPU configuration for Wayland
-# Best practices for 2024/2025 with explicit sync support
+# NVIDIA configuration for Wayland with explicit sync support
 {
   config,
   lib,
@@ -19,9 +19,6 @@
   # Trade-off: Brief flicker when NVIDIA takes over, but Plymouth always works
   boot.kernelParams = [
     "plymouth.use-simpledrm"
-    "nvidia_drm.fbdev=1" # Helps with DPMS/suspend issues
-    # Preserve video memory across suspend/resume
-    "nvidia.NVreg_PreserveVideoMemoryAllocations=1"
     # Enable enterprise DDC for reliable I2C access on NVIDIA GPUs
     "nvidia.NVreg_RegistryDwords=RMUseEnterpriseDdc=1"
   ];

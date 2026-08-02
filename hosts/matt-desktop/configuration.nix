@@ -179,19 +179,17 @@ in
     after = [ "tailscaled.service" ];
     requires = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
-    partOf = [ "tailscaled.service" ]; # Restart when tailscaled restarts
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      Restart = "on-failure";
+      RestartSec = "5s";
+      TimeoutStartSec = "30s";
+      ExecStart = [
+        "${pkgs.tailscale}/bin/tailscale drive share ssd /"
+        "${pkgs.tailscale}/bin/tailscale drive share hdd /mnt/hdd"
+      ];
     };
-    script = ''
-      # Wait for Tailscale to be connected
-      while ! ${pkgs.tailscale}/bin/tailscale status --peers=false 2>/dev/null | grep -q "100\."; do
-        sleep 2
-      done
-      ${pkgs.tailscale}/bin/tailscale drive share ssd /
-      ${pkgs.tailscale}/bin/tailscale drive share hdd /mnt/hdd
-    '';
   };
 
   # Firewall: Restic REST Server only via Tailscale (SSH handled by Tailscale SSH)
@@ -257,13 +255,15 @@ in
   # oracle-0 can only append (REST server is append-only), matt-desktop prunes locally
   age.secrets.restic-password = {
     file = ../../secrets/restic-password.age;
-    owner = "root";
-    group = "root";
+    owner = "restic";
+    group = "restic";
+    mode = "0400";
   };
 
   services.restic.backups.oracle-0-local-prune = {
     repository = "/backups/oracle-0/vaultwarden";
     passwordFile = config.age.secrets.restic-password.path;
+    user = "restic";
     paths = [ ];
 
     timerConfig = {
@@ -281,6 +281,10 @@ in
       "--keep-monthly 12"
       "--keep-yearly 2"
     ];
+
+    # Validate repository metadata after pruning so ownership or index errors
+    # fail the weekly maintenance job instead of remaining silent.
+    checkOpts = [ "--with-cache" ];
   };
 
   nix = {

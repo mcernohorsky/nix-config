@@ -87,6 +87,8 @@
     helix
     wget
     ghostty.terminfo
+    restic
+    sqlite
   ];
 
   # --- DEPLOYMENT / ACCESS TRANSPORT ---
@@ -146,18 +148,14 @@
     after = [ "tailscaled.service" ];
     requires = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
-    partOf = [ "tailscaled.service" ]; # Restart when tailscaled restarts
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      Restart = "on-failure";
+      RestartSec = "5s";
+      TimeoutStartSec = "30s";
+      ExecStart = "${pkgs.tailscale}/bin/tailscale drive share root /";
     };
-    script = ''
-      # Wait for Tailscale to be connected
-      while ! ${pkgs.tailscale}/bin/tailscale status --peers=false 2>/dev/null | grep -q "100\."; do
-        sleep 2
-      done
-      ${pkgs.tailscale}/bin/tailscale drive share root /
-    '';
   };
 
   services.caddy = {
@@ -189,7 +187,6 @@
           header {
             X-Content-Type-Options "nosniff"
             X-Frame-Options "DENY"
-            X-XSS-Protection "1; mode=block"
             Referrer-Policy "strict-origin-when-cross-origin"
             # Required for SharedArrayBuffer (Stockfish WASM threading)
             # Using credentialless instead of require-corp for broader compatibility

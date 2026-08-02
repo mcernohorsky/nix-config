@@ -95,15 +95,4 @@ in
   # Enable 32-bit support for Steam
   hardware.graphics.enable32Bit = true;
 
-  # Open firewall for Steam
-  networking.firewall = {
-    allowedTCPPorts = [
-      27036
-      27037
-    ];
-    allowedUDPPorts = [
-      27031
-      27036
-    ];
-  };
 }

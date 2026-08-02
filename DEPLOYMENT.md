@@ -48,9 +48,6 @@ nix develop
 
 Or use just commands:
 ```bash
-# Check configuration
-just check
-
 # Deploy to Oracle VPS
 just deploy-oracle
 
@@ -64,14 +61,14 @@ Idle timeout and manual lock (`Super+Alt+L`, Walker “Lock Screen”) use **hyp
 
 ## Vaultwarden & Backups
 
-Vaultwarden is deployed as a native service on `oracle-0`, accessible only via Tailscale at `https://oracle-0.tailc41cf5.ts.net`.
+Vaultwarden is deployed as a native service on `oracle-0`. Caddy listens locally and Cloudflare Tunnel publishes `https://vault.cernohorsky.ca`.
 
 ### Backup Strategy
 Backups are performed every 6 hours using Restic to two locations:
 1. **Cloudflare R2**: Offsite encrypted backup (`oracle-0-backups` bucket).
-2. **matt-desktop**: Local encrypted backup via SFTP to `/backups/oracle-0/vaultwarden`.
+2. **matt-desktop**: Local encrypted backup via the append-only Restic REST server at `rest:http://matt-desktop.tailc41cf5.ts.net:8000/`.
 
-Note: If `matt-desktop` is powered off, the local backup job will fail. This is normal and the job will succeed on the next run once the desktop is online.
+The R2 backup prunes on Oracle. The desktop repository is append-only for Oracle and is pruned locally by the `oracle-0-local-prune` timer. If `matt-desktop` is powered off, that backup job fails and the next scheduled run retries it.
 
 ### Secrets
 The following secrets are required in `secrets/`:
@@ -84,30 +81,73 @@ The following secrets are required in `secrets/`:
 If you need to restore Vaultwarden to a new `oracle-0` instance:
 
 1. **Deploy the base system** following the "Disaster Recovery: Rebuilding oracle-0" steps above.
-2. **Stop Vaultwarden**:
+2. **Quiesce Vaultwarden and both backup pipelines** so a scheduled backup
+   cannot capture or overwrite files during the restore:
    ```bash
-   ssh matt@oracle-0 "sudo systemctl stop vaultwarden"
+   ssh matt@oracle-0 << 'EOF'
+   sudo systemctl stop \
+     restic-backups-vaultwarden-r2.timer \
+     restic-backups-vaultwarden-desktop.timer
+   sudo systemctl stop \
+     restic-backups-vaultwarden-r2.service \
+     restic-backups-vaultwarden-desktop.service
+   sudo systemctl stop vaultwarden
+   EOF
    ```
 3. **Restore from Cloudflare R2**:
    ```bash
    ssh matt@oracle-0 << 'EOF'
    sudo -i
-   export AWS_ACCESS_KEY_ID=$(grep AWS_ACCESS_KEY_ID /run/secrets/restic-r2-credentials | cut -d= -f2)
-   export AWS_SECRET_ACCESS_KEY=$(grep AWS_SECRET_ACCESS_KEY /run/secrets/restic-r2-credentials | cut -d= -f2)
-   export RESTIC_PASSWORD_FILE=/run/secrets/restic-password
+   export AWS_ACCESS_KEY_ID=$(grep AWS_ACCESS_KEY_ID /run/agenix/restic-r2-credentials | cut -d= -f2)
+   export AWS_SECRET_ACCESS_KEY=$(grep AWS_SECRET_ACCESS_KEY /run/agenix/restic-r2-credentials | cut -d= -f2)
+   export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
    export RESTIC_REPOSITORY="s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups"
    
    # List snapshots to verify connectivity
    restic snapshots
    
-   # Restore the latest snapshot to the root filesystem
+   # Restore the latest snapshot to the root filesystem. This restores
+   # db-backup.sqlite3, attachments, and the rest of /var/lib/vaultwarden.
    restic restore latest --target /
+
+   # Promote the verified SQLite copy to Vaultwarden's live database.
+   test -s /var/lib/vaultwarden/db-backup.sqlite3
+   test "$(sqlite3 /var/lib/vaultwarden/db-backup.sqlite3 'PRAGMA integrity_check;')" = ok
+   rm -f /var/lib/vaultwarden/db.sqlite3-wal /var/lib/vaultwarden/db.sqlite3-shm
+   install -o vaultwarden -g vaultwarden -m 0600 \
+     /var/lib/vaultwarden/db-backup.sqlite3 /var/lib/vaultwarden/db.sqlite3
    EOF
    ```
-4. **Restart Vaultwarden**:
+4. **Restart and validate Vaultwarden, then re-enable scheduled backups**:
    ```bash
-   ssh matt@oracle-0 "sudo systemctl start vaultwarden"
+   ssh matt@oracle-0 << 'EOF'
+   sudo systemctl start vaultwarden
+   sudo systemctl is-active --quiet vaultwarden
+   sudo systemctl start \
+     restic-backups-vaultwarden-r2.timer \
+     restic-backups-vaultwarden-desktop.timer
+   EOF
    ```
+
+   If validation fails, leave the backup timers stopped until the restore is
+   repaired and Vaultwarden starts successfully.
+
+If R2 is unavailable, run this after step 2 in place of step 3, then continue
+with step 4:
+
+```bash
+ssh matt@oracle-0
+sudo -i
+export RESTIC_REPOSITORY="rest:http://matt-desktop.tailc41cf5.ts.net:8000/"
+export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
+restic snapshots
+restic restore latest --target /
+test -s /var/lib/vaultwarden/db-backup.sqlite3
+test "$(sqlite3 /var/lib/vaultwarden/db-backup.sqlite3 'PRAGMA integrity_check;')" = ok
+rm -f /var/lib/vaultwarden/db.sqlite3-wal /var/lib/vaultwarden/db.sqlite3-shm
+install -o vaultwarden -g vaultwarden -m 0600 \
+  /var/lib/vaultwarden/db-backup.sqlite3 /var/lib/vaultwarden/db.sqlite3
+```
 
 ## Container Details
 
@@ -602,14 +642,6 @@ just desktop-opencode-reset-serve
 - Tailscale Serve proxies requests from the tailnet
 - No firewall rules are opened for the OpenCode port
 - HTTP Basic Auth provides defense-in-depth
-
-### Deferred UI Evaluation
-
-> **Note**: Alternative mobile UIs beyond the default OpenCode web UI were deferred on the Linux desktop until the first shared setup worked. macbook-pro-m2 uses [OpenChamber](https://github.com/openchamber/openchamber) via Home Manager (`services.openchamber`).
-
-Future evaluation may include:
-- OpenChamber (also an option for other hosts)
-- Other mobile-specific clients
 
 ### Troubleshooting
 

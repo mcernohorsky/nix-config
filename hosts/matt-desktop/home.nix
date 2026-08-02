@@ -137,16 +137,6 @@ in
     json.enable = false;
   };
 
-  # Old generations could leave swayidle enabled; it can still run a legacy locker on idle and race evdev + hyprlock.
-  home.activation.disableLegacySwayidle = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    ${pkgs.systemd}/bin/systemctl --user stop swayidle.service 2>/dev/null || true
-    ${pkgs.systemd}/bin/systemctl --user disable swayidle.service 2>/dev/null || true
-  '';
-
-  home.activation.removeLegacyZenProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    rm -rf "${config.home.homeDirectory}/.zen"
-  '';
-
   home.activation.configureCemu = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         cemu_config_dir="${config.home.homeDirectory}/.config/Cemu"
         cemu_settings="$cemu_config_dir/settings.xml"

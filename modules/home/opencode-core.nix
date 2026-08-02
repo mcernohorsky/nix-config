@@ -20,10 +20,6 @@ let
     build = {
       mode = "primary";
       model = "cursor/composer-2";
-      tools = {
-        "context7_*" = true;
-        "exa_*" = true;
-      };
     };
     plan = {
       mode = "primary";
@@ -33,10 +29,6 @@ let
     explore = {
       mode = "subagent";
       model = "opencode-go/minimax-m2.7";
-      tools = {
-        "context7_*" = true;
-        "exa_*" = true;
-      };
     };
     general = {
       mode = "subagent";
@@ -77,29 +69,17 @@ in
     };
 
     permission = mkOption {
-      type = types.oneOf [
-        types.str
-        types.attrs
-      ];
-      default = {
-        "*" = "allow";
-        bash = {
-          "*" = "allow";
-          "rm -rf /" = "ask";
-          "rm -rf /*" = "ask";
-          "mkfs*" = "ask";
-          "dd * of=/dev/*" = "ask";
-          "diskutil erase*" = "ask";
-          "git reset --hard*" = "ask";
-          "git clean -fd*" = "ask";
-          "git push --force*" = "ask";
-        };
-      };
+      type = types.nullOr (
+        types.oneOf [
+          types.str
+          types.attrs
+        ]
+      );
+      default = null;
       description = ''
         OpenCode permission policy written to
         {literal}`programs.opencode.settings.permission`.
-        Defaults to allow-by-default with explicit prompts for
-        especially destructive bash commands.
+        When unset, OpenCode's own defaults are used.
       '';
     };
 
@@ -169,12 +149,10 @@ in
             enabled = true;
           };
         };
-        permission = cfg.permission;
-        tools = {
-          "context7_*" = false;
-          "exa_*" = false;
-        };
         agent = cfg.agents;
+      }
+      // lib.optionalAttrs (cfg.permission != null) {
+        permission = cfg.permission;
       };
     };
   };

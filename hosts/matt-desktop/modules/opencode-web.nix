@@ -52,19 +52,10 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      Restart = "on-failure";
+      RestartSec = "5s";
+      TimeoutStartSec = "30s";
+      ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg http://127.0.0.1:4097";
     };
-
-    script = ''
-      # Wait for Tailscale to be connected
-      until ${pkgs.tailscale}/bin/tailscale status --peers=false 2>/dev/null | grep -q "100\."; do
-        echo "Waiting for Tailscale to be connected..."
-        sleep 2
-      done
-
-      # Configure Tailscale Serve to proxy to localhost OpenCode web UI
-      # --bg runs in background, funnelfrom is disabled (no public internet exposure)
-      echo "Configuring Tailscale Serve for OpenCode web UI..."
-      ${pkgs.tailscale}/bin/tailscale serve --bg http://127.0.0.1:4097
-    '';
   };
 }

@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 {
   # Backup secrets
   age.secrets = {
@@ -15,9 +15,6 @@
     };
   };
 
-  # Ensure sqlite is available for backup preparation
-  environment.systemPackages = [ pkgs.sqlite ];
-
   # Pre-backup service to create consistent SQLite dump
   systemd.services.vaultwarden-backup-prepare = {
     description = "Prepare Vaultwarden backup (SQLite backup)";
@@ -26,10 +23,22 @@
       User = "root";
     };
     script = ''
-      # Create a consistent backup of the SQLite database
-      if [ -f /var/lib/vaultwarden/db.sqlite3 ]; then
-        ${pkgs.sqlite}/bin/sqlite3 /var/lib/vaultwarden/db.sqlite3 ".backup '/var/lib/vaultwarden/db-backup.sqlite3'"
-      fi
+      set -euo pipefail
+
+      db=/var/lib/vaultwarden/db.sqlite3
+      backup=/var/lib/vaultwarden/db-backup.sqlite3
+
+      # Fail closed rather than silently reusing an old backup if the live DB
+      # is missing. Write beside the final file, verify it, then replace it.
+      test -s "$db"
+      tmp=$(mktemp /var/lib/vaultwarden/.db-backup.sqlite3.XXXXXX)
+      trap 'rm -f "$tmp"' EXIT
+
+      ${pkgs.sqlite}/bin/sqlite3 "$db" ".backup '$tmp'"
+      test "$(${pkgs.sqlite}/bin/sqlite3 "$tmp" 'PRAGMA integrity_check;')" = ok
+      chown vaultwarden:vaultwarden "$tmp"
+      chmod 0600 "$tmp"
+      mv -f "$tmp" "$backup"
     '';
   };
 
@@ -61,7 +70,7 @@
 
       # Prepare SQLite backup before running restic
       backupPrepareCommand = ''
-        systemctl start vaultwarden-backup-prepare.service
+        systemctl start --wait vaultwarden-backup-prepare.service
       '';
 
       # Cleanup old backups (GFS retention policy)
@@ -81,8 +90,10 @@
       # Extra options for S3 compatibility
       extraBackupArgs = [
         "--verbose"
-        "--tag" "vaultwarden"
-        "--tag" "oracle-0"
+        "--tag"
+        "vaultwarden"
+        "--tag"
+        "oracle-0"
       ];
     };
 
@@ -109,7 +120,7 @@
       };
 
       backupPrepareCommand = ''
-        systemctl start vaultwarden-backup-prepare.service
+        systemctl start --wait vaultwarden-backup-prepare.service
       '';
 
       # No pruneOpts - matt-desktop REST server is append-only
@@ -119,8 +130,10 @@
 
       extraBackupArgs = [
         "--verbose"
-        "--tag" "vaultwarden"
-        "--tag" "oracle-0"
+        "--tag"
+        "vaultwarden"
+        "--tag"
+        "oracle-0"
       ];
     };
   };

@@ -7,20 +7,10 @@
   imports = [
     ../../../modules/home/opencode-core.nix
     ../../../modules/home/dev-templates.nix
-    ../modules/openchamber.nix
   ];
 
   modules.home.opencodeCore.enable = true;
   modules.home.devTemplates.enable = true;
-
-  # OpenChamber — web UI for OpenCode (https://github.com/openchamber/openchamber)
-  # Access from iPhone: https://macbook-pro-m2.tailc41cf5.ts.net
-  # Uses port 4097 to avoid conflicts with manual `opencode` sessions (which use 4096)
-  services.openchamber = {
-    enable = true;
-    workingDirectory = "/Users/matt/Developer";
-    opencodePort = 4097; # Dedicated port for OpenChamber (avoids conflict with terminal sessions)
-  };
 
   # User Configuration
   home = {
