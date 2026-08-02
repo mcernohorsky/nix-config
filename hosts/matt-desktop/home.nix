@@ -143,6 +143,20 @@ in
     ${pkgs.systemd}/bin/systemctl --user disable swayidle.service 2>/dev/null || true
   '';
 
+  # A previous Home Manager generation left a dangling Kvantum theme link.
+  # Remove only broken symlinks so linkGeneration can recreate them cleanly;
+  # real user-owned theme files and directories are preserved.
+  home.activation.repairDanglingKvantumLinks = lib.hm.dag.entryBefore [ "linkGeneration" ] ''
+    kvantum_dir="${config.home.homeDirectory}/.config/Kvantum"
+    if [ -d "$kvantum_dir" ]; then
+      for link in "$kvantum_dir"/*; do
+        if [ -L "$link" ] && [ ! -e "$link" ]; then
+          rm -f "$link"
+        fi
+      done
+    fi
+  '';
+
   home.activation.removeLegacyZenProfile = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     rm -rf "${config.home.homeDirectory}/.zen"
   '';
