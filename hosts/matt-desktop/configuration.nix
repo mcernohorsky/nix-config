@@ -8,7 +8,7 @@
 
 let
   # NASA Artemis II Earthset, original 5568×3712 image from NASA's Flickr.
-  # Single source of truth for the desktop, greeter, and lock screen.
+  # Single source of truth for the desktop and lock screen.
   stylixWallpaperImage = pkgs.fetchurl {
     name = "artemis-ii-earthset.jpg";
     url = "https://www.flickr.com/photo_download.gne?id=55192132107&secret=00dc598014&size=o&source=photoPageEngagement";
@@ -92,6 +92,7 @@ in
     base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
     image = stylixWallpaperImage;
     imageScalingMode = "fill";
+    opacity.terminal = 0.90;
 
     # Fonts (Using JetBrains Mono for everything)
     fonts = {

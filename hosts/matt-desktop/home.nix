@@ -241,263 +241,350 @@ in
         set_value "/content/Audio/PadVolume" "/content/Audio" "PadVolume" "100"
   '';
 
-  programs.niri.settings = {
-    prefer-no-csd = true;
+  # NixOS owns the compositor session; Home Manager owns and validates its config.
+  wayland.windowManager.niri = {
+    enable = true;
+    package = pkgs.niri;
+    systemd.enable = false;
+    xwaylandSatellitePackage = null;
+    portalPackage = null;
 
-    input = {
-      mod-key = "Super";
-      keyboard.xkb = {
-        layout = "us";
-        options = "caps:escape";
-      };
-      touchpad.natural-scroll = true;
-    };
+    settings = {
+      screenshot-path = "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png";
+      prefer-no-csd = { };
 
-    layout = {
-      focus-ring = {
-        width = 2;
-        inactive.color = "transparent";
-      };
-    };
-
-    spawn-at-startup = [
-      {
-        command = [
-          "systemctl"
-          "--user"
-          "start"
-          "swayosd.service"
-          "swaync.service"
-          "elephant.service"
-          "walker.service"
-        ];
-      }
-      { command = [ "waybar" ]; }
-      { command = [ "nm-applet" ]; }
-      { command = [ "blueman-applet" ]; }
-      {
-        command = [
-          "sh"
-          "-c"
-          "wl-paste --type text --watch cliphist store"
-        ];
-      }
-      {
-        command = [
-          "sh"
-          "-c"
-          "wl-paste --type image --watch cliphist store"
-        ];
-      }
-    ];
-
-    binds = {
-      "Mod+Shift+Slash".action.show-hotkey-overlay = [ ];
-      "Mod+T".action.spawn = "ghostty";
-      "Mod+Space".action.spawn = "walker";
-      "Mod+B".action.spawn = "helium";
-      "Super+Alt+L" = {
-        allow-inhibiting = false;
-        allow-when-locked = false;
-        repeat = false;
-        hotkey-overlay.title = "Lock the Screen";
-        action.spawn = [ (lib.getExe lock-now) ];
-      };
-
-      "XF86AudioRaiseVolume".allow-when-locked = true;
-      "XF86AudioRaiseVolume".action.spawn = [
-        "swayosd-client"
-        "--output-volume"
-        "raise"
-      ];
-      "XF86AudioLowerVolume".allow-when-locked = true;
-      "XF86AudioLowerVolume".action.spawn = [
-        "swayosd-client"
-        "--output-volume"
-        "lower"
-      ];
-      "XF86AudioMute".allow-when-locked = true;
-      "XF86AudioMute".action.spawn = [
-        "swayosd-client"
-        "--output-volume"
-        "mute-toggle"
-      ];
-      "XF86AudioMicMute".allow-when-locked = true;
-      "XF86AudioMicMute".action.spawn = [
-        "swayosd-client"
-        "--input-volume"
-        "mute-toggle"
-      ];
-      "XF86AudioPlay".allow-when-locked = true;
-      "XF86AudioPlay".action.spawn = [
-        "swayosd-client"
-        "--playerctl"
-        "play-pause"
-      ];
-      "XF86AudioStop".allow-when-locked = true;
-      "XF86AudioStop".action.spawn = [
-        "swayosd-client"
-        "--playerctl"
-        "stop"
-      ];
-      "XF86AudioPrev".allow-when-locked = true;
-      "XF86AudioPrev".action.spawn = [
-        "swayosd-client"
-        "--playerctl"
-        "prev"
-      ];
-      "XF86AudioNext".allow-when-locked = true;
-      "XF86AudioNext".action.spawn = [
-        "swayosd-client"
-        "--playerctl"
-        "next"
-      ];
-      "XF86MonBrightnessUp".allow-when-locked = true;
-      "XF86MonBrightnessUp".action.spawn = [
-        (lib.getExe brightness-control)
-        "up"
-      ];
-      "XF86MonBrightnessDown".allow-when-locked = true;
-      "XF86MonBrightnessDown".action.spawn = [
-        (lib.getExe brightness-control)
-        "down"
-      ];
-
-      "Mod+O".action.toggle-overview = [ ];
-      "Mod+Q".action.close-window = [ ];
-
-      "Mod+Left".action.focus-column-left = [ ];
-      "Mod+Down".action.focus-window-down = [ ];
-      "Mod+Up".action.focus-window-up = [ ];
-      "Mod+Right".action.focus-column-right = [ ];
-      "Mod+H".action.focus-column-left = [ ];
-      "Mod+J".action.focus-window-down = [ ];
-      "Mod+K".action.focus-window-up = [ ];
-      "Mod+L".action.focus-column-right = [ ];
-
-      "Mod+Ctrl+Left".action.move-column-left = [ ];
-      "Mod+Ctrl+Down".action.move-window-down = [ ];
-      "Mod+Ctrl+Up".action.move-window-up = [ ];
-      "Mod+Ctrl+Right".action.move-column-right = [ ];
-      "Mod+Ctrl+H".action.move-column-left = [ ];
-      "Mod+Ctrl+J".action.move-window-down = [ ];
-      "Mod+Ctrl+K".action.move-window-up = [ ];
-      "Mod+Ctrl+L".action.move-column-right = [ ];
-
-      "Mod+Home".action.focus-column-first = [ ];
-      "Mod+End".action.focus-column-last = [ ];
-      "Mod+Ctrl+Home".action.move-column-to-first = [ ];
-      "Mod+Ctrl+End".action.move-column-to-last = [ ];
-
-      "Mod+Shift+Left".action.focus-monitor-left = [ ];
-      "Mod+Shift+Down".action.focus-monitor-down = [ ];
-      "Mod+Shift+Up".action.focus-monitor-up = [ ];
-      "Mod+Shift+Right".action.focus-monitor-right = [ ];
-      "Mod+Shift+H".action.focus-monitor-left = [ ];
-      "Mod+Shift+J".action.focus-monitor-down = [ ];
-      "Mod+Shift+K".action.focus-monitor-up = [ ];
-      "Mod+Shift+L".action.focus-monitor-right = [ ];
-
-      "Mod+Shift+Ctrl+Left".action.move-column-to-monitor-left = [ ];
-      "Mod+Shift+Ctrl+Down".action.move-column-to-monitor-down = [ ];
-      "Mod+Shift+Ctrl+Up".action.move-column-to-monitor-up = [ ];
-      "Mod+Shift+Ctrl+Right".action.move-column-to-monitor-right = [ ];
-      "Mod+Shift+Ctrl+H".action.move-column-to-monitor-left = [ ];
-      "Mod+Shift+Ctrl+J".action.move-column-to-monitor-down = [ ];
-      "Mod+Shift+Ctrl+K".action.move-column-to-monitor-up = [ ];
-      "Mod+Shift+Ctrl+L".action.move-column-to-monitor-right = [ ];
-
-      "Mod+Page_Down".action.focus-workspace-down = [ ];
-      "Mod+Page_Up".action.focus-workspace-up = [ ];
-      "Mod+U".action.focus-workspace-down = [ ];
-      "Mod+I".action.focus-workspace-up = [ ];
-      "Mod+Ctrl+Page_Down".action.move-column-to-workspace-down = [ ];
-      "Mod+Ctrl+Page_Up".action.move-column-to-workspace-up = [ ];
-      "Mod+Ctrl+U".action.move-column-to-workspace-down = [ ];
-      "Mod+Ctrl+I".action.move-column-to-workspace-up = [ ];
-      "Mod+Shift+Page_Down".action.move-workspace-down = [ ];
-      "Mod+Shift+Page_Up".action.move-workspace-up = [ ];
-      "Mod+Shift+U".action.move-workspace-down = [ ];
-      "Mod+Shift+I".action.move-workspace-up = [ ];
-
-      "Mod+N".action.spawn-sh = "swaync-client -t -sw";
-      "Mod+1".action.focus-workspace = 1;
-      "Mod+2".action.focus-workspace = 2;
-      "Mod+3".action.focus-workspace = 3;
-      "Mod+4".action.focus-workspace = 4;
-      "Mod+5".action.focus-workspace = 5;
-      "Mod+6".action.focus-workspace = 6;
-      "Mod+7".action.focus-workspace = 7;
-      "Mod+8".action.focus-workspace = 8;
-      "Mod+9".action.focus-workspace = 9;
-      "Mod+Ctrl+1".action.move-column-to-workspace = 1;
-      "Mod+Ctrl+2".action.move-column-to-workspace = 2;
-      "Mod+Ctrl+3".action.move-column-to-workspace = 3;
-      "Mod+Ctrl+4".action.move-column-to-workspace = 4;
-      "Mod+Ctrl+5".action.move-column-to-workspace = 5;
-      "Mod+Ctrl+6".action.move-column-to-workspace = 6;
-      "Mod+Ctrl+7".action.move-column-to-workspace = 7;
-      "Mod+Ctrl+8".action.move-column-to-workspace = 8;
-      "Mod+Ctrl+9".action.move-column-to-workspace = 9;
-
-      "Mod+BracketLeft".action.consume-or-expel-window-left = [ ];
-      "Mod+BracketRight".action.consume-or-expel-window-right = [ ];
-      "Mod+Comma".action.consume-window-into-column = [ ];
-      "Mod+Period".action.expel-window-from-column = [ ];
-
-      "Mod+R".action.switch-preset-column-width = [ ];
-      "Mod+Shift+R".action.switch-preset-window-height = [ ];
-      "Mod+Ctrl+R".action.reset-window-height = [ ];
-      "Mod+F".action.maximize-column = [ ];
-      "Mod+Shift+F".action.fullscreen-window = [ ];
-      "Mod+Ctrl+F".action.expand-column-to-available-width = [ ];
-      "Mod+C".action.center-column = [ ];
-      "Mod+Ctrl+C".action.center-visible-columns = [ ];
-      "Mod+Minus".action.set-column-width = "-10%";
-      "Mod+Equal".action.set-column-width = "+10%";
-      "Mod+Shift+Minus".action.set-window-height = "-10%";
-      "Mod+Shift+Equal".action.set-window-height = "+10%";
-      "Mod+V".action.toggle-window-floating = [ ];
-      "Mod+Shift+V".action.switch-focus-between-floating-and-tiling = [ ];
-      "Mod+W".action.toggle-column-tabbed-display = [ ];
-
-      "Print".action.screenshot = [ ];
-      "Ctrl+Print".action.screenshot-screen = [ ];
-      "Alt+Print".action.screenshot-window = [ ];
-      "Mod+S".action.screenshot = [ ];
-
-      "Mod+Escape".allow-inhibiting = false;
-      "Mod+Escape".action.toggle-keyboard-shortcuts-inhibit = [ ];
-      "Mod+Shift+E".action.quit = [ ];
-      "Ctrl+Alt+Delete".action.quit = [ ];
-      "Mod+Shift+P".action.power-off-monitors = [ ];
-    };
-
-    window-rules = [
-      {
-        clip-to-geometry = true;
-        draw-border-with-background = false;
-        geometry-corner-radius = {
-          top-left = 12.0;
-          top-right = 12.0;
-          bottom-right = 12.0;
-          bottom-left = 12.0;
+      input = {
+        mod-key = "Super";
+        keyboard.xkb = {
+          layout = "us";
+          options = "caps:escape";
         };
-      }
-      {
-        matches = [
-          { app-id = "pavucontrol"; }
-          { app-id = "pwvucontrol"; }
-          { app-id = "blueman-manager"; }
-          { app-id = "nm-connection-editor"; }
-        ];
-        open-floating = true;
-      }
-      {
-        matches = [ { title = "^Picture-in-Picture$"; } ];
-        open-floating = true;
-      }
-    ];
+        touchpad = {
+          tap = { };
+          natural-scroll = { };
+        };
+      };
+
+      layout = {
+        gaps = 16;
+        struts = {
+          left = 0;
+          right = 0;
+          top = 0;
+          bottom = 0;
+        };
+        focus-ring.off = { };
+        border = {
+          width = 4;
+          active-color = "#83a598";
+          inactive-color = "#665c54";
+        };
+        default-column-width = { };
+        center-focused-column = "never";
+      };
+
+      cursor = {
+        xcursor-theme = "phinger-cursors-light";
+        xcursor-size = 24;
+      };
+
+      binds = {
+        "Mod+Shift+Slash".show-hotkey-overlay = { };
+        "Mod+T".spawn = [ "ghostty" ];
+        "Mod+Space".spawn = [ "walker" ];
+        "Mod+B".spawn = [ "helium" ];
+        "Super+Alt+L" = {
+          _props = {
+            allow-inhibiting = false;
+            allow-when-locked = false;
+            repeat = false;
+            hotkey-overlay-title = "Lock the Screen";
+          };
+          spawn = [ (lib.getExe lock-now) ];
+        };
+
+        "XF86AudioRaiseVolume" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--output-volume"
+            "raise"
+          ];
+        };
+        "XF86AudioLowerVolume" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--output-volume"
+            "lower"
+          ];
+        };
+        "XF86AudioMute" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--output-volume"
+            "mute-toggle"
+          ];
+        };
+        "XF86AudioMicMute" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--input-volume"
+            "mute-toggle"
+          ];
+        };
+        "XF86AudioPlay" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--playerctl"
+            "play-pause"
+          ];
+        };
+        "XF86AudioStop" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--playerctl"
+            "stop"
+          ];
+        };
+        "XF86AudioPrev" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--playerctl"
+            "prev"
+          ];
+        };
+        "XF86AudioNext" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            "swayosd-client"
+            "--playerctl"
+            "next"
+          ];
+        };
+        "XF86MonBrightnessUp" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            (lib.getExe brightness-control)
+            "up"
+          ];
+        };
+        "XF86MonBrightnessDown" = {
+          _props.allow-when-locked = true;
+          spawn = [
+            (lib.getExe brightness-control)
+            "down"
+          ];
+        };
+
+        "Mod+O".toggle-overview = { };
+        "Mod+Q".close-window = { };
+
+        "Mod+Left".focus-column-left = { };
+        "Mod+Down".focus-window-down = { };
+        "Mod+Up".focus-window-up = { };
+        "Mod+Right".focus-column-right = { };
+        "Mod+H".focus-column-left = { };
+        "Mod+J".focus-window-down = { };
+        "Mod+K".focus-window-up = { };
+        "Mod+L".focus-column-right = { };
+
+        "Mod+Ctrl+Left".move-column-left = { };
+        "Mod+Ctrl+Down".move-window-down = { };
+        "Mod+Ctrl+Up".move-window-up = { };
+        "Mod+Ctrl+Right".move-column-right = { };
+        "Mod+Ctrl+H".move-column-left = { };
+        "Mod+Ctrl+J".move-window-down = { };
+        "Mod+Ctrl+K".move-window-up = { };
+        "Mod+Ctrl+L".move-column-right = { };
+
+        "Mod+Home".focus-column-first = { };
+        "Mod+End".focus-column-last = { };
+        "Mod+Ctrl+Home".move-column-to-first = { };
+        "Mod+Ctrl+End".move-column-to-last = { };
+
+        "Mod+Shift+Left".focus-monitor-left = { };
+        "Mod+Shift+Down".focus-monitor-down = { };
+        "Mod+Shift+Up".focus-monitor-up = { };
+        "Mod+Shift+Right".focus-monitor-right = { };
+        "Mod+Shift+H".focus-monitor-left = { };
+        "Mod+Shift+J".focus-monitor-down = { };
+        "Mod+Shift+K".focus-monitor-up = { };
+        "Mod+Shift+L".focus-monitor-right = { };
+
+        "Mod+Shift+Ctrl+Left".move-column-to-monitor-left = { };
+        "Mod+Shift+Ctrl+Down".move-column-to-monitor-down = { };
+        "Mod+Shift+Ctrl+Up".move-column-to-monitor-up = { };
+        "Mod+Shift+Ctrl+Right".move-column-to-monitor-right = { };
+        "Mod+Shift+Ctrl+H".move-column-to-monitor-left = { };
+        "Mod+Shift+Ctrl+J".move-column-to-monitor-down = { };
+        "Mod+Shift+Ctrl+K".move-column-to-monitor-up = { };
+        "Mod+Shift+Ctrl+L".move-column-to-monitor-right = { };
+
+        "Mod+Page_Down".focus-workspace-down = { };
+        "Mod+Page_Up".focus-workspace-up = { };
+        "Mod+U".focus-workspace-down = { };
+        "Mod+I".focus-workspace-up = { };
+        "Mod+Ctrl+Page_Down".move-column-to-workspace-down = { };
+        "Mod+Ctrl+Page_Up".move-column-to-workspace-up = { };
+        "Mod+Ctrl+U".move-column-to-workspace-down = { };
+        "Mod+Ctrl+I".move-column-to-workspace-up = { };
+        "Mod+Shift+Page_Down".move-workspace-down = { };
+        "Mod+Shift+Page_Up".move-workspace-up = { };
+        "Mod+Shift+U".move-workspace-down = { };
+        "Mod+Shift+I".move-workspace-up = { };
+
+        "Mod+N".spawn-sh = "swaync-client -t -sw";
+        "Mod+1".focus-workspace = 1;
+        "Mod+2".focus-workspace = 2;
+        "Mod+3".focus-workspace = 3;
+        "Mod+4".focus-workspace = 4;
+        "Mod+5".focus-workspace = 5;
+        "Mod+6".focus-workspace = 6;
+        "Mod+7".focus-workspace = 7;
+        "Mod+8".focus-workspace = 8;
+        "Mod+9".focus-workspace = 9;
+        "Mod+Ctrl+1".move-column-to-workspace = 1;
+        "Mod+Ctrl+2".move-column-to-workspace = 2;
+        "Mod+Ctrl+3".move-column-to-workspace = 3;
+        "Mod+Ctrl+4".move-column-to-workspace = 4;
+        "Mod+Ctrl+5".move-column-to-workspace = 5;
+        "Mod+Ctrl+6".move-column-to-workspace = 6;
+        "Mod+Ctrl+7".move-column-to-workspace = 7;
+        "Mod+Ctrl+8".move-column-to-workspace = 8;
+        "Mod+Ctrl+9".move-column-to-workspace = 9;
+
+        "Mod+BracketLeft".consume-or-expel-window-left = { };
+        "Mod+BracketRight".consume-or-expel-window-right = { };
+        "Mod+Comma".consume-window-into-column = { };
+        "Mod+Period".expel-window-from-column = { };
+
+        "Mod+R".switch-preset-column-width = { };
+        "Mod+Shift+R".switch-preset-window-height = { };
+        "Mod+Ctrl+R".reset-window-height = { };
+        "Mod+F".maximize-column = { };
+        "Mod+Shift+F".fullscreen-window = { };
+        "Mod+Ctrl+F".expand-column-to-available-width = { };
+        "Mod+C".center-column = { };
+        "Mod+Ctrl+C".center-visible-columns = { };
+        "Mod+Minus".set-column-width = "-10%";
+        "Mod+Equal".set-column-width = "+10%";
+        "Mod+Shift+Minus".set-window-height = "-10%";
+        "Mod+Shift+Equal".set-window-height = "+10%";
+        "Mod+V".toggle-window-floating = { };
+        "Mod+Shift+V".switch-focus-between-floating-and-tiling = { };
+        "Mod+W".toggle-column-tabbed-display = { };
+
+        "Print".screenshot = { };
+        "Ctrl+Print".screenshot-screen = { };
+        "Alt+Print".screenshot-window = { };
+        "Mod+S".screenshot = { };
+
+        "Mod+Escape" = {
+          _props.allow-inhibiting = false;
+          toggle-keyboard-shortcuts-inhibit = { };
+        };
+        "Mod+Shift+E".quit = { };
+        "Ctrl+Alt+Delete".quit = { };
+        "Mod+Shift+P".power-off-monitors = { };
+      };
+
+      _children = [
+        {
+          spawn-at-startup._args = [
+            "systemctl"
+            "--user"
+            "start"
+            "swayosd.service"
+            "swaync.service"
+            "elephant.service"
+            "walker.service"
+          ];
+        }
+        { spawn-at-startup._args = [ "waybar" ]; }
+        { spawn-at-startup._args = [ "nm-applet" ]; }
+        { spawn-at-startup._args = [ "blueman-applet" ]; }
+        {
+          spawn-at-startup._args = [
+            "sh"
+            "-c"
+            "wl-paste --type text --watch cliphist store"
+          ];
+        }
+        {
+          spawn-at-startup._args = [
+            "sh"
+            "-c"
+            "wl-paste --type image --watch cliphist store"
+          ];
+        }
+        {
+          window-rule = {
+            clip-to-geometry = true;
+            draw-border-with-background = false;
+            geometry-corner-radius = [
+              12.0
+              12.0
+              12.0
+              12.0
+            ];
+          };
+        }
+        {
+          window-rule._children = [
+            { match._props.app-id = "pavucontrol"; }
+            { match._props.app-id = "pwvucontrol"; }
+            { match._props.app-id = "blueman-manager"; }
+            { match._props.app-id = "nm-connection-editor"; }
+            { open-floating = true; }
+          ];
+        }
+        {
+          window-rule._children = [
+            { match._props.title = "^Picture-in-Picture$"; }
+            { open-floating = true; }
+          ];
+        }
+        {
+          window-rule._children = [
+            { match._props.app-id = "^com[.]mitchellh[.]ghostty$"; }
+            { background-effect.blur = true; }
+          ];
+        }
+        {
+          layer-rule = {
+            match._props.namespace = "^walker$";
+            geometry-corner-radius = 12;
+            background-effect.blur = true;
+          };
+        }
+        {
+          layer-rule = {
+            match._props.namespace = "^waybar$";
+            background-effect.blur = true;
+          };
+        }
+        {
+          layer-rule = {
+            match._props.namespace = "^swaync-control-center$";
+            geometry-corner-radius = 10;
+            background-effect.blur = true;
+          };
+        }
+        {
+          layer-rule = {
+            match._props.namespace = "^swaync-notification-window$";
+            geometry-corner-radius = 10;
+            background-effect.blur = true;
+          };
+        }
+      ];
+    };
   };
 
   services.hyprpaper.enable = lib.mkForce false;
@@ -673,9 +760,9 @@ in
       }
 
       .notification {
-        background-color: #282828;
-        border: 1px solid #3c3836;
-        border-radius: 10px;
+        background-color: rgba(40, 40, 40, 0.86);
+        border: 1px solid rgba(215, 153, 33, 0.35);
+        border-radius: 12px;
         margin: 6px;
       }
 
@@ -693,9 +780,9 @@ in
       }
 
       .control-center {
-        background-color: #282828;
-        border: 1px solid #d79921;
-        border-radius: 10px;
+        background-color: rgba(40, 40, 40, 0.84);
+        border: 1px solid rgba(215, 153, 33, 0.45);
+        border-radius: 12px;
       }
 
       .control-center-list {
@@ -864,7 +951,8 @@ in
       }
 
       window#waybar {
-        background-color: #282828;
+        background-color: rgba(40, 40, 40, 0.80);
+        border-bottom: 1px solid rgba(215, 153, 33, 0.30);
         color: #ebdbb2;
       }
 
@@ -1008,14 +1096,15 @@ in
         }
 
         .box-wrapper {
-          background: alpha(@base, 0.75);
+          background: alpha(@base, 0.82);
           padding: 20px;
-          border: 2px solid @border;
-          border-radius: 10px;
+          border: 1px solid alpha(@border, 0.55);
+          border-radius: 12px;
         }
 
         .search-container {
-          background: @base;
+          background: alpha(@base, 0.55);
+          border-radius: 8px;
           padding: 10px;
         }
 
@@ -1361,7 +1450,6 @@ in
     enable = true;
     settings = {
       command = "nu"; # Launch nushell directly
-      background-opacity = 0.95;
       window-padding-x = 10;
       window-padding-y = 10;
       cursor-style = "block";

@@ -82,10 +82,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    niri-flake = {
-      url = "github:sodiboo/niri-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -151,7 +147,6 @@
           inputs.disko.nixosModules.disko
           inputs.stylix.nixosModules.stylix
           inputs.home-manager.nixosModules.home-manager
-          inputs.niri-flake.nixosModules.niri
           ./hosts/matt-desktop/configuration.nix
           {
             home-manager = {

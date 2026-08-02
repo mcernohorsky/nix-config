@@ -1,17 +1,8 @@
-{
-  config,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 
 {
-  programs.niri = {
-    enable = true;
-  };
+  programs.niri.enable = true;
 
-  xdg.portal.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gnome ];
-  xdg.portal.configPackages = [ config.programs.niri.package ];
-
+  # Niri 26.04 starts xwayland-satellite on demand when it is available on PATH.
   environment.systemPackages = [ pkgs.xwayland-satellite ];
 }
