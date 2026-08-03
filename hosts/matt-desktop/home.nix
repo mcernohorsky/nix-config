@@ -118,12 +118,14 @@ let
 in
 {
   imports = [
-    ../../modules/home/opencode-core.nix
+    ../../modules/home/opencode-v2.nix
     ../../modules/home/dev-templates.nix
+    ../../modules/home/uv-python.nix
   ];
 
-  modules.home.opencodeCore.enable = true;
+  modules.home.opencodeV2.enable = true;
   modules.home.devTemplates.enable = true;
+  modules.home.uvPython.enable = true;
   nix.package = lib.mkForce null;
 
   home.username = "matt";
@@ -1476,7 +1478,7 @@ in
   programs.ghostty = {
     enable = true;
     settings = {
-      command = "nu"; # Launch nushell directly
+      command = "${pkgs.nushell}/bin/nu";
       window-padding-x = 10;
       window-padding-y = 10;
       cursor-style = "block";
@@ -1745,8 +1747,7 @@ in
     gh
     jq
     yq
-    opencode-desktop
-    nodejs # `node` on PATH: TS/Svelte language servers, opencode-cursor-oauth h2-bridge child, npm globals
+    nodejs # `node` on PATH for Node-targeted tools and language servers
 
     # System info
     fastfetch
@@ -1811,6 +1812,15 @@ in
       };
     };
     desktopEntries = {
+      "ai.opencode" = {
+        name = "OpenCode Beta";
+        genericName = "AI Coding Agent";
+        comment = "Official OpenCode v2 beta desktop app";
+        exec = "/home/matt/.local/opt/opencode-beta/OpenCode.AppImage %U";
+        icon = "applications-development";
+        terminal = false;
+        categories = [ "Development" ];
+      };
       "info.cemu.Cemu" = {
         name = "Cemu";
         genericName = "Wii U Emulator";

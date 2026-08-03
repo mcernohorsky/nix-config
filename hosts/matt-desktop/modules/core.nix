@@ -195,6 +195,10 @@
   # Users can manually run 'nu' to enter nushell, or set their terminal to run it
   programs.bash.completion.enable = true;
 
+  # uv places its user-managed Python executables here. Configure this at the
+  # system level as well as in Home Manager so SSH and other login shells see it.
+  environment.localBinInPath = true;
+
   environment.systemPackages = with pkgs; [
     # File management
     file

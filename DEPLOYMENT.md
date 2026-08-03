@@ -1,146 +1,117 @@
-# Repertoire Builder Deployment Guide
+# Deployment Guide
 
-This guide explains how to deploy the repertoire-builder application to your Oracle Cloud VPS using NixOS containers and deploy-rs.
+This repository deploys three Nix hosts:
 
-## Overview
+| Host | Role | Management path |
+| --- | --- | --- |
+| `oracle-0` | Oracle ARM VPS, Caddy, Cloudflare Tunnel, Vaultwarden, repertoire-builder | Tailscale SSH/deploy-rs |
+| `matt-desktop` | NixOS workstation, OpenCode server, Restic receiver | Tailscale SSH/deploy-rs |
+| `macbook-pro-m2` | nix-darwin workstation and remote OpenCode client | local `darwin-rebuild` |
 
-The deployment consists of:
-- A native NixOS container running your repertoire-builder PocketBase application
-- Tailscale for secure, private access (SSH is restricted to Tailscale only)
-- Deploy-rs for automated deployments via Tailscale MagicDNS
-- Proper networking and firewall configuration
-- Persistent data storage
+All routine deployment commands are `just` recipes from the flake development
+shell. Tailscale is the intended management network; Oracle's public SSH port
+is closed after bootstrap.
 
-## Architecture
+## Routine deployment
 
-- **Project-level configuration**: The container configuration is defined in `container.nix` within the repertoire-builder project
-- **Infrastructure loading**: The Oracle VPS configuration imports the container module from the repertoire-builder flake
-- **Secrets Management**: Tailscale auth keys are managed via `agenix` in the `secrets/` directory.
+Prerequisites: Tailscale connectivity, access to the agenix SSH identity, and
+Determinate's native Linux builder authentication for Oracle builds.
 
-## Prerequisites
-
-1. Oracle Cloud VPS running NixOS
-2. Tailscale installed and authenticated on your local machine
-3. SSH public keys added to `secrets/secrets.nix` for agenix encryption
-4. Determinate Nix authenticated to a FlakeHub account with native Linux
-   builder access (`determinate-nixd auth login`)
-
-## Setup Steps
-
-### 1. Tailscale Connectivity
-
-Ensure you can reach the VPS via Tailscale:
-```bash
-ping oracle-0.tailc41cf5.ts.net
-```
-
-### 2. Update Flake Inputs
-
-```bash
-nix flake update
-```
-
-### 3. Build and Deploy
-
-Enter the development shell:
 ```bash
 nix develop
-```
-
-Or use just commands:
-```bash
-# Deploy to Oracle VPS
+just update                 # update all inputs when desired
+just update-app             # update only repertoire-builder
 just deploy-oracle
-
-# Deploy to Desktop
-just deploy-desktop
+just deploy-desktop         # reports whether a reboot is advisable
+just deploy-mac
 ```
 
-### matt-desktop: session lock (hyprlock)
+Non-interactive equivalents are `nix develop -c just <recipe>`. Use
+`just deploy-all` only when deploying all three hosts together. Do not use
+OrbStack as a deployment backend.
 
-Idle timeout and manual lock (`Super+Alt+L`, Walker “Lock Screen”) use **hyprlock** via the shared `lock-now` helper. Walker’s systemd unit uses `PassEnvironment` so `.desktop` launches get `WAYLAND_DISPLAY`, `NIRI_SOCKET`, and the rest of the graphical session.
+After `just deploy-desktop`, reboot only when its post-deploy check reports a
+kernel change or an unavailable NVIDIA stack. Tailscale/SSH should remain
+available even when NVIDIA needs a reboot.
 
-## Vaultwarden & Backups
+## Repertoire-builder
 
-Vaultwarden is deployed as a native service on `oracle-0`. Caddy listens locally and Cloudflare Tunnel publishes `https://vault.cernohorsky.ca`.
+The application runs in a native NixOS container on `oracle-0`; the container
+serves PocketBase on private port `8090`. Host Caddy publishes it at:
 
-### Backup Strategy
-Backups are performed every 6 hours using Restic to two locations:
-1. **Cloudflare R2**: Offsite encrypted backup (`oracle-0-backups` bucket).
-2. **matt-desktop**: Local encrypted backup via the append-only Restic REST server at `rest:http://matt-desktop.tailc41cf5.ts.net:8000/`.
+- App: <https://chess.cernohorsky.ca>
+- PocketBase admin: <https://chess.cernohorsky.ca/_/>
+- Host health check: `curl http://repertoire-builder:8090/api/health`
 
-The R2 backup prunes on Oracle. The desktop repository is append-only for Oracle and is pruned locally by the `oracle-0-local-prune` timer. If `matt-desktop` is powered off, that backup job fails and the next scheduled run retries it.
+Useful commands:
 
-### Secrets
-The following secrets are required in `secrets/`:
-- `vaultwarden-admin-token.age`: Argon2 hash for the admin panel.
-- `restic-password.age`: Encryption password for the Restic repositories.
-- `restic-r2-credentials.age`: Cloudflare R2 Access Key ID and Secret Access Key.
+```bash
+just verify-chess
+just container-status oracle-0
+just container-logs oracle-0
+just container-restart oracle-0
+just ssh-container oracle-0
+```
 
-### Disaster Recovery: Restoring Vaultwarden
+The container data directory is
+`/var/lib/containers/repertoire-builder/data`; the application user is
+`pocketbase`. The host does not expose a separate public `:8090` listener.
 
-If you need to restore Vaultwarden to a new `oracle-0` instance:
+After a deploy, `just verify-chess` checks `/api/version` and `/version.json`.
+If the frontend appears stale, verify the `repertoire-builder` flake revision
+with `nix flake metadata`; update it with `just update-app`. Do not change
+version numbers or derivation inputs to defeat Nix caching.
 
-1. **Deploy the base system** following the "Disaster Recovery: Rebuilding oracle-0" steps above.
-2. **Quiesce Vaultwarden and both backup pipelines** so a scheduled backup
-   cannot capture or overwrite files during the restore:
-   ```bash
-   ssh matt@oracle-0 << 'EOF'
-   sudo systemctl stop \
-     restic-backups-vaultwarden-r2.timer \
-     restic-backups-vaultwarden-desktop.timer
-   sudo systemctl stop \
-     restic-backups-vaultwarden-r2.service \
-     restic-backups-vaultwarden-desktop.service
-   sudo systemctl stop vaultwarden
-   EOF
-   ```
-3. **Restore from Cloudflare R2**:
-   ```bash
-   ssh matt@oracle-0 << 'EOF'
-   sudo -i
-   export AWS_ACCESS_KEY_ID=$(grep AWS_ACCESS_KEY_ID /run/agenix/restic-r2-credentials | cut -d= -f2)
-   export AWS_SECRET_ACCESS_KEY=$(grep AWS_SECRET_ACCESS_KEY /run/agenix/restic-r2-credentials | cut -d= -f2)
-   export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
-   export RESTIC_REPOSITORY="s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups"
-   
-   # List snapshots to verify connectivity
-   restic snapshots
-   
-   # Restore the latest snapshot to the root filesystem. This restores
-   # db-backup.sqlite3, attachments, and the rest of /var/lib/vaultwarden.
-   restic restore latest --target /
+### bun2nix EPERM
 
-   # Promote the verified SQLite copy to Vaultwarden's live database.
-   test -s /var/lib/vaultwarden/db-backup.sqlite3
-   test "$(sqlite3 /var/lib/vaultwarden/db-backup.sqlite3 'PRAGMA integrity_check;')" = ok
-   rm -f /var/lib/vaultwarden/db.sqlite3-wal /var/lib/vaultwarden/db.sqlite3-shm
-   install -o vaultwarden -g vaultwarden -m 0600 \
-     /var/lib/vaultwarden/db-backup.sqlite3 /var/lib/vaultwarden/db.sqlite3
-   EOF
-   ```
-4. **Restart and validate Vaultwarden, then re-enable scheduled backups**:
-   ```bash
-   ssh matt@oracle-0 << 'EOF'
-   sudo systemctl start vaultwarden
-   sudo systemctl is-active --quiet vaultwarden
-   sudo systemctl start \
-     restic-backups-vaultwarden-r2.timer \
-     restic-backups-vaultwarden-desktop.timer
-   EOF
-   ```
+If a `web-dist` build fails linking packages across `/tmp` and `/build`, keep
+the application flake's explicit string override:
 
-   If validation fails, leave the backup timers stopped until the restore is
-   repaired and Vaultwarden starts successfully.
+```nix
+bunInstallFlags = "--linker=isolated --backend=copyfile";
+```
 
-If R2 is unavailable, run this after step 2 in place of step 3, then continue
-with step 4:
+`BUN_CONFIG_INSTALL_BACKEND` does not override bun2nix's hook. Use
+`bunInstallFlags` (a string, not a list).
+
+## Vaultwarden and backups
+
+Vaultwarden is published through the Cloudflare Tunnel at
+`https://vault.cernohorsky.ca`. Backups run every six hours to:
+
+1. Cloudflare R2 (`oracle-0-backups`), with GFS pruning on Oracle.
+2. The append-only Restic REST server on `matt-desktop` at
+   `rest:http://matt-desktop.tailc41cf5.ts.net:8000/`, pruned locally on the
+   desktop.
+
+The encrypted secrets are `vaultwarden-admin-token.age`, `restic-password.age`,
+and `restic-r2-credentials.age`. Agenix decrypts them only at activation; do
+not put plaintext credentials in Nix expressions or the repository.
+
+### Restore Vaultwarden
+
+Stop the service and both backup pipelines before restoring:
+
+```bash
+ssh matt@oracle-0 <<'EOF'
+sudo systemctl stop \
+  restic-backups-vaultwarden-r2.timer \
+  restic-backups-vaultwarden-desktop.timer \
+  restic-backups-vaultwarden-r2.service \
+  restic-backups-vaultwarden-desktop.service \
+  vaultwarden
+EOF
+```
+
+Restore from R2:
 
 ```bash
 ssh matt@oracle-0
 sudo -i
-export RESTIC_REPOSITORY="rest:http://matt-desktop.tailc41cf5.ts.net:8000/"
+export AWS_ACCESS_KEY_ID=$(sed -n 's/^AWS_ACCESS_KEY_ID=//p' /run/agenix/restic-r2-credentials)
+export AWS_SECRET_ACCESS_KEY=$(sed -n 's/^AWS_SECRET_ACCESS_KEY=//p' /run/agenix/restic-r2-credentials)
 export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
+export RESTIC_REPOSITORY="s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups"
 restic snapshots
 restic restore latest --target /
 test -s /var/lib/vaultwarden/db-backup.sqlite3
@@ -150,323 +121,91 @@ install -o vaultwarden -g vaultwarden -m 0600 \
   /var/lib/vaultwarden/db-backup.sqlite3 /var/lib/vaultwarden/db.sqlite3
 ```
 
-## Container Details
-
-The repertoire-builder runs in a native NixOS container with:
-
-- **Network**: Private network with NAT
-  - Attached to `br-containers`
-  - Receives a private address from the bridge's DHCP server; the address is
-    intentionally not pinned
-- **Port**: Application serves on port `8090`
-- **Data**: Persistent storage in `/var/lib/containers/repertoire-builder/data`
-- **User**: Runs as `pocketbase` user for security
-
-## Accessing the Application
-
-The host's Caddy service resolves the container as `repertoire-builder` and
-proxies to port `8090`; the host does not expose a separate `:8090` listener.
-
-- Application: `https://chess.cernohorsky.ca`
-- PocketBase Admin: `https://chess.cernohorsky.ca/_/`
-- Host-side health check: `curl http://repertoire-builder:8090/api/health`
-
-## Container Management
-
-The `justfile` provides wrappers for container management using MagicDNS hostnames.
-
-### Check Container Status
-```bash
-just container-status oracle-0
-```
-
-### View Container Logs
-```bash
-just container-logs oracle-0
-```
-
-### Restart Container
-```bash
-just container-restart oracle-0
-```
-
-### Enter Container Shell
-```bash
-just ssh-container oracle-0
-```
-
-## Security Notes
-
-- **All public ports closed**: No direct access from internet
-- **SSH via Tailscale only**: Port 22 closed on public interfaces
-- **HTTP via Cloudflare Tunnel**: Outbound-only connection to Cloudflare edge
-- **Agenix**: Secrets (Tailscale auth key, Cloudflare token) encrypted with SSH host keys
-
-### Tailscale ACL Policy
-
-The network uses a tiered trust model defined in `tailscale-acl.json`:
-
-| Tag | Devices | Access |
-|-----|---------|--------|
-| `tag:trusted` | matt-desktop | Full access to all devices |
-| `tag:cloud` | oracle-0 | Isolated; can only reach trusted on compute ports |
-| *(user identity)* | macbook, phone, iPad | Full access via `autogroup:member` |
-
-**Apply the policy:** Copy contents of `tailscale-acl.json` to [Tailscale Admin Console → Access Controls](https://login.tailscale.com/admin/acls)
-
-### Taildrive Setup
-
-Taildrive enables secure file sharing between trusted devices. After applying the ACL policy:
+If R2 is unavailable, use the desktop repository instead:
 
 ```bash
-# On Linux (matt-desktop), share a directory:
-tailscale drive share my-files /path/to/directory
-
-# Access shares from any trusted device:
-# Linux: mount via WebDAV at http://100.100.100.100:8080/<tailnet>/<machine>/<share>
-# macOS: Finder → Go → Connect to Server → http://100.100.100.100:8080/
+export RESTIC_REPOSITORY="rest:http://matt-desktop.tailc41cf5.ts.net:8000/"
+export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
+restic snapshots
+restic restore latest --target /
 ```
 
-Note: oracle-0 has no Taildrive access (intentional isolation).
-
-### Oracle Cloud Security List (Ingress)
-
-| Type | Port | Purpose |
-|------|------|---------|
-| UDP | 41641 | Tailscale direct P2P |
-| ICMP | Type 3 | Destination unreachable |
-| ICMP | Type 3, Code 4 | Path MTU discovery |
-
-All other ingress: **blocked**. Egress: **allow all**.
-
-## Disaster Recovery: Rebuilding oracle-0
-
-If the VPS is destroyed and you need to create a new one, follow these steps:
-
-### 1. Create New VPS in Oracle Cloud
-
-- Shape: `VM.Standard.A1.Flex` (ARM)
-- Image: Ubuntu 22.04 (or latest LTS)
-- **Keep SSH port 22 open** in security list (temporary for bootstrap)
-- Note the public IP address
-
-### 2. Install nixos-anywhere Locally (if not already)
+Run the same integrity check and database promotion above, then restart the
+service and timers only after validation:
 
 ```bash
-nix profile install github:nix-community/nixos-anywhere
+systemctl start vaultwarden
+systemctl is-active --quiet vaultwarden
+systemctl start restic-backups-vaultwarden-r2.timer restic-backups-vaultwarden-desktop.timer
 ```
 
-### 3. Get New Host's SSH Key
+## Security and Tailscale
+
+- Oracle public ingress is blocked except Tailscale direct-connect UDP `41641`
+  and required ICMP.
+- Oracle uses Tailscale SSH; `services.openssh.enable = false`.
+- Desktop OpenSSH remains available without a public firewall opening for
+  deploy-rs compatibility.
+- Cloudflare Tunnel is outbound-only.
+- `tailscale-acl.json` isolates `tag:cloud` (Oracle) from trusted devices.
+- Taildrive shares are configured declaratively; Oracle shares `/` and the
+  desktop shares `/` and `/mnt/hdd`.
+
+Apply ACL changes in the Tailscale admin console, then verify connectivity:
 
 ```bash
-ssh-keyscan <new-ip> 2>/dev/null | grep ed25519
+nix develop -c just tailscale-status
+nix develop -c just ping-all
 ```
 
-### 4. Update secrets.nix
+If rebuilding Oracle, keep SSH port 22 open only during bootstrap and remove it
+after Tailscale is working.
 
-Edit `secrets/secrets.nix` and replace the `oracle-0` key:
+## Disaster recovery: rebuild `oracle-0`
 
-```nix
-oracle-0 = "ssh-ed25519 AAAA...new-key...";
-```
+1. Create an ARM `VM.Standard.A1.Flex` VPS with Ubuntu and temporary SSH port
+   22 access.
+2. Get the new host key and replace `oracle-0` in `secrets/secrets.nix`:
 
-### 5. Re-encrypt All Secrets
+   ```bash
+   ssh-keyscan <new-ip> 2>/dev/null | rg ed25519
+   ```
 
-```bash
-cd secrets
-agenix -r -i ~/.ssh/id_ed25519  # rekey all secrets with new host key
-```
+3. Rekey the encrypted secrets:
 
-### 6. Commit the Changes
+   ```bash
+   cd secrets
+   agenix -r -i ~/.ssh/id_ed25519
+   cd ..
+   ```
 
-```bash
-git add secrets/
-git commit -m "Update oracle-0 host key for new VPS"
-```
+4. Install with disko/nixos-anywhere:
 
-### 7. Run nixos-anywhere with Disko
+   ```bash
+   nixos-anywhere --flake .#oracle-0 root@<new-ip>
+   ```
 
-This will:
-- SSH into the Ubuntu instance
-- Use kexec to boot into a NixOS installer (in RAM)
-- Run disko to partition the disk (`/dev/sda`: 512M boot + rest as root)
-- Install NixOS with your configuration
+   `hosts/oracle-0/disk-config.nix` uses `/dev/sda`: a 512 MiB EFI partition
+   and an ext4 root partition using the remainder.
 
-```bash
-nixos-anywhere --flake .#oracle-0 root@<new-ip>
-```
+5. Wait for the reboot, verify `ssh matt@oracle-0` over Tailscale, remove
+   public SSH ingress, then check:
 
-**Note:** The kexec boot takes 5-10 minutes. You may lose SSH connection temporarily.
+   ```bash
+   ssh matt@oracle-0 sudo systemctl status cloudflared-tunnel
+   curl -fsS https://cernohorsky.ca
+   curl -fsS https://chess.cernohorsky.ca
+   ```
 
-### 8. Verify Tailscale Connectivity
-
-After installation completes, the system will reboot. Wait a few minutes, then:
-
-```bash
-# Should work via Tailscale now
-ssh matt@oracle-0
-```
-
-### 9. Lock Down Oracle Cloud Security List
-
-Once Tailscale is working:
-- **Remove** SSH port 22 ingress rule
-- **Keep** UDP 41641 (Tailscale)
-- **Keep** ICMP Type 3 (network health)
-
-### 10. Verify Services
-
-```bash
-# Check tunnel is running
-ssh matt@oracle-0 "sudo systemctl status cloudflared-tunnel"
-
-# Test domains
-curl https://cernohorsky.ca
-curl https://chess.cernohorsky.ca
-```
-
-### Disko Disk Layout
-
-The `disk-config.nix` defines partitioning for `/dev/sda`:
-
-| Partition | Size | Type | Mount |
-|-----------|------|------|-------|
-| boot | 512M | EFI (vfat) | /boot |
-| root | 100% | ext4 | / |
-
-Disko runs automatically during `nixos-anywhere` - no manual partitioning needed.
-
-### If nixos-anywhere Fails
-
-Fall back to manual kexec method:
-
-1. SSH into Ubuntu: `ssh ubuntu@<new-ip>`
-2. Install nix: `curl -L https://nixos.org/nix/install | sh`
-3. Build kexec tarball or use netboot.xyz
-4. Boot into NixOS installer
-5. Run disko manually: `nix run github:nix-community/disko -- --mode disko /path/to/disk-config.nix`
-6. Mount and install: `nixos-install --flake .#oracle-0`
-
----
-
-## matt-desktop BIOS Configuration
-
-Reference settings for the AMD Ryzen 7 5700X3D workstation. These settings were optimized for stability and performance on the ASUS ROG STRIX B450-F GAMING motherboard with 64GB (2x32GB) DDR4 RAM.
-
-**Last updated**: December 2025 (BIOS version 5901)
-
-### Hardware Summary
-
-| Component | Details |
-|-----------|---------|
-| CPU | AMD Ryzen 7 5700X3D (8-core, 96MB L3 V-Cache) |
-| Motherboard | ASUS ROG STRIX B450-F GAMING |
-| RAM | Corsair Vengeance LPX 64GB (2x32GB) DDR4-3200 CL16 (CMK64GX4M2E3200C16) |
-| RAM Slots | DIMM_A2 + DIMM_B2 (optimal for dual-channel) |
-| GPU | NVIDIA GeForce RTX 2070 8GB |
-
-### Ai Tweaker Tab
-
-| Setting | Value | Notes |
-|---------|-------|-------|
-| Ai Overclock Tuner | Manual | DOCP fails with 64GB dual-rank on B450 |
-| Memory Frequency | DDR4-3200MHz | |
-| FCLK Frequency | 1600 MHz | 1:1 ratio with memory |
-| DRAM Voltage | 1.365V | Slight bump from 1.35V spec for stability |
-| CPU SOC Voltage | Manual: 1.100V | Feeds memory controller and Infinity Fabric |
-
-### Ai Tweaker → DRAM Timing Control
-
-| Setting | Value |
-|---------|-------|
-| DRAM CAS# Latency (tCL) | 16 |
-| DRAM RAS# to CAS# Read Delay (tRCDrd) | 20 |
-| DRAM RAS# to CAS# Write Delay (tRCDwr) | 20 |
-| DRAM RAS# PRE Time (tRP) | 20 |
-| DRAM RAS# ACT Time (tRAS) | 38 |
-| Cmd2T (Command Rate) | 2T |
-
-### Advanced → AMD CBS → NBIO Common Options → XFR Enhancement
-
-| Setting | Value | Notes |
-|---------|-------|-------|
-| Precision Boost Overdrive | Enabled | Allows optimal CPU boost using motherboard limits |
-
-Note: Curve Optimizer is not available for 5700X3D on this BIOS.
-
-### Boot Tab
-
-| Setting | Value | Notes |
-|---------|-------|-------|
-| Fast Boot | Disabled | Ensures full memory training on each boot |
-| CSM | Disabled | Required for Resizable BAR |
-
-### Advanced → PCI Subsystem Settings
-
-| Setting | Value | Notes |
-|---------|-------|-------|
-| Above 4G Decoding | Enabled | Required for Resizable BAR |
-| Re-Size BAR Support | Enabled | ~5-10% GPU performance in supported games |
-
-### Thermal Performance
-
-Verified stable under load:
-- Idle: ~37°C
-- Full 16-thread stress: ~49°C peak
-
-### Why These Settings?
-
-- **Manual RAM config**: DOCP/XMP fails to train with 64GB dual-rank on B450 due to signal integrity limits
-- **2T Command Rate**: Required for stability with high-density dual-rank DIMMs
-- **3200 MT/s (not higher)**: The 5700X3D's 96MB L3 cache masks RAM speed differences; gains from 3600+ are <1.5% but stability risks are high
-- **PBO limits**: Conservative values protect B450 VRMs while allowing full CPU boost
-- **Fast Boot disabled**: Ensures proper memory training; critical for 64GB on B450
-
-### Recovery
-
-If system fails to POST after changes:
-1. Power off, switch off PSU
-2. Wait 30 seconds
-3. Power on — board should auto-recover to safe mode (C.P.R. feature)
-4. Re-enter BIOS and adjust settings
-
----
+If nixos-anywhere fails, boot the installer manually, run disko against
+`hosts/oracle-0/disk-config.nix`, and install with
+`nixos-install --flake .#oracle-0`.
 
 ## Troubleshooting
 
-### Deploy-rs Verification
+### Native Linux builder
 
-After deployment, verify success:
-```bash
-curl https://chess.cernohorsky.ca/api/version
-curl https://chess.cernohorsky.ca/version.json
-# Or use the justfile command:
-just verify-chess
-```
-
-### Transitioning from OpenSSH to Tailscale SSH
-
-**Symptom**: `Failed to restart sshd.service: Unit sshd.service not found.`
-
-**Cause**: NixOS compares the new system against `/run/booted-system` (the system from last boot) to determine which units to restart. If the server hasn't been rebooted since OpenSSH was disabled, it keeps trying to restart the old `sshd.service`.
-
-**Solution**: Reboot the server after disabling OpenSSH:
-```bash
-ssh matt@oracle-0 "sudo reboot"
-# Wait 30-60 seconds, then verify:
-ssh matt@oracle-0 "ls /run/booted-system/etc/systemd/system/sshd.service" # Should fail (file not found)
-```
-
-After reboot, `/run/booted-system` points to the new system without sshd, and future activations work cleanly.
-
-### Native Linux Builder
-
-`just deploy-oracle` builds the `aarch64-linux` closure from macOS using
-Determinate Nix's native Linux builder, then deploys it with deploy-rs. Docker
-and OrbStack are not involved.
-
-If a cross-platform build reports a platform mismatch, verify authentication
-and restart the daemon after logging in:
+Oracle builds use Determinate's native Linux builder, not Docker or OrbStack:
 
 ```bash
 determinate-nixd status
@@ -474,197 +213,85 @@ determinate-nixd auth login
 sudo launchctl kickstart -k system/systems.determinate.nix-daemon
 ```
 
-### Caddy Not Starting After Deployment
+### Tailscale/OpenSSH transition
 
-**Symptom**: Caddy is stopped (`inactive (dead)`) after deployment, returning 502 errors.
+If activation reports `sshd.service` missing after disabling OpenSSH, reboot
+Oracle once so `/run/booted-system` reflects the new configuration:
 
-**Cause**: The NixOS Caddy module sets `StartLimitIntervalSec = 14400` (4 hours) and `StartLimitBurst = 10`. If Caddy fails to start 10 times within 50 seconds (at 5s intervals), systemd marks it as "failed" and won't retry for 4 hours.
-
-**Solution**: Override with `StartLimitIntervalSec = 0` in the Caddy service config:
-```nix
-systemd.services.caddy.serviceConfig.StartLimitIntervalSec = 0;
-```
-
-**Quick fix**: If Caddy is down, manually start it:
 ```bash
-ssh matt@oracle-0 "sudo systemctl start caddy"
+ssh matt@oracle-0 sudo reboot
 ```
 
-### Host Key Verification Failed
-If you change hostnames or IPs, you may need to clear old host keys:
+### Caddy returns 502
+
+If Caddy exhausted systemd's start limit, temporarily start it with
+`ssh matt@oracle-0 sudo systemctl start caddy`; the declarative fix is:
+
+```nix
+systemd.services.caddy.unitConfig.StartLimitIntervalSec = 0;
+```
+
+### Deployment timeout or host-key failure
+
+Deploy-rs normally rolls back after a Tailscale interruption. For a changed
+host key:
+
 ```bash
 ssh-keygen -R oracle-0.tailc41cf5.ts.net
 ssh-keyscan -H oracle-0.tailc41cf5.ts.net >> ~/.ssh/known_hosts
 ```
 
-### Deployment Timeout
-If deployment times out during activation, it usually means the Tailscale connection was interrupted. Magic rollback will revert the changes automatically.
+## Desktop BIOS reference
 
----
+Hardware: Ryzen 7 5700X3D, ASUS ROG STRIX B450-F, 64 GiB DDR4-3200,
+RTX 2070. Stable settings (BIOS 5901): manual memory, DDR4-3200, FCLK 1600,
+DRAM 1.365 V, SoC 1.10 V, timings `16-20-20-20-38`, command rate 2T, PBO
+enabled, CSM disabled, Above 4G decoding and ReBAR enabled, Fast Boot disabled.
 
-## Deployment Verification Checklist
+After a failed memory change, power off fully and reboot into safe recovery;
+then reduce memory settings or return to the last known-good values.
 
-After every deployment, verify these to confirm success:
+## OpenCode v2 beta
 
-### 1. Backend Version
-```bash
-curl https://chess.cernohorsky.ca/api/version
-```
-Expected: JSON with `version`, `gitCommit`, `buildTime`
+OpenCode uses the official `@opencode-ai/cli@next` Bun package on both agent
+hosts. `oc` launches locally; `ocd` connects the MacBook CLI to the desktop at
+`https://matt-desktop.tailc41cf5.ts.net` through Tailscale.
 
-### 2. Frontend Version
-```bash
-curl https://chess.cernohorsky.ca/version.json
-```
-Expected: JSON matching the deployment commit
-
-### 3. UI Footer
-Check the app footer shows the version (e.g., `v0.1.0 (abc1234)`)
-
-### 4. Container & Service Health
-```bash
-just container-status oracle-0
-ssh matt@oracle-0 "sudo systemctl status container@repertoire-builder"
-ssh matt@oracle-0 "sudo machinectl shell repertoire-builder /bin/systemctl status repertoire-builder"
-ssh matt@oracle-0 "sudo machinectl shell repertoire-builder /bin/systemctl status pocketbase-superuser-setup"
-```
-
-### 5. pb_public Mount Verification
-```bash
-ssh matt@oracle-0 "sudo machinectl shell repertoire-builder /bin/ls -la /var/lib/pocketbase/pb_public"
-```
-Expected: Shows files from the Nix store (read-only mount)
-
-### 6. Database Persistence
-```bash
-ssh matt@oracle-0 "sudo sqlite3 /var/lib/containers/repertoire-builder/data/data.db 'SELECT COUNT(*) FROM edges;'"
-```
-Compare with API result to verify same database is being used.
-
-### 7. Service Restart Test
-```bash
-just container-restart oracle-0
-# Wait 30 seconds, then verify:
-curl https://chess.cernohorsky.ca/api/health
-curl https://chess.cernohorsky.ca/version.json
-```
-Expected: No "missing assets" window, services come up cleanly
-
----
-
-## If Frontend Didn't Update (Rare)
-
-If `/version.json` shows an old commit after deployment:
-
-1. **Make sure the application input points at the expected revision**:
-   ```bash
-   nix flake metadata | grep -A2 repertoire-builder
-   just update-app  # only if the lock file is actually behind
-   just deploy-oracle
-   ```
-
-2. **Do NOT** bump version numbers or modify derivation inputs as a workaround.
-
-Nix store paths are content-addressed by their derivation inputs, so a stale
-deployment usually means the flake input or application derivation did not
-change, not that a Docker cache needs clearing.
-
----
-
-## bun2nix Build Issues
-
-### EPERM: Operation not permitted during bun install
-
-**Symptom**: `web-dist` derivation fails with:
-```
-EPERM: Operation not permitted: failed to link package: glob-parent@5.1.2 (link)
-```
-
-**Cause**: 
-1. bun2nix hook defaults to `--backend=symlink` which uses hardlinks
-2. In some Nix sandboxes, `/tmp` (bun cache) and `/build` (build dir) are separate mount points
-3. Linux forbids hardlinks across mount points → EPERM
-
-**Failed attempt**: Setting `BUN_CONFIG_INSTALL_BACKEND = "copyfile";` env var doesn't work because CLI flags override env vars, and the hook explicitly passes `--backend=symlink`.
-
-**Working fix**: In the repertoire-builder `flake.nix`, use `bunInstallFlags` to override the hook's default:
-```nix
-bunInstallFlags = "--linker=isolated --backend=copyfile";
-```
-
-**Note**: Use `bunInstallFlags` (string) not `bunInstallFlagsArray` (Nix list). The hook's `concatTo` function doesn't properly handle Nix lists.
-
----
-
-## Desktop OpenCode Web Service
-
-The `matt-desktop` host runs an always-on OpenCode web UI, accessible via Tailscale from any device on the tailnet.
-
-### Access
-
-- **URL**: `https://matt-desktop.tailc41cf5.ts.net`
-- **Local**: `http://127.0.0.1:4097` (on matt-desktop only)
-
-### One-Time Auth Bootstrap
-
-After the first deployment, you need to authenticate OpenCode:
+The desktop API is systemd-owned at `127.0.0.1:4097`, published only through
+Tailscale Serve, and protected by HTTP Basic Auth. The shared password is the
+agenix secret `opencode-server-password.age`. Provider credentials, models,
+subagents, sessions, plugins, and MCPs intentionally start empty.
 
 ```bash
-ssh matt@matt-desktop.tailc41cf5.ts.net
-opencode auth login
+nix develop -c just opencode-update
+nix develop -c just desktop-opencode-status
+nix develop -c just desktop-opencode-logs
+nix develop -c just desktop-opencode-restart
+nix develop -c just desktop-opencode-reset-serve
 ```
 
-Follow the prompts to authenticate with your preferred provider.
+The Mac desktop beta DMG and Linux AppImage are writable, outside the Nix
+store, and follow their official update mechanisms. The v2 preview CLI does
+not expose the mainline browser `web` command; its tailnet endpoint is API-only
+for now. Do not add a legacy web backend or third-party phone app. Revisit the
+official browser UI when it lands in v2.
 
-### Service Management
+## Claude Code
 
-Use the `justfile` commands to manage the service:
+Claude Code uses Anthropic's native `latest` installer on both agent hosts;
+native installs update in the background:
 
 ```bash
-# Check service status and Tailscale Serve config
-just desktop-opencode-status
-
-# View logs
-just desktop-opencode-logs
-
-# Restart both services
-just desktop-opencode-restart
-
-# Reset Tailscale Serve config
-just desktop-opencode-reset-serve
+curl -fsSL https://claude.ai/install.sh | bash -s latest
+claude update                 # optional immediate update
 ```
 
-### Architecture
+The binary is `~/.local/bin/claude`. Claude configuration and authentication
+are local to each machine and are not stored in Nix.
 
-- **Service**: `opencode-web.service` - Runs `opencode web --hostname 127.0.0.1 --port 4097`
-- **Tailscale Serve**: `opencode-web-serve.service` - Publishes localhost:4097 to the tailnet
-- **Auth**: HTTP Basic Auth via `OPENCODE_SERVER_PASSWORD` (managed by agenix)
-- **Working Directory**: `/home/matt/Developer`
+## Agenix rule
 
-### Security
-
-- The service binds only to `127.0.0.1:4097` (localhost)
-- Tailscale Serve proxies requests from the tailnet
-- No firewall rules are opened for the OpenCode port
-- HTTP Basic Auth provides defense-in-depth
-
-### Troubleshooting
-
-**Service not starting**:
-```bash
-ssh matt@matt-desktop.tailc41cf5.ts.net
-sudo systemctl status opencode-web
-sudo journalctl -u opencode-web -n 50
-```
-
-**Tailscale Serve not configured**:
-```bash
-ssh matt@matt-desktop.tailc41cf5.ts.net
-sudo systemctl status opencode-web-serve
-tailscale serve status
-```
-
-**Cannot access from iPhone**:
-1. Ensure Tailscale is running on iPhone
-2. Verify you're connected to the same tailnet
-3. Check `https://matt-desktop.tailc41cf5.ts.net` in Safari
+Secrets in `secrets/*.age` are encrypted for the required user/host SSH keys.
+Activation decrypts them into `/run/agenix`; plaintext secret values do not
+enter the Nix store. When a host key changes, update `secrets/secrets.nix` and
+run `agenix -r -i ~/.ssh/id_ed25519`.

@@ -8,22 +8,18 @@ desktop_host := "matt-desktop.tailc41cf5.ts.net"
 default:
     @just --list
 
-# Update flake inputs and fast-moving AI tool pins
+# Update flake inputs
 update:
     nix flake update
-    just update-plugins
 
-# Update opencode plugins versions in JSON
-update-plugins:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔍 Checking for latest opencode plugin versions via registry..."
-    CURSOR_OAUTH_VERSION=$(bun -e 'const res = await fetch("https://registry.npmjs.org/opencode-cursor-oauth/latest"); if (!res.ok) throw new Error(`registry request failed: ${res.status}`); const pkg = await res.json(); console.log(pkg.version)')
-    echo "opencode-cursor-oauth: $CURSOR_OAUTH_VERSION"
-    jq -n --arg cursor "$CURSOR_OAUTH_VERSION" \
-        '{"opencode-cursor-oauth": $cursor}' \
-        > modules/home/opencode-plugins.json
-    echo "✅ Updated modules/home/opencode-plugins.json"
+# Update the official OpenCode v2 beta CLI on both agent hosts
+opencode-update:
+    @echo "Updating OpenCode v2 beta on macbook-pro-m2..."
+    bun install -g --trust @opencode-ai/cli@next
+    @echo "Updating OpenCode v2 beta on matt-desktop..."
+    ssh matt@{{desktop_host}} 'bun install -g --trust @opencode-ai/cli@next'
+    @echo "Mac:     $($HOME/.bun/bin/opencode2 --version)"
+    @ssh matt@{{desktop_host}} 'printf "Desktop: "; "$HOME/.bun/bin/opencode2" --version'
 
 # Update just the repertoire-builder input
 update-app:
@@ -110,25 +106,24 @@ ping-all:
     @echo "Pinging matt-desktop..."
     @ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || echo "❌ matt-desktop unreachable"
 
-# Desktop OpenCode web service commands
-# Access from iPhone: https://matt-desktop.tailc41cf5.ts.net
+# Desktop OpenCode v2 service commands
 
-# Check Desktop OpenCode web service status
+# Check Desktop OpenCode service status
 desktop-opencode-status:
-    @echo "Desktop OpenCode web service:"
-    @ssh matt@{{desktop_host}} "systemctl status opencode-web --no-pager"
+    @echo "Desktop OpenCode v2 service:"
+    @ssh matt@{{desktop_host}} "systemctl status opencode-v2 --no-pager"
     @echo ""
     @echo "Tailscale Serve config:"
     @ssh matt@{{desktop_host}} "tailscale serve status"
 
-# View Desktop OpenCode web service logs
+# View Desktop OpenCode service logs
 desktop-opencode-logs:
-    @ssh matt@{{desktop_host}} "journalctl -u opencode-web -f"
+    @ssh matt@{{desktop_host}} "journalctl -u opencode-v2 -f"
 
-# Restart Desktop OpenCode web service
+# Restart Desktop OpenCode service
 desktop-opencode-restart:
-    @ssh matt@{{desktop_host}} "sudo systemctl restart opencode-web opencode-web-serve"
-    @echo "✅ Restarted opencode-web and opencode-web-serve services"
+    @ssh matt@{{desktop_host}} "sudo systemctl restart opencode-v2 opencode-v2-serve"
+    @echo "✅ Restarted opencode-v2 and opencode-v2-serve services"
 
 # Reset Desktop Tailscale Serve config
 desktop-opencode-reset-serve:

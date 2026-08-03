@@ -31,7 +31,7 @@ in
     ./modules/desktop-services.nix
     ./modules/gaming.nix
     ./modules/media.nix
-    ./modules/opencode-web.nix
+    ./modules/opencode-v2.nix
     ./modules/niri.nix
   ];
 
@@ -45,6 +45,13 @@ in
   boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [ "tpm2-device=auto" ];
 
   networking.hostName = "matt-desktop";
+
+  # The official OpenCode beta AppImage remains writable so its updater can
+  # follow the fast-moving beta channel outside the Nix store.
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
 
   # Fix slow shutdown
   systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
@@ -294,14 +301,12 @@ in
         "https://nix-community.cachix.org"
         "https://deploy-rs.cachix.org"
         "https://walker-git.cachix.org"
-        "https://cache.numtide.com"
       ];
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
         "deploy-rs.cachix.org-1:xfNobmiwF/vzvK1gpfediPwpdIP0rpDV2rYqx40zdSI="
         "walker-git.cachix.org-1:vmC0ocfPWh0S/vRAQGtChuiZBTAe4wiKDeyyXM0/7pM="
-        "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       ];
       trusted-users = [
         "root"

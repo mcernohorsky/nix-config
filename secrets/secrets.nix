@@ -36,7 +36,7 @@ in
   # PocketBase superuser password for repertoire-builder
   "pocketbase-superuser.age".publicKeys = all;
 
-  # OpenCode web server password (HTTP basic auth for matt-desktop)
+  # OpenCode v2 API password shared by the desktop server and remote Mac client
   "opencode-server-password.age".publicKeys = all;
 
   # Grafana secret key for oracle-0 (NixOS 26.05 requires explicit value)

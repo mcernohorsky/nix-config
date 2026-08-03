@@ -56,9 +56,6 @@
     # Let repertoire-builder use its own pinned nixpkgs for reproducibility.
     repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
 
-    # AI Coding Tools
-    llm-agents.url = "github:numtide/llm-agents.nix";
-
     # Secrets management
     agenix = {
       url = "github:ryantm/agenix";
@@ -93,6 +90,7 @@
         modules = [
           # Determinate nix-darwin compatibility module
           inputs.determinate.darwinModules.default
+          inputs.agenix.darwinModules.default
 
           # System configuration
           ./hosts/macbook-pro-m2/configuration.nix

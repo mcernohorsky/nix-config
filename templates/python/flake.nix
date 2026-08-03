@@ -20,16 +20,19 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            python313
+            python314
             uv
             ruff
             basedpyright
-            python313Packages.debugpy
+            python314Packages.debugpy
             nixd
             nixfmt
             git
           ];
 
+          # The global Python is managed by uv, but project environments use
+          # only the interpreter supplied by this pinned Nix dev shell.
+          UV_NO_MANAGED_PYTHON = "1";
           UV_PYTHON_DOWNLOADS = "never";
 
           shellHook = ''

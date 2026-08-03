@@ -1,4 +1,34 @@
-{ pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
+let
+  ocd = pkgs.writeShellApplication {
+    name = "ocd";
+    text = ''
+      cli="$HOME/.bun/bin/opencode2"
+      if [ ! -x "$cli" ]; then
+        echo "OpenCode v2 is not installed; run: just opencode-update" >&2
+        exit 1
+      fi
+
+      set -a
+      # The agenix secret is deliberately created at activation time.
+      # shellcheck disable=SC1091
+      source ${config.age.secrets.opencode-server-password.path}
+      set +a
+
+      if [ -n "''${OPENCODE_SERVER_PASSWORD:-}" ]; then
+        export OPENCODE_PASSWORD="$OPENCODE_SERVER_PASSWORD"
+      fi
+
+      exec "$cli" \
+        --server https://matt-desktop.tailc41cf5.ts.net \
+        "$@"
+    '';
+  };
+in
 {
   system = {
     stateVersion = 5;
@@ -23,11 +53,9 @@
       # Binary caches for faster builds
       extra-substituters = [
         "https://helix.cachix.org"
-        "https://cache.numtide.com" # llm-agents (amp, claude-code, opencode, etc.)
       ];
       extra-trusted-public-keys = [
         "helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="
-        "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
       ];
     };
     determinateNixd = {
@@ -36,6 +64,16 @@
   };
 
   nixpkgs.config.allowUnfree = true;
+
+  age = {
+    identityPaths = [ "/Users/matt/.ssh/id_ed25519" ];
+    secrets.opencode-server-password = {
+      file = ../../secrets/opencode-server-password.age;
+      owner = "matt";
+    };
+  };
+
+  environment.systemPackages = [ ocd ];
 
   users.users.matt = {
     home = "/Users/matt";
@@ -78,7 +116,6 @@
       "magicavoxel"
       "monodraw"
       "nvidia-geforce-now"
-      "opencode-desktop"
       "orbstack"
       "obsidian"
       "qbittorrent"

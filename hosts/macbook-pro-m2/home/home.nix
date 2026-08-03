@@ -5,12 +5,14 @@
 }:
 {
   imports = [
-    ../../../modules/home/opencode-core.nix
+    ../../../modules/home/opencode-v2.nix
     ../../../modules/home/dev-templates.nix
+    ../../../modules/home/uv-python.nix
   ];
 
-  modules.home.opencodeCore.enable = true;
+  modules.home.opencodeV2.enable = true;
   modules.home.devTemplates.enable = true;
+  modules.home.uvPython.enable = true;
 
   # User Configuration
   home = {
@@ -18,14 +20,8 @@
     homeDirectory = "/Users/matt";
     stateVersion = "23.11";
 
-    # Add scripts to the PATH.
-    sessionPath = [
-      "$HOME/.local/bin"
-      "$HOME/.bun/bin" # For bun/bunx
-    ];
     sessionVariables = {
       DIRENV_WARN_TIMEOUT = "0";
-      # NODE_PATH not needed - opencode manages plugins in ~/.cache/opencode/
     };
 
     file = {
@@ -56,7 +52,7 @@
       nixfmt
 
       bun # bun / bunx for daily JS/TS work
-      nodejs # still needed for Node-targeted npm CLIs, language servers, and opencode child processes
+      nodejs # Node-targeted npm CLIs and language servers
 
       # fonts
       jetbrains-mono
@@ -65,16 +61,12 @@
       inter
       merriweather
       roboto
-
-      # AI Tools
-      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.amp
     ];
 
     shellAliases = {
       lg = "lazygit";
       ld = "lazydocker";
       zj = "zellij";
-      oc = "opencode";
     };
   };
 
@@ -246,7 +238,7 @@
         background-blur = 10;
         macos-option-as-alt = "left";
         mouse-hide-while-typing = true;
-        command = "${pkgs.bashInteractive}/bin/bash -i -l -c 'exec nu'";
+        command = "${pkgs.nushell}/bin/nu";
         quick-terminal-animation-duration = 0;
         macos-non-native-fullscreen = true;
       };
