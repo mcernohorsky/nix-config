@@ -21,6 +21,15 @@ in
     xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
       "$schema" = "https://opencode.ai/config.json";
       autoupdate = true;
+      # V2 has blanket --auto approval, not a reviewer agent. Keep shell
+      # actions explicit until OpenCode ships an actual auto-reviewer.
+      permissions = [
+        {
+          action = "shell";
+          resource = "*";
+          effect = "ask";
+        }
+      ];
     };
 
     # Bootstrap a fresh machine, then let OpenCode maintain its own beta

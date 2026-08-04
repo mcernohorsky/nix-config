@@ -59,7 +59,14 @@ in
       ];
     };
     determinateNixd = {
-      builder.state = "enabled";
+      builder = {
+        state = "enabled";
+        # Oracle's aarch64 closure is large; give the native Linux VM enough
+        # memory to avoid reclaim thrash while retaining Determinate's
+        # recommended single-CPU configuration.
+        memoryBytes = 17179869184; # 16 GiB
+        cpuCount = 1;
+      };
     };
   };
 
@@ -187,6 +194,12 @@ in
 
   # Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
+
+  # Passwordless sudo for unattended agent and remote administration sessions.
+  # Keep this user-specific; the NixOS hosts use the same policy.
+  security.sudo.extraConfig = ''
+    matt ALL=(root) NOPASSWD: ALL
+  '';
 
   networking.hostName = "macbook-pro-m2";
   networking.computerName = "macbook-pro-m2";
