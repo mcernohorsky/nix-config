@@ -226,6 +226,16 @@
       settings = {
         show_banner = false;
       };
+      extraEnv = ''
+        let determinate_nix_bin_dir = "/nix/var/nix/profiles/default/bin"
+        let nix_darwin_system_bin_dir = "/run/current-system/sw/bin"
+        $env.PATH = (
+          $env.PATH
+          | prepend $nix_darwin_system_bin_dir
+          | prepend $determinate_nix_bin_dir
+          | uniq
+        )
+      '';
     };
 
     ghostty = {
@@ -234,6 +244,10 @@
       settings = {
         auto-update = "off";
         theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
+        font-family = [
+          "NordwandMono Nerd Font Mono"
+          "Noto Color Emoji"
+        ];
         background-opacity = 0.95;
         background-blur = 10;
         macos-option-as-alt = "left";
@@ -251,6 +265,10 @@
 
     atuin = {
       enable = true;
+      # Atuin 18.19 emits two Nushell keybindings with the same name when both
+      # Ctrl-R and Up are enabled, which Nushell 0.115 warns about. Keep the
+      # history search on Ctrl-R and let Up use Nushell's native history.
+      flags = [ "--disable-up-arrow" ];
     };
 
     nix-index = {

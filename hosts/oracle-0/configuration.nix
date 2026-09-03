@@ -59,6 +59,27 @@ let
         Cross-Origin-Embedder-Policy "credentialless"
       }
     }
+
+    http://vault.cernohorsky.ca {
+      bind 127.0.0.1
+      reverse_proxy 127.0.0.1:${toString config.services.vaultwarden.config.ROCKET_PORT}
+
+      encode gzip
+    }
+
+    http://metrics.cernohorsky.ca {
+      bind 127.0.0.1
+      reverse_proxy 127.0.0.1:${toString config.services.grafana.settings.server.http_port}
+
+      encode gzip
+
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+      }
+    }
   '';
 in
 {
@@ -72,6 +93,17 @@ in
     ./modules/security.nix
     ./modules/vaultwarden.nix
     ./modules/backup.nix
+  ];
+
+  # Determinate's native Linux builder does not expose /dev/ptmx inside its
+  # sandbox, so age's pseudo-terminal tests cannot run there. The package
+  # itself builds normally; skip only its check phase on this host.
+  nixpkgs.overlays = [
+    (_final: prev: {
+      age = prev.age.overrideAttrs (_old: {
+        doCheck = false;
+      });
+    })
   ];
 
   nix = {
@@ -184,8 +216,53 @@ in
   systemd.services.systemd-networkd.restartIfChanged = false;
   systemd.services.systemd-resolved.restartIfChanged = false;
 
+  # A deleted control-plane node can leave tailscaled running while it reports
+  # `404: node not found`; Restart=on-failure cannot recover that state. Check
+  # for an explicit login failure and reuse nixpkgs' OAuth-aware autoconnect
+  # unit, which includes ephemeral=false for this persistent server.
+  systemd.services.tailscale-recover = {
+    description = "Recover Tailscale machine authorization";
+    after = [ "tailscaled.service" ];
+    wants = [ "tailscaled.service" ];
+    unitConfig = {
+      StartLimitIntervalSec = 3600;
+      StartLimitBurst = 3;
+    };
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutStartSec = "2min";
+    };
+    script = ''
+      state="$(${pkgs.tailscale}/bin/tailscale status --json --peers=false \
+        | ${pkgs.jq}/bin/jq -r '.BackendState' || true)"
+      last_relevant="$(${pkgs.systemd}/bin/journalctl -b -u tailscaled.service \
+        --no-pager --output=cat --lines=20 \
+        --grep='node not found|Switching ipn state .* -> Running' || true)"
+
+      if [[ "$state" != "NeedsLogin" \
+        && "$state" != "NeedsMachineAuth" \
+        && "$last_relevant" != *"node not found"* ]]; then
+        exit 0
+      fi
+
+      echo "Tailscale authorization is unhealthy; restarting and re-authenticating"
+      ${pkgs.systemd}/bin/systemctl restart tailscaled.service
+      ${pkgs.systemd}/bin/systemctl start tailscaled-autoconnect.service
+    '';
+  };
+
+  systemd.timers.tailscale-recover = {
+    description = "Periodically verify Tailscale machine authorization";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "5min";
+      OnUnitActiveSec = "5min";
+      RandomizedDelaySec = "30s";
+    };
+  };
+
   # Secrets management
-  age.secrets.tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
+  age.secrets.tailscale-oracle-authkey.file = ../../secrets/tailscale-oracle-authkey.age;
   age.secrets.pocketbase-superuser = {
     file = ../../secrets/pocketbase-superuser.age;
     mode = "0400";
@@ -204,7 +281,13 @@ in
     enable = true;
     openFirewall = true;
     useRoutingFeatures = "server";
-    authKeyFile = config.age.secrets.tailscale-authkey.path;
+    authKeyFile = config.age.secrets.tailscale-oracle-authkey.path;
+    # The credential is an OAuth client secret, whose default is an ephemeral
+    # node. Oracle is a persistent server and must survive extended downtime.
+    authKeyParameters = {
+      ephemeral = false;
+      preauthorized = true;
+    };
     extraUpFlags = [
       "--advertise-tags=tag:cloud"
       "--ssh"

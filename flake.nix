@@ -18,6 +18,9 @@
   inputs = {
     # Core
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    # Oracle is a semi-production headless server: keep it on the supported
+    # small stable channel while desktop experimentation stays on unstable.
+    nixpkgs-server.url = "github:NixOS/nixpkgs/nixos-26.05-small";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
     darwin = {
       url = "github:lnl7/nix-darwin";
@@ -32,8 +35,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Deployment (don't override nixpkgs - use upstream's pinned version for cache hits)
-    deploy-rs.url = "github:serokell/deploy-rs";
+    # Use the same current nixpkgs for the local runner and target activation
+    # helper. Deploy-rs's older pinned nixpkgs generates obsolete crates.io API
+    # fetch URLs, which the native ARM builder cannot use.
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Homebrew
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
@@ -48,6 +56,10 @@
 
     # Additional packages
     helix-master.url = "github:helix-editor/helix";
+    nordwand-mono = {
+      url = "github:tywr/Nordwand-Mono";
+      flake = false;
+    };
 
     # Repertoire Builder
     # NOTE: Do NOT use `inputs.nixpkgs.follows` here!
@@ -62,16 +74,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    stylix = {
-      url = "github:danth/stylix";
+    cosmic-manager = {
+      url = "github:HeitorAugustoLN/cosmic-manager/1630bbf792a95baffbd3169885580cd53a7027d8";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # Walker launcher (Raycast-like for Linux)
-    elephant.url = "github:abenz1267/elephant";
-    walker = {
-      url = "github:abenz1267/walker";
-      inputs.elephant.follows = "elephant";
+      inputs.home-manager.follows = "home-manager";
     };
 
     helium = {
@@ -126,7 +132,7 @@
         ];
       };
 
-      nixosConfigurations.oracle-0 = inputs.nixpkgs.lib.nixosSystem {
+      nixosConfigurations.oracle-0 = inputs.nixpkgs-server.lib.nixosSystem {
         system = "aarch64-linux";
         specialArgs = { inherit inputs; };
         modules = [
@@ -143,18 +149,16 @@
           inputs.determinate.nixosModules.default
           inputs.agenix.nixosModules.default
           inputs.disko.nixosModules.disko
-          inputs.stylix.nixosModules.stylix
           inputs.home-manager.nixosModules.home-manager
           ./hosts/matt-desktop/configuration.nix
           {
             home-manager = {
               useGlobalPkgs = true;
               useUserPackages = true;
-              backupFileExtension = "hm-bak";
               users.matt = {
                 imports = [
                   ./hosts/matt-desktop/home.nix
-                  inputs.walker.homeManagerModules.default
+                  inputs.cosmic-manager.homeManagerModules.default
                 ];
               };
             };
@@ -221,11 +225,12 @@
         in
         {
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              deploy-rs
-              just
-              git
-              ssh-to-age
+            buildInputs = [
+              inputs.deploy-rs.packages.${system}.deploy-rs
+              pkgs.just
+              pkgs.git
+              pkgs.ssh-to-age
+              inputs.agenix.packages.${system}.default
             ];
             shellHook = ''
               echo "🚀 NixOS deployment environment ready!"

@@ -18,6 +18,18 @@ in
 
     home.shellAliases.oc = "opencode2";
 
+    # Nushell does not consume Home Manager's POSIX session-variable script.
+    # Set its structured PATH directly so `nu` also works when it is launched
+    # without an intermediate Bash or Zsh login shell.
+    programs.nushell.extraEnv = lib.mkAfter ''
+      let bun_bin_dir = ($nu.home-dir | path join ".bun" "bin")
+      $env.PATH = (
+        $env.PATH
+        | prepend $bun_bin_dir
+        | uniq
+      )
+    '';
+
     xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
       "$schema" = "https://opencode.ai/config.json";
       autoupdate = true;

@@ -147,7 +147,7 @@
   # Udisks2 for automounting removable drives
   services.udisks2.enable = true;
 
-  # GVFS for Nautilus to see/mount drives
+  # GIO mounts, trash, and network locations for COSMIC Files and GTK apps
   services.gvfs.enable = true;
 
   # Smartd for disk health monitoring

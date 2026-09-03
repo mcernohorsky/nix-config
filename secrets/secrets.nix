@@ -21,6 +21,12 @@ in
   # Tailscale OAuth client secret (used as auth key)
   "tailscale-authkey.age".publicKeys = all;
 
+  # Oracle-only Tailscale OAuth client secret, restricted to tag:cloud.
+  "tailscale-oracle-authkey.age".publicKeys = [
+    macbook-pro-m2
+    oracle-0
+  ];
+
   # Cloudflare Tunnel token for oracle-0
   "cloudflared-token.age".publicKeys = all;
 

@@ -1,7 +1,5 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 let
@@ -74,18 +72,4 @@ in
     };
   };
 
-  # Caddy vhost for Grafana (loopback only, accessed via Cloudflare Tunnel)
-  services.caddy.virtualHosts."http://metrics.cernohorsky.ca" = {
-    listenAddresses = [ "127.0.0.1" ];
-    extraConfig = ''
-      reverse_proxy 127.0.0.1:${toString grafanaPort}
-      encode gzip
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-      }
-    '';
-  };
 }

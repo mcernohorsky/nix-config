@@ -23,7 +23,6 @@
   environment.systemPackages = with pkgs; [
     jellyfin-web
     jellyfin-ffmpeg
-    mpv
     ffmpeg-full
   ];
 

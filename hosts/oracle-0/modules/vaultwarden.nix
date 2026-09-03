@@ -1,7 +1,5 @@
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 {
@@ -25,22 +23,5 @@
       SIGNUPS_ALLOWED = false;
       WEBSOCKET_ENABLED = true;
     };
-  };
-
-  # Caddy reverse proxy for Vaultwarden
-  # Accessed via Cloudflare Tunnel (vault.cernohorsky.ca -> localhost:8222)
-  services.caddy.virtualHosts."http://vault.cernohorsky.ca" = {
-    listenAddresses = [ "127.0.0.1" ];
-    extraConfig = ''
-      reverse_proxy localhost:8222
-
-      encode gzip
-
-      header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-      }
-    '';
   };
 }

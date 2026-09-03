@@ -1,9 +1,14 @@
 {
   config,
+  inputs,
+  lib,
   pkgs,
   ...
 }:
 let
+  nordwand-mono = pkgs.callPackage ../../packages/nordwand-mono.nix {
+    src = inputs.nordwand-mono;
+  };
   ocd = pkgs.writeShellApplication {
     name = "ocd";
     text = ''
@@ -74,13 +79,22 @@ in
 
   age = {
     identityPaths = [ "/Users/matt/.ssh/id_ed25519" ];
-    secrets.opencode-server-password = {
-      file = ../../secrets/opencode-server-password.age;
-      owner = "matt";
+    secrets = {
+      opencode-server-password = {
+        file = ../../secrets/opencode-server-password.age;
+        owner = "matt";
+      };
     };
   };
 
   environment.systemPackages = [ ocd ];
+
+  fonts.packages = with pkgs; [
+    nordwand-mono
+    maple-mono.NF-unhinted
+    ioskeley-mono.normal-NF
+    ioskeley-mono.normal-term-NF
+  ];
 
   users.users.matt = {
     home = "/Users/matt";
@@ -104,15 +118,12 @@ in
 
     casks = [
       "affinity"
-      "aqua-voice"
       "betterdisplay"
       "chatgpt"
       "blender"
-      "codex-app"
       "cursor"
       "discord"
       "ghostty"
-      "handy"
       "helium-browser"
       "iina"
       "imageoptim"
@@ -146,6 +157,8 @@ in
   };
 
   system.defaults = {
+    CustomUserPreferences.NSGlobalDomain.NSFixedPitchFont = "NordwandMono Nerd Font Mono";
+
     dock = {
       autohide = true;
       autohide-delay = 0.0;

@@ -1,33 +1,22 @@
-# Shared desktop services and greetd configuration
+# Desktop services used by COSMIC and graphical applications
 {
-  config,
-  lib,
+  inputs,
   pkgs,
   ...
 }:
 
-{
-  # Login manager: greetd with tuigreet
-  services.greetd = {
-    enable = true;
-    useTextGreeter = true;
-    settings = {
-      default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --time-format '%Y-%m-%d %H:%M' --asterisks --asterisks-char '•' --width 50 --window-padding 2 --container-padding 2 --remember --remember-session --theme 'border=yellow;greet=yellow;time=gray;prompt=green;action=cyan;button=yellow;input=white' --sessions ${config.services.displayManager.sessionData.desktops}/share/wayland-sessions";
-        user = "greeter";
-      };
-    };
+let
+  nordwand-mono = pkgs.callPackage ../../../packages/nordwand-mono.nix {
+    src = inputs.nordwand-mono;
   };
-
+in
+{
   # Enable polkit for privilege escalation dialogs
   security.polkit.enable = true;
 
   # Enable GNOME keyring for password storage
   services.gnome.gnome-keyring.enable = true;
-  security.pam.services.greetd.enableGnomeKeyring = true;
-
-  # PAM service for hyprlock (required for authentication)
-  security.pam.services.hyprlock = { };
+  security.pam.services.cosmic-greeter.enableGnomeKeyring = true;
 
   # Audio via PipeWire
   services.pipewire = {
@@ -67,19 +56,11 @@
     enable = true;
     powerOnBoot = true;
   };
-  services.blueman.enable = true;
 
   # Desktop utilities
   environment.systemPackages = with pkgs; [
     # Wayland essentials
     wl-clipboard
-    cliphist
-    wtype
-
-    # Screenshots
-    grim
-    slurp
-    swappy
 
     # Screen recording
     wf-recorder
@@ -90,35 +71,30 @@
     # External display brightness
     asdbctl
 
-    # Lock screen
-    hyprlock
-
-    # Polkit agent
-    polkit_gnome
-
-    # Audio control
-    pavucontrol
+    # Advanced PipeWire control beyond COSMIC Settings
     pwvucontrol
 
-    # Network manager applet
-    networkmanagerapplet
-
-    # OSD for volume/brightness
-    swayosd
-
-    # Color picker
-    hyprpicker
   ];
 
   # Enable dconf for GNOME apps settings
   programs.dconf.enable = true;
 
-  # Fonts - Stylix handles most fonts, adding nerd fonts for icons
+  # Fonts
   fonts = {
     enableDefaultPackages = true;
     packages = with pkgs; [
-      nerd-fonts.jetbrains-mono
-      nerd-fonts.fira-code
+      nordwand-mono
+      maple-mono.NF-unhinted
+      ioskeley-mono.normal
+      ioskeley-mono.normal-NF
+      ioskeley-mono.normal-term-NF
+      jetbrains-mono
+      noto-fonts
+      noto-fonts-color-emoji
+      open-sans
+    ];
+    fontconfig.defaultFonts.monospace = [
+      "NordwandMono Nerd Font Mono"
     ];
   };
 }

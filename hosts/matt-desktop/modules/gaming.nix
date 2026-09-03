@@ -68,8 +68,8 @@ in
 
   # Gaming packages
   environment.systemPackages = with pkgs; [
-    # Wii U emulation. Wrapped to use Xwayland on niri because Cemu's native
-    # Wayland Vulkan presentation path caps BotW around 27-28 FPS on this host.
+    # Wii U emulation. Wrapped to use Xwayland because Cemu's native Wayland
+    # Vulkan presentation path caps BotW around 27-28 FPS on this host.
     cemuX11
 
     # Performance overlay
