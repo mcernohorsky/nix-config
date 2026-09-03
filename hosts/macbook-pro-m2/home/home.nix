@@ -47,13 +47,6 @@
 
       bun # bun / bunx for daily JS/TS work
       nodejs # Node-targeted npm CLIs and language servers
-
-      # fonts
-      iosevka
-      nerd-fonts.jetbrains-mono
-      inter
-      merriweather
-      roboto
     ];
 
     shellAliases = {

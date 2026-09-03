@@ -94,6 +94,11 @@ in
     maple-mono.NF-unhinted
     ioskeley-mono.normal-NF
     ioskeley-mono.normal-term-NF
+    nerd-fonts.jetbrains-mono
+    iosevka
+    inter
+    merriweather
+    roboto
   ];
 
   users.users.matt = {
