@@ -138,7 +138,6 @@ in
       "keka"
       "magicavoxel"
       "monodraw"
-      "nvidia-geforce-now"
       "obsidian"
       "orbstack"
       "orion"
