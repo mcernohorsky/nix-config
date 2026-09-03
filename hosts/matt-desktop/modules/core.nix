@@ -60,17 +60,17 @@
 
   i18n = {
     defaultLocale = "en_CA.UTF-8";
-    extraLocaleSettings = {
-      LC_ADDRESS = "en_CA.UTF-8";
-      LC_IDENTIFICATION = "en_CA.UTF-8";
-      LC_MEASUREMENT = "en_CA.UTF-8";
-      LC_MONETARY = "en_CA.UTF-8";
-      LC_NAME = "en_CA.UTF-8";
-      LC_NUMERIC = "en_CA.UTF-8";
-      LC_PAPER = "en_CA.UTF-8";
-      LC_TELEPHONE = "en_CA.UTF-8";
-      LC_TIME = "en_CA.UTF-8";
-    };
+    extraLocaleSettings = lib.genAttrs [
+      "LC_ADDRESS"
+      "LC_IDENTIFICATION"
+      "LC_MEASUREMENT"
+      "LC_MONETARY"
+      "LC_NAME"
+      "LC_NUMERIC"
+      "LC_PAPER"
+      "LC_TELEPHONE"
+      "LC_TIME"
+    ] (_name: "en_CA.UTF-8");
   };
 
   # ===================
@@ -130,16 +130,15 @@
   # rtkit for realtime audio priority
   security.rtkit.enable = true;
 
-  # Enable audit framework (useful for security monitoring)
-  security.auditd.enable = false; # Enable if you need it
-
   # ===================
   # Services
   # ===================
 
   # D-Bus
-  services.dbus.enable = true;
-  services.dbus.implementation = "broker";
+  services.dbus = {
+    enable = true;
+    implementation = "broker";
+  };
 
   # UPower for power management info
   services.upower.enable = true;

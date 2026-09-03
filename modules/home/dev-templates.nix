@@ -31,19 +31,6 @@ let
                     exit 1
                   }
 
-                  is_supported_language() {
-                    local candidate="$1"
-                    local language
-
-                    for language in $supported_languages; do
-                      if [ "$language" = "$candidate" ]; then
-                        return 0
-                      fi
-                    done
-
-                    return 1
-                  }
-
                   ensure_empty_dir() {
                     local dir="$1"
                     local entries=()
@@ -78,10 +65,13 @@ let
                   language="$1"
                   target_input="''${2:-.}"
 
-                  if ! is_supported_language "$language"; then
-                    printf 'Error: unsupported language %s\n' "$language" >&2
-                    usage
-                  fi
+                  case " $supported_languages " in
+                    *" $language "*) ;;
+                    *)
+                      printf 'Error: unsupported language %s\n' "$language" >&2
+                      usage
+                      ;;
+                  esac
 
                   if [ ! -d "$repo_path" ]; then
                     printf 'Error: nix-config repo not found at %s\n' "$repo_path" >&2

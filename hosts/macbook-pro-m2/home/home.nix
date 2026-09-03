@@ -20,17 +20,12 @@
     homeDirectory = "/Users/matt";
     stateVersion = "23.11";
 
-    sessionVariables = {
-      DIRENV_WARN_TIMEOUT = "0";
-    };
-
     file = {
       ".hushlogin".text = ""; # Disable login messages in the terminal.
       "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
       # Make the helix background transparent.
       ".config/helix/themes/custom.toml".text = ''
         inherits = "gruvbox_dark_hard"
-        # inherits = "catppuccin_mocha"
         "ui.background" = {}
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
@@ -45,7 +40,6 @@
       hyperfine
       gh
 
-      tailscale
       bitwarden-desktop
 
       nixd
@@ -55,7 +49,6 @@
       nodejs # Node-targeted npm CLIs and language servers
 
       # fonts
-      jetbrains-mono
       iosevka
       nerd-fonts.jetbrains-mono
       inter

@@ -17,11 +17,11 @@
 			"src":    ["autogroup:member", "tag:trusted"],
 			"dst":    ["*:*"],
 		},
-		// oracle-0 (tag:cloud) can reach matt-desktop (tag:trusted) on compute ports only
+		// oracle-0 (tag:cloud) can reach matt-desktop (tag:trusted) on the Restic port only
 		{
 			"action": "accept",
 			"src":    ["tag:cloud"],
-			"dst":    ["tag:trusted:8000-9000"],
+			"dst":    ["tag:trusted:8000"],
 		},
 	],
 	"ssh": [

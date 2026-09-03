@@ -1,9 +1,9 @@
-{ config, lib, pkgs, ... }:
-
-let
-  coolerControlConfig = pkgs.writeText "matt-desktop-coolercontrol.toml"
-    (builtins.readFile ./coolercontrol-profiles.toml);
-in
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # The in-tree NCT6683 driver is present on this kernel, but it does not
@@ -22,7 +22,7 @@ in
   # from Nix rather than symlinking it read-only into the store. Certificates,
   # authentication state, and runtime session data remain daemon-managed.
   systemd.services.coolercontrold.serviceConfig.ExecStartPre = lib.mkBefore [
-    "${pkgs.coreutils}/bin/install -D -m 0644 ${coolerControlConfig} /etc/coolercontrol/config.toml"
+    "${pkgs.coreutils}/bin/install -D -m 0644 ${./coolercontrol-profiles.toml} /etc/coolercontrol/config.toml"
   ];
 
   environment.systemPackages = with pkgs; [

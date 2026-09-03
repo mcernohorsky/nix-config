@@ -15,13 +15,24 @@
         "x86_64-linux"
       ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
+      # Fonts referenced by main.typ (Inter for UI accents, New Computer Modern
+      # for body text). One search path serves the shell and the PDF build.
+      fontPathsFor =
+        pkgs:
+        pkgs.lib.makeSearchPath "share/fonts" (
+          with pkgs;
+          [
+            inter
+            newcomputermodern
+          ]
+        );
     in
     {
       devShells = forAllSystems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          fontPaths = "${pkgs.inter}/share/fonts";
+          fontPaths = fontPathsFor pkgs;
         in
         {
           default = pkgs.mkShellNoCC {
@@ -64,13 +75,13 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          fontPaths = "${pkgs.inter}/share/fonts";
+          fontPaths = fontPathsFor pkgs;
         in
         {
           default = pkgs.stdenvNoCC.mkDerivation {
             pname = "typst-proposal";
             version = "0.1.0";
-            src = ./.;
+            src = nixpkgs.lib.cleanSource ./.;
             nativeBuildInputs = [ pkgs.typst ];
             TYPST_FONT_PATHS = fontPaths;
             dontConfigure = true;

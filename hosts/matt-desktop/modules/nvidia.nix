@@ -24,6 +24,9 @@
 
   hardware.graphics.enable = true;
 
+  # Accept the proprietary NVIDIA license alongside the module that requires it.
+  nixpkgs.config.nvidia.acceptLicense = true;
+
   # I2C/DDC for direct monitor control (ddcutil)
   # Required because NVIDIA's DPMS path is unreliable under Wayland
   hardware.i2c.enable = true;

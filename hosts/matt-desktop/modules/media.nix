@@ -19,10 +19,9 @@
     openFirewall = false;
   };
 
-  # Media packages
+  # Media packages (services pull their own web assets/codecs;
+  # this is just the CLI toolkit)
   environment.systemPackages = with pkgs; [
-    jellyfin-web
-    jellyfin-ffmpeg
     ffmpeg-full
   ];
 

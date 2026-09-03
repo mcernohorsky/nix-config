@@ -119,8 +119,8 @@ in
     casks = [
       "affinity"
       "betterdisplay"
-      "chatgpt"
       "blender"
+      "chatgpt"
       "cursor"
       "discord"
       "ghostty"
@@ -134,18 +134,18 @@ in
       "magicavoxel"
       "monodraw"
       "nvidia-geforce-now"
-      "orbstack"
       "obsidian"
+      "orbstack"
+      "orion"
       "qbittorrent"
+      "raindropio"
       "raycast"
+      "readest"
       "rectangle"
       "shottr"
       "stats"
       "steam"
       "surfshark"
-      "orion"
-      "readest"
-      "raindropio"
     ];
 
     masApps = {
@@ -198,11 +198,11 @@ in
       softwareupdate --install-rosetta --agree-to-license
     fi
 
-    # Power Management
+    # Power Management (activation already runs as root)
     # AC: 30m display off (~25m dim), never sleep, disable standby/powernap for SSH access
-    sudo pmset -c displaysleep 30 sleep 0 standby 0 powernap 0
+    pmset -c displaysleep 30 sleep 0 standby 0 powernap 0
     # Battery: 5m display off (~4m dim), sleep 1m after
-    sudo pmset -b displaysleep 5 sleep 1 lessbright 0
+    pmset -b displaysleep 5 sleep 1 lessbright 0
   '';
 
   # Touch ID for sudo

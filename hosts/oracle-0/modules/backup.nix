@@ -1,4 +1,51 @@
 { config, pkgs, ... }:
+let
+  mkVaultwardenBackup =
+    {
+      repository,
+      onCalendar,
+      environmentFile ? null,
+      pruneOpts ? [ ],
+    }:
+    {
+      inherit repository pruneOpts;
+      passwordFile = config.age.secrets.restic-password.path;
+    }
+    // pkgs.lib.optionalAttrs (environmentFile != null) { inherit environmentFile; }
+    // {
+      paths = [
+        "/var/lib/vaultwarden"
+      ];
+
+      exclude = [
+        # Exclude the live database (we backup the consistent copy)
+        "/var/lib/vaultwarden/db.sqlite3"
+        "/var/lib/vaultwarden/db.sqlite3-shm"
+        "/var/lib/vaultwarden/db.sqlite3-wal"
+      ];
+
+      timerConfig = {
+        OnCalendar = onCalendar;
+        Persistent = true;
+        RandomizedDelaySec = "5min";
+      };
+
+      # Prepare SQLite backup before running restic
+      backupPrepareCommand = ''
+        systemctl start --wait vaultwarden-backup-prepare.service
+      '';
+
+      initialize = true;
+
+      extraBackupArgs = [
+        "--verbose"
+        "--tag"
+        "vaultwarden"
+        "--tag"
+        "oracle-0"
+      ];
+    };
+in
 {
   # Backup secrets
   age.secrets = {
@@ -57,33 +104,10 @@
   # Restic backup configuration
   services.restic.backups = {
     # Primary backup to Cloudflare R2
-    vaultwarden-r2 = {
+    vaultwarden-r2 = mkVaultwardenBackup {
       repository = "s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups";
       environmentFile = config.age.secrets.restic-r2-credentials.path;
-      passwordFile = config.age.secrets.restic-password.path;
-
-      paths = [
-        "/var/lib/vaultwarden"
-      ];
-
-      exclude = [
-        # Exclude the live database (we backup the consistent copy)
-        "/var/lib/vaultwarden/db.sqlite3"
-        "/var/lib/vaultwarden/db.sqlite3-shm"
-        "/var/lib/vaultwarden/db.sqlite3-wal"
-      ];
-
-      # Run every 6 hours
-      timerConfig = {
-        OnCalendar = "*-*-* 00,06,12,18:00:00";
-        Persistent = true;
-        RandomizedDelaySec = "5min";
-      };
-
-      # Prepare SQLite backup before running restic
-      backupPrepareCommand = ''
-        systemctl start --wait vaultwarden-backup-prepare.service
-      '';
+      onCalendar = "*-*-* 00,06,12,18:00:00";
 
       # Cleanup old backups (GFS retention policy)
       # hourly: 6 days of granular recovery (24 × 6hr intervals)
@@ -95,58 +119,14 @@
         "--keep-monthly 12"
         "--keep-yearly 2"
       ];
-
-      # Initialize repository if it doesn't exist
-      initialize = true;
-
-      # Extra options for S3 compatibility
-      extraBackupArgs = [
-        "--verbose"
-        "--tag"
-        "vaultwarden"
-        "--tag"
-        "oracle-0"
-      ];
     };
 
-    # Secondary backup to matt-desktop via Restic REST Server
-    vaultwarden-desktop = {
+    # Secondary backup to matt-desktop via Restic REST Server.
+    # No pruneOpts: the REST server is append-only, pruning happens locally
+    # on matt-desktop. Runs offset by 30 minutes from the R2 backup.
+    vaultwarden-desktop = mkVaultwardenBackup {
       repository = "rest:http://matt-desktop.tailc41cf5.ts.net:8000/";
-      passwordFile = config.age.secrets.restic-password.path;
-
-      paths = [
-        "/var/lib/vaultwarden"
-      ];
-
-      exclude = [
-        "/var/lib/vaultwarden/db.sqlite3"
-        "/var/lib/vaultwarden/db.sqlite3-shm"
-        "/var/lib/vaultwarden/db.sqlite3-wal"
-      ];
-
-      # Run every 6 hours, offset by 30 minutes from R2 backup
-      timerConfig = {
-        OnCalendar = "*-*-* 00,06,12,18:30:00";
-        Persistent = true;
-        RandomizedDelaySec = "5min";
-      };
-
-      backupPrepareCommand = ''
-        systemctl start --wait vaultwarden-backup-prepare.service
-      '';
-
-      # No pruneOpts - matt-desktop REST server is append-only
-      # Pruning is handled locally on matt-desktop
-
-      initialize = true;
-
-      extraBackupArgs = [
-        "--verbose"
-        "--tag"
-        "vaultwarden"
-        "--tag"
-        "oracle-0"
-      ];
+      onCalendar = "*-*-* 00,06,12,18:30:00";
     };
   };
 }

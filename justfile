@@ -66,17 +66,9 @@ container-logs host=oracle_host:
 container-restart host=oracle_host:
     ssh matt@{{host}} "sudo machinectl restart repertoire-builder"
 
-# SSH into a host (defaults to oracle-0)
+# SSH into a host (defaults to oracle-0, e.g. `just ssh matt-desktop.tailc41cf5.ts.net`)
 ssh host=oracle_host:
     ssh matt@{{host}}
-
-# SSH into oracle-0
-ssh-oracle:
-    ssh matt@{{oracle_host}}
-
-# SSH into matt-desktop
-ssh-desktop:
-    ssh matt@{{desktop_host}}
 
 # SSH into the repertoire-builder container
 ssh-container host=oracle_host:

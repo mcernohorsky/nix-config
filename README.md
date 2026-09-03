@@ -1,6 +1,6 @@
 # Nix Configuration
 
-This repository contains my personal Nix configuration for macOS using nix-darwin and home-manager.
+This repository contains my personal Nix configurations: macOS via nix-darwin and NixOS, all with home-manager.
 
 ## Setup
 

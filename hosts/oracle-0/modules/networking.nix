@@ -21,18 +21,13 @@
   systemd.network = {
     enable = true;
 
-    # Main interface (Oracle Cloud)
+    # Main interface (Oracle Cloud). DHCP supplies addressing plus
+    # Oracle's metadata-service DNS, routes, and domains (all defaults).
     networks."10-main" = {
       matchConfig.Name = "enp0s6";
       networkConfig = {
         DHCP = "ipv4";
         IPv4Forwarding = true;
-      };
-      # Keep Oracle's DNS configuration from DHCP
-      dhcpV4Config = {
-        UseDNS = true; # Use Oracle's metadata service DNS
-        UseDomains = true;
-        UseRoutes = true;
       };
       linkConfig.RequiredForOnline = "routable";
     };

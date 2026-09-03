@@ -35,9 +35,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Use the same current nixpkgs for the local runner and target activation
-    # helper. Deploy-rs's older pinned nixpkgs generates obsolete crates.io API
-    # fetch URLs, which the native ARM builder cannot use.
+    # Deploy-rs must resolve against the same nixpkgs as the targets.
+    # Its upstream pin generates obsolete crates.io fetch URLs that the
+    # native ARM builder rejects.
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -61,11 +61,7 @@
       flake = false;
     };
 
-    # Repertoire Builder
-    # NOTE: Do NOT use `inputs.nixpkgs.follows` here!
-    # The webDist derivation depends on exact bun version from nixpkgs.
-    # Different nixpkgs commit = different bun = different webDist hash.
-    # Let repertoire-builder use its own pinned nixpkgs for reproducibility.
+    # Repertoire Builder pins its own nixpkgs (bun-sensitive webDist hash).
     repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
 
     # Secrets management
@@ -166,15 +162,11 @@
         ];
       };
 
-      # Deploy-rs configuration (using Tailscale MagicDNS hostnames)
-      # Oracle uses Tailscale SSH; matt-desktop uses OpenSSH over Tailscale.
-      #
-      # IMPORTANT: magicRollback is disabled because the SSH connection drops during
-      # activation (sysinit-reactivation.target restarts network services). This is
-      # unavoidable when Tailscale is the only network path. The new profile is actually
-      # applied successfully - deploy-rs just can't confirm it.
-      #
-      # After each deploy, verify with: just verify-chess
+      # Deploy-rs configuration (using Tailscale MagicDNS hostnames).
+      # magicRollback is disabled on both nodes: activation restarts
+      # networking while Tailscale is the only SSH path, so deploy-rs
+      # cannot confirm the switch even when it succeeds. Verify manually
+      # with e.g. `just verify-chess` after each deploy.
       deploy.nodes.oracle-0 = {
         hostname = "oracle-0.tailc41cf5.ts.net";
         sshUser = "matt";
@@ -189,8 +181,6 @@
         hostname = "matt-desktop.tailc41cf5.ts.net";
         sshUser = "matt";
         remoteBuild = true;
-        # Activation can briefly drop the Tailscale-backed SSH path while
-        # system services restart, so deploy-rs confirmation is unreliable here.
         magicRollback = false;
         profiles.system = {
           user = "root";
@@ -198,20 +188,14 @@
         };
       };
 
-      # Expose deploy-rs as a runnable flake app so we can do:
+      # Expose deploy-rs as a runnable flake app:
       #   nix run .#deploy-rs -- --skip-checks .#oracle-0
-      apps.aarch64-linux.deploy-rs = {
-        type = "app";
-        program = "${inputs.deploy-rs.packages.aarch64-linux.deploy-rs}/bin/deploy";
-      };
-      apps.aarch64-darwin.deploy-rs = {
-        type = "app";
-        program = "${inputs.deploy-rs.packages.aarch64-darwin.deploy-rs}/bin/deploy";
-      };
-      apps.x86_64-linux.deploy-rs = {
-        type = "app";
-        program = "${inputs.deploy-rs.packages.x86_64-linux.deploy-rs}/bin/deploy";
-      };
+      apps = inputs.nixpkgs.lib.genAttrs [ "aarch64-linux" "aarch64-darwin" "x86_64-linux" ] (system: {
+        deploy-rs = {
+          type = "app";
+          program = "${inputs.deploy-rs.packages.${system}.deploy-rs}/bin/deploy";
+        };
+      });
 
       # Deploy-rs checks
       checks.aarch64-linux = inputs.deploy-rs.lib.aarch64-linux.deployChecks inputs.self.deploy;

@@ -9,6 +9,35 @@
 }:
 
 let
+  # COSMIC's ron-style tagged values, collapsed to one line per setting.
+  mkEnum = variant: {
+    __type = "enum";
+    inherit variant;
+  };
+  mkOptional = value: {
+    __type = "optional";
+    inherit value;
+  };
+  mkTuple = value: {
+    __type = "tuple";
+    inherit value;
+  };
+  # Symmetric corner radius used for all non-zero COSMIC radii.
+  mkRadii =
+    v:
+    mkTuple [
+      v
+      v
+      v
+      v
+    ];
+  panelAutohideBehavior = {
+    wait_time = 1000;
+    transition_time = 200;
+    handle_size = 4;
+    unhide_delay = 200;
+  };
+
   # Fixed wrapper for Jellyfin Media Player (Forces XWayland and Fusion style to avoid crashes)
   jellyfin-wrapped = pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
     export QT_QPA_PLATFORM=xcb
@@ -40,105 +69,51 @@ in
 
     appearance.toolkit = {
       apply_theme_global = true;
-      header_size = {
-        __type = "enum";
-        variant = "Standard";
-      };
+      header_size = mkEnum "Standard";
       # Trial the dark Colloid icon set across COSMIC and GTK. Revert this
       # string/package to Cosmic if the visual fit is worse.
       icon_theme = "Colloid-Dark";
-      interface_density = {
-        __type = "enum";
-        variant = "Standard";
-      };
+      interface_density = mkEnum "Standard";
       interface_font = {
         family = "Open Sans";
-        weight = {
-          __type = "enum";
-          variant = "Normal";
-        };
-        stretch = {
-          __type = "enum";
-          variant = "Normal";
-        };
-        style = {
-          __type = "enum";
-          variant = "Normal";
-        };
+        weight = mkEnum "Normal";
+        stretch = mkEnum "Normal";
+        style = mkEnum "Normal";
       };
       monospace_font = {
         family = "NordwandMono Nerd Font Mono";
-        weight = {
-          __type = "enum";
-          variant = "Normal";
-        };
-        stretch = {
-          __type = "enum";
-          variant = "Normal";
-        };
-        style = {
-          __type = "enum";
-          variant = "Normal";
-        };
+        weight = mkEnum "Normal";
+        stretch = mkEnum "Normal";
+        style = mkEnum "Normal";
       };
     };
 
     compositor = {
       active_hint = true;
       autotile = true;
-      autotile_behavior = {
-        __type = "enum";
-        variant = "PerWorkspace";
-      };
+      autotile_behavior = mkEnum "PerWorkspace";
       edge_snap_threshold = 0;
       input_default = {
-        state = {
-          __type = "enum";
-          variant = "Enabled";
-        };
-        scroll_config = {
-          __type = "optional";
-          value = {
-            method = {
-              __type = "optional";
-              value = null;
-            };
-            natural_scroll = {
-              __type = "optional";
-              value = true;
-            };
-            scroll_button = {
-              __type = "optional";
-              value = null;
-            };
-            scroll_factor = {
-              __type = "optional";
-              value = null;
-            };
-          };
+        state = mkEnum "Enabled";
+        scroll_config = mkOptional {
+          method = mkOptional null;
+          natural_scroll = mkOptional true;
+          scroll_button = mkOptional null;
+          scroll_factor = mkOptional null;
         };
       };
       xkb_config = {
         layout = "us";
         model = "pc104";
-        options = {
-          __type = "optional";
-          value = "terminate:ctrl_alt_bksp,caps:escape";
-        };
+        options = mkOptional "terminate:ctrl_alt_bksp,caps:escape";
         repeat_delay = 600;
         repeat_rate = 25;
         rules = "";
         variant = "";
       };
       workspaces = {
-        workspace_mode = {
-          __type = "enum";
-          variant = "OutputBound";
-        };
-        workspace_layout = {
-          __type = "enum";
-          variant = "Vertical";
-        };
+        workspace_mode = mkEnum "OutputBound";
+        workspace_layout = mkEnum "Vertical";
         workspace_wraparound = true;
       };
     };
@@ -156,113 +131,52 @@ in
     configFile."com.system76.CosmicPanel.Panel" = {
       version = 1;
       entries = {
-        anchor = {
-          __type = "enum";
-          variant = "Top";
-        };
+        anchor = mkEnum "Top";
         anchor_gap = false;
-        autohide = {
-          __type = "enum";
-          variant = "Never";
-        };
-        autohide_behavior = {
-          wait_time = 1000;
-          transition_time = 200;
-          handle_size = 4;
-          unhide_delay = 200;
-        };
-        background = {
-          __type = "enum";
-          variant = "ThemeDefault";
-        };
+        autohide = mkEnum "Never";
+        autohide_behavior = panelAutohideBehavior;
+        background = mkEnum "ThemeDefault";
         border_radius = 0;
         exclusive_zone = true;
         expand_to_edges = true;
         margin = 0;
-        output = {
-          __type = "enum";
-          variant = "All";
-        };
+        output = mkEnum "All";
         padding = 0;
-        size = {
-          __type = "enum";
-          variant = "XS";
-        };
+        size = mkEnum "XS";
         spacing = 0;
       };
     };
     configFile."com.system76.CosmicPanel.Dock" = {
       version = 1;
       entries = {
-        anchor = {
-          __type = "enum";
-          variant = "Bottom";
-        };
+        anchor = mkEnum "Bottom";
         anchor_gap = false;
-        autohide = {
-          __type = "enum";
-          variant = "OnOverlap";
-        };
-        autohide_behavior = {
-          wait_time = 1000;
-          transition_time = 200;
-          handle_size = 4;
-          unhide_delay = 200;
-        };
-        background = {
-          __type = "enum";
-          variant = "ThemeDefault";
-        };
+        autohide = mkEnum "OnOverlap";
+        autohide_behavior = panelAutohideBehavior;
+        background = mkEnum "ThemeDefault";
         border_radius = 8;
         exclusive_zone = false;
         expand_to_edges = false;
         margin = 0;
-        output = {
-          __type = "enum";
-          variant = "All";
-        };
+        output = mkEnum "All";
         padding = 4;
-        size = {
-          __type = "enum";
-          variant = "L";
-        };
+        size = mkEnum "L";
         spacing = 0;
       };
     };
 
     configFile."com.system76.CosmicFiles" = {
       version = 1;
-      entries.favorites = [
-        {
-          __type = "enum";
-          variant = "Home";
-        }
-        {
-          __type = "enum";
-          variant = "Documents";
-        }
-        {
-          __type = "enum";
-          variant = "Downloads";
-        }
-        {
-          __type = "enum";
-          variant = "Music";
-        }
-        {
-          __type = "enum";
-          variant = "Pictures";
-        }
-        {
-          __type = "enum";
-          variant = "Videos";
-        }
-        {
-          __type = "enum";
-          variant = "Path";
-          value = [ "/mnt/hdd" ];
-        }
-      ];
+      entries.favorites =
+        map mkEnum [
+          "Home"
+          "Documents"
+          "Downloads"
+          "Music"
+          "Pictures"
+          "Videos"
+        ]
+        ++ [ (mkEnum "Path" // { value = [ "/mnt/hdd" ]; }) ];
     };
 
     # COSMIC Initial Setup reset these user-selected values on its first run.
@@ -271,73 +185,19 @@ in
     configFile."com.system76.CosmicTheme.Dark.Builder" = {
       version = 2;
       entries = {
-        accent = {
-          __type = "optional";
-          value = "#FFAD00FF";
-        };
+        accent = mkOptional "#FFAD00FF";
         active_hint = 1;
-        gaps = {
-          __type = "tuple";
-          value = [
-            0
-            6
-          ];
-        };
+        gaps = mkTuple [
+          0
+          6
+        ];
         corner_radii = {
-          radius_0 = {
-            __type = "tuple";
-            value = [
-              0.0
-              0.0
-              0.0
-              0.0
-            ];
-          };
-          radius_xs = {
-            __type = "tuple";
-            value = [
-              2.0
-              2.0
-              2.0
-              2.0
-            ];
-          };
-          radius_s = {
-            __type = "tuple";
-            value = [
-              8.0
-              8.0
-              8.0
-              8.0
-            ];
-          };
-          radius_m = {
-            __type = "tuple";
-            value = [
-              8.0
-              8.0
-              8.0
-              8.0
-            ];
-          };
-          radius_l = {
-            __type = "tuple";
-            value = [
-              8.0
-              8.0
-              8.0
-              8.0
-            ];
-          };
-          radius_xl = {
-            __type = "tuple";
-            value = [
-              8.0
-              8.0
-              8.0
-              8.0
-            ];
-          };
+          radius_0 = mkRadii 0.0;
+          radius_xs = mkRadii 2.0;
+          radius_s = mkRadii 8.0;
+          radius_m = mkRadii 8.0;
+          radius_l = mkRadii 8.0;
+          radius_xl = mkRadii 8.0;
         };
         alpha_map = {
           extremely_low = 0.84;
@@ -361,25 +221,14 @@ in
     wallpapers = [
       {
         output = "all";
-        source = {
-          __type = "enum";
-          variant = "Path";
+        source = mkEnum "Path" // {
           value = [ "${wallpaperImage}" ];
         };
         filter_by_theme = true;
         rotation_frequency = 3600;
-        filter_method = {
-          __type = "enum";
-          variant = "Lanczos";
-        };
-        scaling_mode = {
-          __type = "enum";
-          variant = "Zoom";
-        };
-        sampling_method = {
-          __type = "enum";
-          variant = "Alphanumeric";
-        };
+        filter_method = mkEnum "Lanczos";
+        scaling_mode = mkEnum "Zoom";
+        sampling_method = mkEnum "Alphanumeric";
       }
     ];
   };
@@ -393,6 +242,8 @@ in
   modules.home.opencodeV2.enable = true;
   modules.home.devTemplates.enable = true;
   modules.home.uvPython.enable = true;
+  # Determinate manages Nix itself; Home Manager must not install a competing
+  # nix package or daemon profile on this host.
   nix.package = lib.mkForce null;
 
   home.username = "matt";
@@ -652,13 +503,7 @@ in
     enableNushellIntegration = true;
     settings = {
       add_newline = false;
-      format = lib.concatStrings [
-        "$directory"
-        "$git_branch"
-        "$git_status"
-        "$nix_shell"
-        "$character"
-      ];
+      format = "$directory$git_branch$git_status$nix_shell$character";
       directory = {
         style = "blue bold";
         truncation_length = 3;

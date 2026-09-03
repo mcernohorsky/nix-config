@@ -33,6 +33,7 @@ in
     ./modules/media.nix
     ./modules/opencode-v2.nix
     ./modules/cosmic.nix
+    ../../modules/nixos/tailscale-recover.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -57,7 +58,6 @@ in
   systemd.settings.Manager.DefaultTimeoutStopSec = "10s";
 
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.nvidia.acceptLicense = true;
 
   services.udev.packages = [
     pkgs.solaar
@@ -78,7 +78,6 @@ in
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP matt@cernohorsky.ca"
     ];
   };
-  users.groups.netdev = { };
 
   # Restic REST Server for receiving backups from oracle-0
   # Security: Tailscale ACLs restrict access to tag:cloud only, appendOnly prevents deletion
@@ -295,51 +294,6 @@ in
       RestartSec = lib.mkForce "5s";
       # Fix Tailscale TPM state invalidation after BIOS updates.
       Environment = [ "TS_NO_TPM=1" ];
-    };
-  };
-
-  # A deleted control-plane node leaves tailscaled running while it repeatedly
-  # reports `404: node not found`, so Restart=on-failure cannot help. Check the
-  # latest relevant event and, only for that state or an explicit login state,
-  # restart the daemon and reuse nixpkgs' OAuth-aware autoconnect unit.
-  systemd.services.tailscale-recover = {
-    description = "Recover Tailscale machine authorization";
-    after = [ "tailscaled.service" ];
-    wants = [ "tailscaled.service" ];
-    unitConfig = {
-      StartLimitIntervalSec = 3600;
-      StartLimitBurst = 3;
-    };
-    serviceConfig = {
-      Type = "oneshot";
-      TimeoutStartSec = "2min";
-    };
-    script = ''
-      state="$(${pkgs.tailscale}/bin/tailscale status --json --peers=false \
-        | ${pkgs.jq}/bin/jq -r '.BackendState' || true)"
-      last_relevant="$(${pkgs.systemd}/bin/journalctl -b -u tailscaled.service \
-        --no-pager --output=cat --lines=1 \
-        --grep='node not found|Switching ipn state .* -> Running' || true)"
-
-      if [[ "$state" != "NeedsLogin" \
-        && "$state" != "NeedsMachineAuth" \
-        && "$last_relevant" != *"node not found"* ]]; then
-        exit 0
-      fi
-
-      echo "Tailscale authorization is unhealthy; restarting and re-authenticating"
-      ${pkgs.systemd}/bin/systemctl restart tailscaled.service
-      ${pkgs.systemd}/bin/systemctl start tailscaled-autoconnect.service
-    '';
-  };
-
-  systemd.timers.tailscale-recover = {
-    description = "Periodically verify Tailscale machine authorization";
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnBootSec = "5min";
-      OnUnitActiveSec = "5min";
-      RandomizedDelaySec = "30s";
     };
   };
 

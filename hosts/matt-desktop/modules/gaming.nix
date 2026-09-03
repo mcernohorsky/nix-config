@@ -24,23 +24,30 @@ let
     exec ${pkgs.gamemode}/bin/gamemoderun "''${cmd[@]}" "$@"
   '';
 
-  cemuX11 = pkgs.runCommand "cemu-x11" { } ''
-    mkdir -p "$out"
-    cp -rL ${pkgs.cemu}/* "$out/"
-    chmod -R u+w "$out"
+  cemuX11 = pkgs.symlinkJoin {
+    name = "cemu-x11";
+    paths = [ pkgs.cemu ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      rm -f "$out/bin/Cemu" "$out/bin/cemu"
+      makeWrapper ${cemuX11Launcher} "$out/bin/Cemu"
+      ln -s Cemu "$out/bin/cemu"
 
-    install -Dm755 ${cemuX11Launcher} "$out/bin/Cemu"
-    ln -sf Cemu "$out/bin/cemu"
-
-    substituteInPlace "$out/share/applications/info.cemu.Cemu.desktop" \
-      --replace-fail "Exec=${pkgs.cemu}/bin/Cemu" "Exec=$out/bin/Cemu"
-  '';
+      # The applications dir is a symlink into the original store path;
+      # materialize it before patching the Exec line.
+      rm "$out/share/applications"
+      mkdir -p "$out/share/applications"
+      cp "${pkgs.cemu}/share/applications/"*.desktop "$out/share/applications/"
+      substituteInPlace "$out/share/applications/info.cemu.Cemu.desktop" \
+        --replace-fail "Exec=${pkgs.cemu}/bin/Cemu" "Exec=$out/bin/Cemu"
+    '';
+  };
 in
 {
   # Lutris pulls openldap into its FHS rootfs. On this host, openldap 2.6.13
   # repeatedly fails test017-syncreplication-refresh while deploying.
   nixpkgs.overlays = [
-    (final: prev: {
+    (_final: prev: {
       openldap = prev.openldap.overrideAttrs (_old: {
         doCheck = false;
       });
@@ -88,9 +95,6 @@ in
     # Lutris game launcher
     lutris
   ];
-
-  # Gamepad/controller support
-  # hardware.xpadneo.enable = true;
 
   # Enable 32-bit support for Steam
   hardware.graphics.enable32Bit = true;
