@@ -33,9 +33,9 @@ let
       makeWrapper ${cemuX11Launcher} "$out/bin/Cemu"
       ln -s Cemu "$out/bin/cemu"
 
-      # The applications dir is a symlink into the original store path;
-      # materialize it before patching the Exec line.
-      rm "$out/share/applications"
+      # symlinkJoin materializes directories and symlinks only files, so
+      # replace the whole dir before patching the Exec line.
+      rm -rf "$out/share/applications"
       mkdir -p "$out/share/applications"
       cp "${pkgs.cemu}/share/applications/"*.desktop "$out/share/applications/"
       substituteInPlace "$out/share/applications/info.cemu.Cemu.desktop" \
