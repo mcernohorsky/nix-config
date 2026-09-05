@@ -1,16 +1,10 @@
-# Core system configuration
-# Networking, security, locale, and system essentials
 {
-  config,
   lib,
   pkgs,
   ...
 }:
 
 {
-  # ===================
-  # Networking
-  # ===================
   networking = {
     # Use NetworkManager for easy network management
     networkmanager = {
@@ -30,18 +24,13 @@
       };
     };
 
-    # Firewall
-    firewall = {
-      enable = true;
-      allowPing = true;
-      # Default deny, open ports as needed in other modules
-    };
+    # Default deny; ports are opened as needed in other modules.
+    firewall.enable = true;
   };
 
-  # Don't wait for network during boot (nothing needs it that early)
+  # Nothing needs the network that early; don't delay boot on it.
   systemd.services.NetworkManager-wait-online.enable = false;
 
-  # Resolved for DNS (with mDNS support)
   services.resolved = {
     enable = true;
     settings.Resolve.DNSSEC = "allow-downgrade";
@@ -53,9 +42,6 @@
     ];
   };
 
-  # ===================
-  # Time and Locale
-  # ===================
   time.timeZone = "America/Edmonton";
 
   i18n = {
@@ -70,12 +56,9 @@
       "LC_PAPER"
       "LC_TELEPHONE"
       "LC_TIME"
-    ] (_name: "en_CA.UTF-8");
+    ] (_: "en_CA.UTF-8");
   };
 
-  # ===================
-  # Bootloader & Console
-  # ===================
   boot = {
     # Plymouth splash screen for a pretty boot & LUKS prompt
     plymouth = {
@@ -117,81 +100,58 @@
     tctiEnvironment.enable = true;
   };
 
-  # ===================
-  # Security
-  # ===================
-
-  # Sudo configuration
   security.sudo = {
     enable = true;
     wheelNeedsPassword = true;
   };
 
-  # rtkit for realtime audio priority
   security.rtkit.enable = true;
 
-  # ===================
-  # Services
-  # ===================
-
-  # D-Bus
   services.dbus = {
     enable = true;
     implementation = "broker";
   };
 
-  # UPower for power management info
   services.upower.enable = true;
-
-  # Udisks2 for automounting removable drives
   services.udisks2.enable = true;
 
-  # GIO mounts, trash, and network locations for COSMIC Files and GTK apps
+  # GIO mounts, trash, and network locations for COSMIC Files and GTK apps.
   services.gvfs.enable = true;
 
-  # Smartd for disk health monitoring
   services.smartd = {
     enable = true;
     autodetect = true;
   };
 
-  # fwupd for firmware updates
   services.fwupd.enable = true;
 
-  # Printing (CUPS)
   services.printing = {
     enable = true;
     drivers = with pkgs; [
       gutenprint
-      hplip
+      # hplip's Qt GUI (pyqt5, EOL, broken with sip>=6.16) is unneeded for CUPS PPDs/filters.
+      (hplip.override { withQt5 = false; })
     ];
   };
 
-  # Locate database for fast file search
   services.locate = {
     enable = true;
     package = pkgs.plocate;
     interval = "daily";
   };
 
-  # Periodic TRIM for SSDs
   services.fstrim = {
     enable = true;
     interval = "weekly";
   };
 
-  # Btrfs scrubbing (you have btrfs from disk-config)
   services.btrfs.autoScrub = {
     enable = true;
     interval = "monthly";
     fileSystems = [ "/" ];
   };
 
-  # ===================
-  # Shell
-  # ===================
-  # Keep bash as login shell for POSIX compatibility
-  # Users can manually run 'nu' to enter nushell, or set their terminal to run it
+  # Bash stays the login shell for POSIX compatibility; terminals run nushell.
   programs.bash.completion.enable = true;
 
   # uv places its user-managed Python executables here. Configure this at the
@@ -199,7 +159,6 @@
   environment.localBinInPath = true;
 
   environment.systemPackages = with pkgs; [
-    # File management
     file
     tree
     unzip
@@ -207,65 +166,47 @@
     p7zip
     xdg-utils
 
-    # Networking tools
     wget
     dig
     nmap
     inetutils
 
-    # System monitoring
     iotop
     lsof
 
-    # Hardware info
     pciutils
     usbutils
     lshw
     dmidecode
 
-    # Disk utilities
     parted
     gptfdisk
     smartmontools
     ncdu
 
-    # Text editors (fallback)
     nano
-
-    # Version control
     git
 
-    # Process management
     killall
     psmisc
 
-    # Nix tools
     nix-output-monitor
     nvd
     nix-tree
   ];
 
-  # ===================
-  # Environment
-  # ===================
   environment.variables = {
     EDITOR = "hx";
     VISUAL = "hx";
     BROWSER = "helium";
   };
 
-  # Enable man pages
   documentation = {
     enable = true;
     man.enable = true;
     dev.enable = true;
   };
 
-  # ===================
-  # Misc
-  # ===================
-
-  # Enable firmware updates and microcode
   hardware.enableRedistributableFirmware = true;
   hardware.cpu.amd.updateMicrocode = true;
 

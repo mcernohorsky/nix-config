@@ -3,6 +3,25 @@
   inputs,
   ...
 }:
+
+let
+  # Bindings shared by normal and select mode; normal mode adds C-j/C-k below.
+  helixModalKeys = {
+    "x" = "select_line_below";
+    "X" = "select_line_above";
+    "A-x" = "extend_to_line_bounds";
+    "D" = [
+      "ensure_selections_forward"
+      "extend_to_line_end"
+      "delete_selection"
+    ];
+    space = {
+      l = ":toggle lsp.display-inlay-hints";
+      x = ":toggle whitespace.render all none";
+      "." = "file_picker_in_current_buffer_directory";
+    };
+  };
+in
 {
   imports = [
     ../../../modules/home/opencode-v2.nix
@@ -14,7 +33,6 @@
   modules.home.devTemplates.enable = true;
   modules.home.uvPython.enable = true;
 
-  # User Configuration
   home = {
     username = "matt";
     homeDirectory = "/Users/matt";
@@ -29,7 +47,6 @@
         "ui.background" = {}
       '';
       ".config/zellij/config.kdl".source = ./config.kdl;
-
     };
 
     packages = with pkgs; [
@@ -120,15 +137,7 @@
           soft-wrap.enable = true;
         };
         keys = {
-          normal = {
-            "x" = "select_line_below";
-            "X" = "select_line_above";
-            "A-x" = "extend_to_line_bounds";
-            "D" = [
-              "ensure_selections_forward"
-              "extend_to_line_end"
-              "delete_selection"
-            ];
+          normal = helixModalKeys // {
             "C-j" = [
               "extend_to_line_bounds"
               "delete_selection"
@@ -141,27 +150,8 @@
               "move_line_up"
               "paste_before"
             ];
-            space = {
-              l = ":toggle lsp.display-inlay-hints";
-              x = ":toggle whitespace.render all none";
-              "." = "file_picker_in_current_buffer_directory";
-            };
           };
-          select = {
-            "x" = "select_line_below";
-            "X" = "select_line_above";
-            "A-x" = "extend_to_line_bounds";
-            "D" = [
-              "ensure_selections_forward"
-              "extend_to_line_end"
-              "delete_selection"
-            ];
-            space = {
-              l = ":toggle lsp.display-inlay-hints";
-              x = ":toggle whitespace.render all none";
-              "." = "file_picker_in_current_buffer_directory";
-            };
-          };
+          select = helixModalKeys;
         };
       };
       languages = {
@@ -226,6 +216,7 @@
 
     ghostty = {
       enable = true;
+      # System app bundle is installed outside Nix; only manage the config.
       package = null;
       settings = {
         auto-update = "off";
@@ -244,10 +235,7 @@
       };
     };
 
-    # CLI Tools
-    starship = {
-      enable = true;
-    };
+    starship.enable = true;
 
     atuin = {
       enable = true;
@@ -257,9 +245,7 @@
       flags = [ "--disable-up-arrow" ];
     };
 
-    nix-index = {
-      enable = true;
-    };
+    nix-index.enable = true;
 
     direnv = {
       enable = true;
@@ -275,34 +261,22 @@
       historyWidget.command = "";
     };
 
-    zellij = {
-      enable = true;
-    };
+    zellij.enable = true;
 
-    zoxide = {
-      enable = true;
-    };
+    zoxide.enable = true;
 
-    bat = {
-      enable = true;
-    };
+    bat.enable = true;
 
-    jujutsu = {
-      enable = true;
-    };
+    jujutsu.enable = true;
 
-    lazygit = {
-      enable = true;
-    };
+    lazygit.enable = true;
 
     yazi = {
       enable = true;
       shellWrapperName = "y";
     };
 
-    ripgrep = {
-      enable = true;
-    };
+    ripgrep.enable = true;
 
   };
 }

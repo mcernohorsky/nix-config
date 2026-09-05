@@ -1,4 +1,3 @@
-# Gaming configuration with Steam, Gamescope, and related tools
 { pkgs, ... }:
 
 let
@@ -54,49 +53,35 @@ in
     })
   ];
 
-  # Enable Steam
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = true;
     dedicatedServer.openFirewall = true;
   };
 
-  # Gamescope compositor for gaming
   programs.gamescope = {
     enable = true;
     capSysNice = true;
   };
 
-  # GameMode for performance optimization
   programs.gamemode = {
     enable = true;
     enableRenice = true;
   };
 
-  # Gaming packages
   environment.systemPackages = with pkgs; [
-    # Wii U emulation. Wrapped to use Xwayland because Cemu's native Wayland
-    # Vulkan presentation path caps BotW around 27-28 FPS on this host.
+    # Wrapped to use Xwayland: Cemu's native Wayland Vulkan presentation path
+    # caps BotW around 27-28 FPS on this host.
     cemuX11
 
-    # Performance overlay
     mangohud
-
-    # Proton management
     protonup-qt
-
-    # Controller support
     gamepad-tool
-
-    # Wine for non-Steam games
     wineWow64Packages.stable
     winetricks
-
-    # Lutris game launcher
     lutris
   ];
 
-  # Enable 32-bit support for Steam
   hardware.graphics.enable32Bit = true;
 
 }

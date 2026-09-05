@@ -35,17 +35,6 @@
             zls.packages.${system}.zls
             pkgs.git
           ];
-
-          shellHook = ''
-            echo "Zig dev shell ready"
-            echo "  zig: $(zig version)"
-            echo "  zls: ready"
-            echo ""
-            echo "Quick start:"
-            echo "  zig init"
-            echo "  zig build"
-            echo "  zig test src/root.zig"
-          '';
         };
       }
     );

@@ -57,23 +57,13 @@ in
     powerOnBoot = true;
   };
 
-  # Desktop utilities
   environment.systemPackages = with pkgs; [
-    # Wayland essentials
     wl-clipboard
-
-    # Screen recording
     wf-recorder
-
-    # Notifications
     libnotify
-
-    # External display brightness
     asdbctl
-
-    # Advanced PipeWire control beyond COSMIC Settings
+    # Advanced PipeWire control beyond COSMIC Settings.
     pwvucontrol
-
   ];
 
   # Enable dconf for GNOME apps settings

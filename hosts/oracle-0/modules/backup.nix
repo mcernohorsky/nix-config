@@ -1,4 +1,8 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  ...
+}:
 let
   mkVaultwardenBackup =
     {
@@ -8,11 +12,11 @@ let
       pruneOpts ? [ ],
     }:
     {
-      inherit repository pruneOpts;
+      # environmentFile is nullOr with a null default upstream, so passing
+      # null through is identical to omitting the attribute.
+      inherit repository environmentFile pruneOpts;
       passwordFile = config.age.secrets.restic-password.path;
-    }
-    // pkgs.lib.optionalAttrs (environmentFile != null) { inherit environmentFile; }
-    // {
+
       paths = [
         "/var/lib/vaultwarden"
       ];
@@ -47,28 +51,16 @@ let
     };
 in
 {
-  # Backup secrets
+  # Backup secrets (restic runs as root, so agenix defaults suffice).
   age.secrets = {
-    restic-password = {
-      file = ../../../secrets/restic-password.age;
-      owner = "root";
-      group = "root";
-    };
-
-    restic-r2-credentials = {
-      file = ../../../secrets/restic-r2-credentials.age;
-      owner = "root";
-      group = "root";
-    };
+    restic-password.file = ../../../secrets/restic-password.age;
+    restic-r2-credentials.file = ../../../secrets/restic-r2-credentials.age;
   };
 
   # Pre-backup service to create consistent SQLite dump
   systemd.services.vaultwarden-backup-prepare = {
     description = "Prepare Vaultwarden backup (SQLite backup)";
-    serviceConfig = {
-      Type = "oneshot";
-      User = "root";
-    };
+    serviceConfig.Type = "oneshot";
     script = ''
       set -euo pipefail
 

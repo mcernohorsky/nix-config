@@ -45,16 +45,6 @@
             ];
 
             TYPST_FONT_PATHS = fontPaths;
-
-            shellHook = ''
-              echo "Typst proposal shell"
-              echo "  typst: $(typst --version)"
-              echo ""
-              echo "Commands:"
-              echo "  just build"
-              echo "  just watch"
-              echo "  just format"
-            '';
           };
         }
       );

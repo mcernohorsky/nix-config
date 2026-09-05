@@ -1,3 +1,10 @@
+let
+  # Shared by every Btrfs subvolume on the system disk.
+  mountOptions = [
+    "compress=zstd"
+    "noatime"
+  ];
+in
 {
   disko.devices = {
     disk = {
@@ -26,23 +33,23 @@
                   subvolumes = {
                     "@root" = {
                       mountpoint = "/";
-                      mountOptions = [ "compress=zstd" "noatime" ];
+                      inherit mountOptions;
                     };
                     "@home" = {
                       mountpoint = "/home";
-                      mountOptions = [ "compress=zstd" "noatime" ];
+                      inherit mountOptions;
                     };
                     "@nix" = {
                       mountpoint = "/nix";
-                      mountOptions = [ "compress=zstd" "noatime" ];
+                      inherit mountOptions;
                     };
                     "@snapshots" = {
                       mountpoint = "/.snapshots";
-                      mountOptions = [ "compress=zstd" "noatime" ];
+                      inherit mountOptions;
                     };
                     "@log" = {
                       mountpoint = "/var/log";
-                      mountOptions = [ "compress=zstd" "noatime" ];
+                      inherit mountOptions;
                     };
                   };
                 };

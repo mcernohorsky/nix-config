@@ -63,7 +63,8 @@ let
                   fi
 
                   language="$1"
-                  target_input="''${2:-.}"
+                  # Canonicalize (handles ., .., relative, and absolute inputs alike).
+                  target_dir="$(realpath -m -- "''${2:-.}")"
 
                   case " $supported_languages " in
                     *" $language "*) ;;
@@ -77,18 +78,6 @@ let
                     printf 'Error: nix-config repo not found at %s\n' "$repo_path" >&2
                     exit 1
                   fi
-
-                  case "$target_input" in
-                    .)
-                      target_dir="$PWD"
-                      ;;
-                    /*)
-                      target_dir="$target_input"
-                      ;;
-                    *)
-                      target_dir="$PWD/$target_input"
-                      ;;
-                  esac
 
                   project_name="$(basename "$target_dir")"
 

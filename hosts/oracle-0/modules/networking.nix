@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   networking = {
     # Enable systemd-networkd for proper container networking
     useNetworkd = true;
@@ -76,5 +75,4 @@
       "1.0.0.1"
     ];
   };
-
 }

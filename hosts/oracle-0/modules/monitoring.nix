@@ -45,9 +45,7 @@ in
         root_url = "https://metrics.cernohorsky.ca";
         enforce_domain = true;
       };
-      analytics = {
-        reporting_enabled = false;
-      };
+      analytics.reporting_enabled = false;
       security = {
         allow_embedding = false;
         cookie_secure = true;

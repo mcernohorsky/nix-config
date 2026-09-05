@@ -119,22 +119,10 @@
 
             shellHook = ''
               export SCCACHE_DIR="''${HOME}/.cache/sccache"
-
-              echo "Rust dev shell ready"
-              echo "  rustc: $(rustc --version)"
-              echo "  cargo: $(cargo --version)"
-              echo ""
-              echo "Checks:"
-              echo "  cargo nextest run"
-              echo "  cargo llvm-cov nextest --html"
-              echo "  cargo deny check"
-              echo "  nix flake check"
               ${lib.optionalString (!hasCargoToml) ''
-                echo ""
                 echo "Bootstrap the crate with: cargo init --vcs none --name $(basename "$PWD")"
               ''}
               ${lib.optionalString (hasCargoToml && !hasCargoProject) ''
-                echo ""
                 echo "Create Cargo.lock (e.g. cargo generate-lockfile or cargo build) so Nix/Crane can build the package and checks."
               ''}
             '';

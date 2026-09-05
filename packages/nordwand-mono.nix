@@ -1,21 +1,42 @@
 {
   lib,
   nerd-font-patcher,
+  python3,
   stdenvNoCC,
   src,
 }:
-
+let
+  # Upstream no longer ships built Nordwand fonts; generate them from source.
+  generator = python3.withPackages (
+    ps: with ps; [
+      booleanoperations
+      fonttools
+      numpy
+      skia-pathops
+      ttfautohint-py
+      ufolib2
+    ]
+  );
+in
 stdenvNoCC.mkDerivation {
   pname = "nordwand-mono";
   version = "unstable";
   inherit src;
 
-  nativeBuildInputs = [ nerd-font-patcher ];
+  nativeBuildInputs = [
+    generator
+    nerd-font-patcher
+  ];
 
   buildPhase = ''
     runHook preBuild
+    PYTHONPATH="$PWD/src" python3 -m generate_font --ttf
     mkdir patched
     for font in fonts/ttf/*.ttf; do
+      [ -e "$font" ] || {
+        echo "no TTFs generated" >&2
+        exit 1
+      }
       nerd-font-patcher --complete --mono --careful --outputdir patched "$font"
     done
     runHook postBuild

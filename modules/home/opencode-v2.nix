@@ -13,10 +13,11 @@ in
   config = lib.mkIf cfg.enable {
     # OpenCode v2's supported beta installer is Bun. Keep the application in
     # Bun's writable user prefix so its fast-moving beta updater can work.
-    home.packages = [ pkgs.bun ];
-    home.sessionPath = lib.mkAfter [ "$HOME/.bun/bin" ];
-
-    home.shellAliases.oc = "opencode2";
+    home = {
+      packages = [ pkgs.bun ];
+      sessionPath = lib.mkAfter [ "$HOME/.bun/bin" ];
+      shellAliases.oc = "opencode2";
+    };
 
     # Nushell does not consume Home Manager's POSIX session-variable script.
     # Set its structured PATH directly so `nu` also works when it is launched
@@ -33,12 +34,28 @@ in
     xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
       "$schema" = "https://opencode.ai/config.json";
       autoupdate = true;
-      # V2 has blanket --auto approval, not a reviewer agent. Keep shell
-      # actions explicit until OpenCode ships an actual auto-reviewer.
+      # Default to auto-approve shell; ask only for destructive actions.
+      # (Build agent defaults already ask for external dirs and .env reads.)
+      # Last match wins, so broad allow goes first.
       permissions = [
         {
           action = "shell";
           resource = "*";
+          effect = "allow";
+        }
+        {
+          action = "shell";
+          resource = "rm -rf *";
+          effect = "ask";
+        }
+        {
+          action = "shell";
+          resource = "sudo rm -rf *";
+          effect = "ask";
+        }
+        {
+          action = "shell";
+          resource = "git push *";
           effect = "ask";
         }
       ];

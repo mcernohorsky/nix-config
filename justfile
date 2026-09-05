@@ -1,8 +1,10 @@
-# Justfile for NixOS deployment and management
+# Justfile for Nix host deployment and management
 
 # MagicDNS hostnames
 oracle_host := "oracle-0.tailc41cf5.ts.net"
 desktop_host := "matt-desktop.tailc41cf5.ts.net"
+
+desktop_ssh := "ssh matt@" + desktop_host
 
 # Show available commands
 default:
@@ -17,9 +19,9 @@ opencode-update:
     @echo "Updating OpenCode v2 beta on macbook-pro-m2..."
     bun install -g --trust @opencode-ai/cli@next
     @echo "Updating OpenCode v2 beta on matt-desktop..."
-    ssh matt@{{desktop_host}} 'bun install -g --trust @opencode-ai/cli@next'
-    @echo "Mac:     $($HOME/.bun/bin/opencode2 --version)"
-    @ssh matt@{{desktop_host}} 'printf "Desktop: "; "$HOME/.bun/bin/opencode2" --version'
+    {{desktop_ssh}} 'bun install -g --trust @opencode-ai/cli@next'
+    @printf "Mac:     "; $HOME/.bun/bin/opencode2 --version
+    @{{desktop_ssh}} 'printf "Desktop: "; "$HOME/.bun/bin/opencode2" --version'
 
 # Update just the repertoire-builder input
 update-app:
@@ -42,7 +44,7 @@ deploy-oracle:
 deploy-desktop:
     @echo "🚀 Deploying to matt-desktop..."
     nix run .#deploy-rs -- .#matt-desktop --skip-checks
-    @ssh matt@{{desktop_host}} 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ Running kernel and NVIDIA stack do not require a reboot"; fi'
+    @{{desktop_ssh}} 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ Running kernel and NVIDIA stack do not require a reboot"; fi'
 
 # Deploy to macbook (this machine)
 deploy-mac:
@@ -91,33 +93,35 @@ verify-chess:
     @echo ""
     @echo "✅ Verification complete"
 
-# Verify connectivity to all hosts
+# Verify connectivity to all hosts; exit non-zero if any host is unreachable
 ping-all:
-    @echo "Pinging oracle-0..."
-    @ping -c 1 {{oracle_host}} > /dev/null && echo "✅ oracle-0 reachable" || echo "❌ oracle-0 unreachable"
-    @echo "Pinging matt-desktop..."
-    @ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || echo "❌ matt-desktop unreachable"
+    #!/usr/bin/env bash
+    set -u
+    fail=0
+    ping -c 1 {{oracle_host}} > /dev/null && echo "✅ oracle-0 reachable" || { echo "❌ oracle-0 unreachable" >&2; fail=1; }
+    ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || { echo "❌ matt-desktop unreachable" >&2; fail=1; }
+    exit $fail
 
 # Desktop OpenCode v2 service commands
 
 # Check Desktop OpenCode service status
 desktop-opencode-status:
     @echo "Desktop OpenCode v2 service:"
-    @ssh matt@{{desktop_host}} "systemctl status opencode-v2 --no-pager"
+    @{{desktop_ssh}} "systemctl status opencode-v2 --no-pager"
     @echo ""
     @echo "Tailscale Serve config:"
-    @ssh matt@{{desktop_host}} "tailscale serve status"
+    @{{desktop_ssh}} "tailscale serve status"
 
 # View Desktop OpenCode service logs
 desktop-opencode-logs:
-    @ssh matt@{{desktop_host}} "journalctl -u opencode-v2 -f"
+    @{{desktop_ssh}} "journalctl -u opencode-v2 -f"
 
 # Restart Desktop OpenCode service
 desktop-opencode-restart:
-    @ssh matt@{{desktop_host}} "sudo systemctl restart opencode-v2 opencode-v2-serve"
+    @{{desktop_ssh}} "sudo systemctl restart opencode-v2 opencode-v2-serve"
     @echo "✅ Restarted opencode-v2 and opencode-v2-serve services"
 
 # Reset Desktop Tailscale Serve config
 desktop-opencode-reset-serve:
-    @ssh matt@{{desktop_host}} "tailscale serve reset && tailscale serve --bg http://127.0.0.1:4097"
+    @{{desktop_ssh}} "tailscale serve reset && tailscale serve --bg http://127.0.0.1:4097"
     @echo "✅ Reset Tailscale Serve to proxy to localhost:4097"

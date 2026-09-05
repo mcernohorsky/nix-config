@@ -24,18 +24,6 @@
             fourmolu
             git
           ];
-
-          shellHook = ''
-            echo "Haskell dev shell ready"
-            echo "  ghc: $(ghc --version)"
-            echo "  cabal: $(cabal --version | head -n1)"
-            echo ""
-            echo "Quick start:"
-            echo "  cabal init"
-            echo "  cabal build"
-            echo "  cabal test"
-            echo "  ghcid --command \"cabal repl\""
-          '';
         };
       }
     );

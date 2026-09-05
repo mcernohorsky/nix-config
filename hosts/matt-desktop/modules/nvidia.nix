@@ -1,16 +1,10 @@
-# NVIDIA configuration for Wayland with explicit sync support
 { pkgs, ... }:
 
 {
-  # Load nvidia driver for Xorg and Wayland
   services.xserver.videoDrivers = [ "nvidia" ];
 
-  # ===================
-  # Plymouth/Boot Fix (Strategy B - accept simpledrm, minimize flicker)
-  # ===================
-  # Problem: simpledrm grabs fb0 first, NVIDIA takes over later causing flicker
-  # Strategy B: Let Plymouth use simpledrm immediately with zero timeout
-  # Trade-off: Brief flicker when NVIDIA takes over, but Plymouth always works
+  # simpledrm grabs fb0 first and NVIDIA takes over later, causing flicker.
+  # Let Plymouth use simpledrm immediately: brief flicker, but Plymouth always works.
   boot.kernelParams = [
     "plymouth.use-simpledrm"
     # Enable enterprise DDC for reliable I2C access on NVIDIA GPUs
@@ -27,8 +21,7 @@
   # Accept the proprietary NVIDIA license alongside the module that requires it.
   nixpkgs.config.nvidia.acceptLicense = true;
 
-  # I2C/DDC for direct monitor control (ddcutil)
-  # Required because NVIDIA's DPMS path is unreliable under Wayland
+  # ddcutil: NVIDIA's DPMS path is unreliable under Wayland.
   hardware.i2c.enable = true;
 
   boot.kernelModules = [
@@ -50,13 +43,9 @@
     branch = "production";
   };
 
-  # Environment variables for Wayland + Nvidia
   environment.sessionVariables = {
-    # Force Electron/Chromium apps to use Wayland
     NIXOS_OZONE_WL = "1";
-    # Nvidia-specific Wayland settings
     LIBVA_DRIVER_NAME = "nvidia";
-    # Hardware video acceleration
     NVD_BACKEND = "direct";
   };
 
@@ -66,6 +55,6 @@
     libva-utils
     vulkan-tools
     mesa-demos
-    ddcutil # Direct monitor control via DDC/CI for monitor power management
+    ddcutil
   ];
 }

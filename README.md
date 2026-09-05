@@ -42,20 +42,20 @@ determinate-nixd version
   - `macbook-pro-m2/`: macOS configuration
   - `matt-desktop/`: Linux desktop configuration
   - `oracle-0/`: Oracle Cloud NixOS VPS configuration
+- `modules/`: Shared home-manager modules
+- `packages/`: Local package definitions
 - `secrets/`: Encrypted secrets managed by `agenix`
 - `templates/`: Nix flake templates for various languages
 - `justfile`: Common commands for deployment and management
 
 ## Deployment
 
-Deployments are handled via `deploy-rs` over Tailscale.
+Deployments run via `deploy-rs` over Tailscale; see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ```bash
-# Deploy to desktop
-just deploy-desktop
-
-# Deploy to Oracle VPS (Determinate native Linux builder)
-just deploy-oracle
+just deploy-mac      # this machine
+just deploy-desktop  # NixOS workstation (reports if a reboot is advisable)
+just deploy-oracle   # Oracle VPS (Determinate native Linux builder)
 ```
 
 ## Secrets

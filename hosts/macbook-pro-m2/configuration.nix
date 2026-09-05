@@ -1,7 +1,6 @@
 {
   config,
   inputs,
-  lib,
   pkgs,
   ...
 }:
@@ -77,14 +76,10 @@ in
 
   nixpkgs.config.allowUnfree = true;
 
-  age = {
-    identityPaths = [ "/Users/matt/.ssh/id_ed25519" ];
-    secrets = {
-      opencode-server-password = {
-        file = ../../secrets/opencode-server-password.age;
-        owner = "matt";
-      };
-    };
+  age.identityPaths = [ "/Users/matt/.ssh/id_ed25519" ];
+  age.secrets.opencode-server-password = {
+    file = ../../secrets/opencode-server-password.age;
+    owner = "matt";
   };
 
   environment.systemPackages = [ ocd ];
@@ -116,10 +111,8 @@ in
       upgrade = true;
     };
 
-    taps = [
-      "homebrew/core"
-      "homebrew/cask"
-    ];
+    # Mirror nix-homebrew's pinned taps so the Brewfile agrees with them.
+    taps = builtins.attrNames config.nix-homebrew.taps;
 
     casks = [
       "affinity"
@@ -197,12 +190,11 @@ in
   };
 
   system.activationScripts.extraActivation.text = ''
-    # Install Rosetta
+    # nix-homebrew creates the Intel prefix but does not install Rosetta.
     if ! pkgutil --pkgs | grep -q "com.apple.pkg.RosettaUpdateAuto"; then
       softwareupdate --install-rosetta --agree-to-license
     fi
 
-    # Power Management (activation already runs as root)
     # AC: 30m display off (~25m dim), never sleep, disable standby/powernap for SSH access
     pmset -c displaysleep 30 sleep 0 standby 0 powernap 0
     # Battery: 5m display off (~4m dim), sleep 1m after
@@ -219,7 +211,7 @@ in
   '';
 
   networking.hostName = "macbook-pro-m2";
-  networking.computerName = "macbook-pro-m2";
+  networking.computerName = config.networking.hostName;
 
   services.tailscale.enable = true;
 

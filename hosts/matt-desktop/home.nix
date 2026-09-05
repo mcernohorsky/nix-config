@@ -48,10 +48,14 @@ let
 
 in
 {
-  # COSMIC's defaults reference Firefox, COSMIC Terminal, and COSMIC Store,
-  # none of which are part of this host. Keep the dock useful and icon-backed
-  # by declaring the applications that are actually installed and supported.
-  # Only these keys are managed; other COSMIC Settings changes remain writable.
+  imports = [
+    ../../modules/home/opencode-v2.nix
+    ../../modules/home/dev-templates.nix
+    ../../modules/home/uv-python.nix
+  ];
+
+  # COSMIC's defaults reference uninstalled apps (Firefox, COSMIC Terminal,
+  # COSMIC Store). Only these keys are managed; other Settings changes stay writable.
   wayland.desktopManager.cosmic = {
     enable = true;
     applets.app-list.settings.favorites = [
@@ -70,8 +74,7 @@ in
     appearance.toolkit = {
       apply_theme_global = true;
       header_size = mkEnum "Standard";
-      # Trial the dark Colloid icon set across COSMIC and GTK. Revert this
-      # string/package to Cosmic if the visual fit is worse.
+      # Trial: revert to Cosmic if the visual fit is worse.
       icon_theme = "Colloid-Dark";
       interface_density = mkEnum "Standard";
       interface_font = {
@@ -233,12 +236,6 @@ in
     ];
   };
 
-  imports = [
-    ../../modules/home/opencode-v2.nix
-    ../../modules/home/dev-templates.nix
-    ../../modules/home/uv-python.nix
-  ];
-
   modules.home.opencodeV2.enable = true;
   modules.home.devTemplates.enable = true;
   modules.home.uvPython.enable = true;
@@ -250,7 +247,6 @@ in
   home.homeDirectory = "/home/matt";
   home.stateVersion = "25.05";
 
-  # Let home-manager manage itself
   programs.home-manager.enable = true;
 
   manual = {
@@ -259,6 +255,7 @@ in
     json.enable = false;
   };
 
+  # Cemu rewrites settings.xml at runtime, so merge the declarative values via activation.
   home.activation.configureCemu = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         cemu_config_dir="${config.home.homeDirectory}/.config/Cemu"
         cemu_settings="$cemu_config_dir/settings.xml"
@@ -363,9 +360,6 @@ in
         set_value "/content/Audio/PadVolume" "/content/Audio" "PadVolume" "100"
   '';
 
-  # ===================
-  # Terminal: Ghostty
-  # ===================
   programs.ghostty = {
     enable = true;
     settings = {
@@ -386,9 +380,6 @@ in
     };
   };
 
-  # ===================
-  # File Manager: Yazi (modern, fast terminal file manager)
-  # ===================
   programs.yazi = {
     shellWrapperName = "y";
     enable = true;
@@ -410,28 +401,19 @@ in
     };
   };
 
-  # ===================
-  # Shell: Nushell (modern, structured data shell)
-  # ===================
   programs.nushell = {
     enable = true;
 
     # Extra config appended to config.nu
     extraConfig = ''
-      # Disable banner
       $env.config.show_banner = false
-
-      # Editor
       $env.config.buffer_editor = "hx"
-
-      # History settings
       $env.config.history = {
         max_size: 10000
         sync_on_enter: true
         file_format: "sqlite"
       }
 
-      # Completions
       $env.config.completions = {
         case_sensitive: false
         quick: true
@@ -439,7 +421,6 @@ in
         algorithm: "fuzzy"
       }
 
-      # Table display
       $env.config.table = {
         mode: rounded
         index_mode: auto
@@ -452,7 +433,6 @@ in
         header_on_separator: false
       }
 
-      # Aliases (Nushell native)
       alias ll = ls -l
       alias la = ls -la
       alias lt = eza --tree --icons
@@ -460,11 +440,9 @@ in
       alias vim = hx
       alias vi = hx
 
-      # NixOS shortcuts
       alias nrs = sudo nixos-rebuild switch --flake ~/.config/nix-config#matt-desktop
       alias nrt = sudo nixos-rebuild test --flake ~/.config/nix-config#matt-desktop
 
-      # Git shortcuts
       alias gs = git status
       alias gd = git diff
       alias ga = git add
@@ -474,9 +452,7 @@ in
       alias lg = lazygit
     '';
 
-    # Environment variables (env.nu)
     extraEnv = ''
-      # PATH additions if needed
       $env.EDITOR = "hx"
       $env.VISUAL = "hx"
     '';
@@ -489,15 +465,11 @@ in
     };
   };
 
-  # Carapace - multi-shell completion generator (works great with Nushell)
   programs.carapace = {
     enable = true;
     enableNushellIntegration = true;
   };
 
-  # ===================
-  # Starship Prompt
-  # ===================
   programs.starship = {
     enable = true;
     enableNushellIntegration = true;
@@ -527,9 +499,6 @@ in
     };
   };
 
-  # ===================
-  # Editor: Helix
-  # ===================
   programs.helix = {
     enable = true;
     defaultEditor = true;
@@ -566,9 +535,6 @@ in
     };
   };
 
-  # ===================
-  # Git
-  # ===================
   programs.git = {
     enable = true;
     settings = {
@@ -594,9 +560,6 @@ in
     };
   };
 
-  # ===================
-  # Modern CLI Tools
-  # ===================
   programs.bat.enable = true;
 
   programs.eza.enable = true;
@@ -626,9 +589,6 @@ in
     };
   };
 
-  # ===================
-  # Additional Packages
-  # ===================
   home.packages = with pkgs; [
     # Browser
     inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
@@ -645,11 +605,8 @@ in
     fastfetch
     cpufetch
 
-    # COSMIC icon theme plus an installed fallback for apps whose artwork is
-    # not covered by Colloid. COSMIC selects Colloid-Dark above; Papirus is
-    # intentionally available but not selected globally.
     colloid-icon-theme
-    papirus-icon-theme
+    papirus-icon-theme # Fallback for artwork Colloid doesn't cover
 
     # Media
     celluloid
@@ -660,23 +617,15 @@ in
 
   ];
 
-  # ===================
-  # GTK Icon Theme
-  # ===================
   gtk = {
     enable = true;
+    # COSMIC's complete symbolic set, so native controls (e.g. Ghostty) keep working.
     iconTheme = {
-      # Keep GTK/libadwaita on COSMIC's complete symbolic set. Colloid remains
-      # the COSMIC icon-theme trial above, without breaking native controls in
-      # apps such as Ghostty.
       name = "Cosmic";
       package = pkgs.cosmic-icons;
     };
   };
 
-  # ===================
-  # XDG
-  # ===================
   xdg = {
     enable = true;
     userDirs = {

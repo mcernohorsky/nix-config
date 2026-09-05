@@ -8,10 +8,6 @@
     description = "Recover Tailscale machine authorization";
     after = [ "tailscaled.service" ];
     wants = [ "tailscaled.service" ];
-    unitConfig = {
-      StartLimitIntervalSec = 3600;
-      StartLimitBurst = 3;
-    };
     serviceConfig = {
       Type = "oneshot";
       TimeoutStartSec = "2min";

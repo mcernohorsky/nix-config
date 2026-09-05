@@ -36,10 +36,14 @@ in
     ../../modules/nixos/tailscale-recover.nix
   ];
 
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.systemd-boot.configurationLimit = 10;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.timeout = 2; # Faster boot menu
+  boot.loader = {
+    systemd-boot = {
+      enable = true;
+      configurationLimit = 10;
+    };
+    efi.canTouchEfiVariables = true;
+    timeout = 2;
+  };
 
   # Allow the systemd initrd to unlock the LUKS2 system volume with its
   # enrolled TPM2 token. The existing passphrase slot remains available.
@@ -84,7 +88,6 @@ in
   services.restic.server = {
     enable = true;
     dataDir = "/backups/oracle-0/vaultwarden";
-    listenAddress = "8000";
     appendOnly = true;
     extraFlags = [ "--no-auth" ];
   };
@@ -114,7 +117,6 @@ in
     }
   ];
 
-  # Secrets management
   age.secrets = {
     tailscale-authkey.file = ../../secrets/tailscale-authkey.age;
     restic-password = {
@@ -125,7 +127,6 @@ in
     };
   };
 
-  # Tailscale VPN
   services.tailscale = {
     enable = true;
     openFirewall = true; # Allow UDP 41641 for direct connections
@@ -216,7 +217,6 @@ in
     '';
   };
 
-  # Backup directory for oracle-0 restic backups
   systemd.tmpfiles.rules = [
     "d /backups 0755 matt users -"
     "d /backups/oracle-0 0755 matt users -"
@@ -229,7 +229,6 @@ in
     repository = "/backups/oracle-0/vaultwarden";
     passwordFile = config.age.secrets.restic-password.path;
     user = "restic";
-    paths = [ ];
 
     timerConfig = {
       OnCalendar = "weekly";

@@ -8,9 +8,9 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       flake-utils,
+      ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -19,7 +19,7 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
+          packages = with pkgs; [
             python314
             uv
             ruff
@@ -34,20 +34,6 @@
           # only the interpreter supplied by this pinned Nix dev shell.
           UV_NO_MANAGED_PYTHON = "1";
           UV_PYTHON_DOWNLOADS = "never";
-
-          shellHook = ''
-            echo "Python dev shell (uv + ruff + basedpyright)"
-            echo "  python: $(python --version)"
-            echo "  uv: $(uv --version)"
-            echo "  ruff: $(ruff --version)"
-            echo ""
-            echo "Quick start:"
-            echo "  uv init --no-python-downloads"
-            echo "  uv add ruff pytest         # add deps"
-            echo "  uv run pytest              # run tests"
-            echo "  uv run ruff check .        # lint"
-            echo "  uv run ruff format .       # format"
-          '';
         };
       }
     );

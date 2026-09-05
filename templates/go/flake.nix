@@ -25,16 +25,6 @@
             delve
             git
           ];
-
-          shellHook = ''
-            echo "Go dev shell ready"
-            echo "  go: $(go version)"
-            echo ""
-            echo "Quick start:"
-            echo "  go mod init example.com/myapp"
-            echo "  go test ./..."
-            echo "  golangci-lint run"
-          '';
         };
       }
     );

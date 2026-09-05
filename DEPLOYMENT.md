@@ -31,7 +31,9 @@ Non-interactive equivalents are `nix develop -c just <recipe>`. Use
 OrbStack as a deployment backend.
 
 After `just deploy-desktop`, reboot only when its post-deploy check reports a
-kernel change or an unavailable NVIDIA stack. Tailscale/SSH should remain
+kernel change or an unavailable NVIDIA stack. The deploying agent is
+authorized to run that reboot itself (`ssh matt@matt-desktop.tailc41cf5.ts.net
+sudo reboot`). Tailscale/SSH should remain
 available even when NVIDIA needs a reboot.
 
 ## Repertoire-builder
@@ -103,7 +105,9 @@ sudo systemctl stop \
 EOF
 ```
 
-Restore from R2:
+Restore from R2 (if R2 is unavailable, substitute the desktop repository
+`rest:http://matt-desktop.tailc41cf5.ts.net:8000/` and skip the `AWS_*`
+exports):
 
 ```bash
 ssh matt@oracle-0
@@ -114,26 +118,17 @@ export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
 export RESTIC_REPOSITORY="s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups"
 restic snapshots
 restic restore latest --target /
+```
+
+Validate the restored backup and promote it, then restart the service and
+timers only after validation:
+
+```bash
 test -s /var/lib/vaultwarden/db-backup.sqlite3
 test "$(sqlite3 /var/lib/vaultwarden/db-backup.sqlite3 'PRAGMA integrity_check;')" = ok
 rm -f /var/lib/vaultwarden/db.sqlite3-wal /var/lib/vaultwarden/db.sqlite3-shm
 install -o vaultwarden -g vaultwarden -m 0600 \
   /var/lib/vaultwarden/db-backup.sqlite3 /var/lib/vaultwarden/db.sqlite3
-```
-
-If R2 is unavailable, use the desktop repository instead:
-
-```bash
-export RESTIC_REPOSITORY="rest:http://matt-desktop.tailc41cf5.ts.net:8000/"
-export RESTIC_PASSWORD_FILE=/run/agenix/restic-password
-restic snapshots
-restic restore latest --target /
-```
-
-Run the same integrity check and database promotion above, then restart the
-service and timers only after validation:
-
-```bash
 systemctl start vaultwarden
 systemctl is-active --quiet vaultwarden
 systemctl start restic-backups-vaultwarden-r2.timer restic-backups-vaultwarden-desktop.timer
@@ -233,8 +228,10 @@ systemd.services.caddy.unitConfig.StartLimitIntervalSec = 0;
 
 ### Deployment timeout or host-key failure
 
-Deploy-rs normally rolls back after a Tailscale interruption. For a changed
-host key:
+`magicRollback` is disabled on both deploy-rs nodes: activation restarts
+networking while Tailscale is the only SSH path, so deploy-rs cannot confirm
+the switch even when it succeeds. Verify manually with `just verify-chess`
+after each deploy. For a changed host key:
 
 ```bash
 ssh-keygen -R oracle-0.tailc41cf5.ts.net
@@ -244,7 +241,7 @@ ssh-keyscan -H oracle-0.tailc41cf5.ts.net >> ~/.ssh/known_hosts
 ## Desktop BIOS reference
 
 Hardware: Ryzen 7 5700X3D, ASUS ROG STRIX B450-F, 64 GiB DDR4-3200,
-RTX 2070. Stable settings (BIOS 5901): manual memory, DDR4-3200, FCLK 1600,
+RTX 4080. Stable settings (BIOS 5901): manual memory, DDR4-3200, FCLK 1600,
 DRAM 1.365 V, SoC 1.10 V, timings `16-20-20-20-38`, command rate 2T, PBO
 enabled, CSM disabled, Above 4G decoding and ReBAR enabled, Fast Boot disabled.
 
@@ -257,10 +254,12 @@ OpenCode uses the official `@opencode-ai/cli@next` Bun package on both agent
 hosts. `oc` launches locally; `ocd` connects the MacBook CLI to the desktop at
 `https://matt-desktop.tailc41cf5.ts.net` through Tailscale.
 
-The desktop API is systemd-owned at `127.0.0.1:4097`, published only through
-Tailscale Serve, and protected by HTTP Basic Auth. The shared password is the
-agenix secret `opencode-server-password.age`. Provider credentials, models,
-subagents, sessions, plugins, and MCPs intentionally start empty.
+The desktop server is systemd-owned at `127.0.0.1:4097` and published only
+through Tailscale Serve. `opencode2 serve` serves both the browser UI (HTML)
+and the API under `/api/*`, protected by HTTP Basic Auth, so the same tailnet
+URL works in a browser and as the remote CLI's `--server`. The shared password
+is the agenix secret `opencode-server-password.age`. Provider credentials,
+models, subagents, sessions, plugins, and MCPs intentionally start empty.
 
 ```bash
 nix develop -c just opencode-update
@@ -271,10 +270,8 @@ nix develop -c just desktop-opencode-reset-serve
 ```
 
 The Mac desktop beta DMG and Linux AppImage are writable, outside the Nix
-store, and follow their official update mechanisms. The v2 preview CLI does
-not expose the mainline browser `web` command; its tailnet endpoint is API-only
-for now. Do not add a legacy web backend or third-party phone app. Revisit the
-official browser UI when it lands in v2.
+store, and follow their official update mechanisms. Do not add a legacy web
+backend or third-party phone app.
 
 ## Claude Code
 

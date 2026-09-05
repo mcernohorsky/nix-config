@@ -1,4 +1,3 @@
-# COSMIC desktop integration.
 {
   pkgs,
   ...

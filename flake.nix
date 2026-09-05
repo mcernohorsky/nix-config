@@ -6,6 +6,7 @@
     extra-substituters = [
       "https://nix-community.cachix.org"
       "https://deploy-rs.cachix.org"
+      "https://cache.flakehub.com"
       "https://install.determinate.systems"
     ];
     extra-trusted-public-keys = [
@@ -84,7 +85,15 @@
   };
 
   outputs =
-    { ... }@inputs:
+    inputs:
+    let
+      lib = inputs.nixpkgs.lib;
+      forSystems = lib.genAttrs [
+        "aarch64-linux"
+        "aarch64-darwin"
+        "x86_64-linux"
+      ];
+    in
     {
       darwinConfigurations.macbook-pro-m2 = inputs.darwin.lib.darwinSystem {
         system = "aarch64-darwin";
@@ -104,9 +113,7 @@
               useGlobalPkgs = true;
               useUserPackages = true;
               extraSpecialArgs = { inherit inputs; };
-              users.matt.imports = [
-                ./hosts/macbook-pro-m2/home/home.nix
-              ];
+              users.matt.imports = [ ./hosts/macbook-pro-m2/home/home.nix ];
             };
           }
 
@@ -163,63 +170,59 @@
       };
 
       # Deploy-rs configuration (using Tailscale MagicDNS hostnames).
-      # magicRollback is disabled on both nodes: activation restarts
-      # networking while Tailscale is the only SSH path, so deploy-rs
-      # cannot confirm the switch even when it succeeds. Verify manually
-      # with e.g. `just verify-chess` after each deploy.
-      deploy.nodes.oracle-0 = {
-        hostname = "oracle-0.tailc41cf5.ts.net";
+      # sshUser/magicRollback are top-level deploy-rs defaults inherited by
+      # every node: activation restarts networking while Tailscale is the
+      # only SSH path, so deploy-rs cannot confirm the switch even when it
+      # succeeds. Verify manually with e.g. `just verify-chess` after deploy.
+      deploy = {
         sshUser = "matt";
         magicRollback = false;
-        profiles.system = {
-          user = "root";
-          path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;
+        nodes.oracle-0 = {
+          hostname = "oracle-0.tailc41cf5.ts.net";
+          profiles.system = {
+            user = "root";
+            path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;
+          };
         };
-      };
-
-      deploy.nodes.matt-desktop = {
-        hostname = "matt-desktop.tailc41cf5.ts.net";
-        sshUser = "matt";
-        remoteBuild = true;
-        magicRollback = false;
-        profiles.system = {
-          user = "root";
-          path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos inputs.self.nixosConfigurations.matt-desktop;
+        nodes.matt-desktop = {
+          hostname = "matt-desktop.tailc41cf5.ts.net";
+          remoteBuild = true;
+          profiles.system = {
+            user = "root";
+            path = inputs.deploy-rs.lib.x86_64-linux.activate.nixos inputs.self.nixosConfigurations.matt-desktop;
+          };
         };
       };
 
       # Expose deploy-rs as a runnable flake app:
       #   nix run .#deploy-rs -- --skip-checks .#oracle-0
-      apps = inputs.nixpkgs.lib.genAttrs [ "aarch64-linux" "aarch64-darwin" "x86_64-linux" ] (system: {
+      apps = forSystems (system: {
         deploy-rs = {
           type = "app";
           program = "${inputs.deploy-rs.packages.${system}.deploy-rs}/bin/deploy";
         };
       });
 
-      # Deploy-rs checks
-      checks.aarch64-linux = inputs.deploy-rs.lib.aarch64-linux.deployChecks inputs.self.deploy;
-      checks.x86_64-linux = inputs.deploy-rs.lib.x86_64-linux.deployChecks inputs.self.deploy;
+      # Deploy-rs checks (Linux targets only)
+      checks = lib.genAttrs [ "aarch64-linux" "x86_64-linux" ] (
+        system: inputs.deploy-rs.lib.${system}.deployChecks inputs.self.deploy
+      );
 
       # Development shells
-      devShells = inputs.nixpkgs.lib.genAttrs [ "aarch64-linux" "x86_64-linux" "aarch64-darwin" ] (
+      devShells = forSystems (
         system:
         let
           pkgs = inputs.nixpkgs.legacyPackages.${system};
         in
         {
           default = pkgs.mkShell {
-            buildInputs = [
+            packages = [
               inputs.deploy-rs.packages.${system}.deploy-rs
               pkgs.just
               pkgs.git
               pkgs.ssh-to-age
               inputs.agenix.packages.${system}.default
             ];
-            shellHook = ''
-              echo "🚀 NixOS deployment environment ready!"
-              echo "Use 'deploy .#oracle-0' to deploy to your Oracle VPS"
-            '';
           };
         }
       );

@@ -96,9 +96,7 @@ in
     ../../modules/nixos/tailscale-recover.nix
   ];
 
-  # Determinate's native Linux builder does not expose /dev/ptmx inside its
-  # sandbox, so age's pseudo-terminal tests cannot run there. The package
-  # itself builds normally; skip only its check phase on this host.
+  # Determinate's builder lacks /dev/ptmx, so skip age's PTY tests (build is unaffected).
   nixpkgs.overlays = [
     (_final: prev: {
       age = prev.age.overrideAttrs (_old: {
@@ -114,6 +112,10 @@ in
         "flakes"
       ];
       eval-cores = 1;
+      trusted-users = [
+        "root"
+        "@wheel"
+      ];
       extra-substituters = [
         "https://deploy-rs.cachix.org"
       ];
@@ -163,18 +165,8 @@ in
     };
   };
 
-  # Enable passwordless sudo.
-  security.sudo.extraRules = [
-    {
-      users = [ "matt" ];
-      commands = [
-        {
-          command = "ALL";
-          options = [ "NOPASSWD" ];
-        }
-      ];
-    }
-  ];
+  # Passwordless sudo for matt only (not all future wheel members).
+  security.sudo.extraConfig = "matt ALL=(ALL) NOPASSWD: ALL";
 
   environment.systemPackages = with pkgs; [
     curl
@@ -186,22 +178,9 @@ in
     sqlite
   ];
 
-  # --- DEPLOYMENT / ACCESS TRANSPORT ---
-  # IMPORTANT: deploy-rs activation currently restarts tailscaled during the switch.
-  # Since Tailscale is our ONLY network path, that drops the SSH control channel and triggers deploy-rs rollback.
-  #
-  # Safer two-step rollout:
-  # 1) Keep OpenSSH enabled while enabling Tailscale SSH ("--ssh"). Deploy and verify TS SSH works.
-  # 2) In a follow-up deploy, disable OpenSSH.
-  #
-  # We are now in step (2): Tailscale SSH works (see tailscaled ssh-session journal entries).
-  #
-  # NOTE: we still need an SSH host key available for agenix, even if OpenSSH is disabled.
-  # See: age.identityPaths below.
+  # Only management path is Tailscale SSH, so OpenSSH stays disabled.
+  # agenix still needs an age identity: use the host ed25519 key directly.
   services.openssh.enable = false;
-
-  # agenix needs an age identity. When OpenSSH is disabled, NixOS can't auto-derive it from
-  # ssh host keys, so we point it at the existing host ed25519 key.
   age.identityPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
 
   # Don't restart these during activation. Updates take effect on next reboot.
@@ -212,7 +191,6 @@ in
     unitConfig.StartLimitIntervalSec = 0;
     serviceConfig.RestartSec = lib.mkForce "5s";
   };
-  systemd.services.systemd-networkd.restartIfChanged = false;
   systemd.services.systemd-resolved.restartIfChanged = false;
 
   # Secrets management
@@ -228,9 +206,7 @@ in
     group = "grafana";
   };
 
-  # Tailscale VPN
-  # Note: tag:cloud is isolated - see tailscale-acl.json for policy
-  # SSH access is via Tailscale SSH (--ssh flag), OpenSSH is disabled
+  # Tailscale VPN (tag:cloud is isolated, see tailscale-acl.json; SSH via Tailscale SSH only)
   services.tailscale = {
     enable = true;
     openFirewall = true;
@@ -274,12 +250,6 @@ in
   services.repertoire-builder.webDist =
     inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
   services.repertoire-builder.superuserPasswordFile = config.age.secrets.pocketbase-superuser.path;
-
-  # Configure nix for deployment
-  nix.settings.trusted-users = [
-    "root"
-    "@wheel"
-  ];
 
   # Disable documentation for minimal install.
   documentation.enable = false;

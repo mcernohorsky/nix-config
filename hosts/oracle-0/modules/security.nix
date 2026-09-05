@@ -1,8 +1,7 @@
 { config, pkgs, ... }:
 {
-  # Firewall - all ports closed; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
+  # Firewall - all ports closed by default; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
   networking.firewall = {
-    allowedTCPPorts = [ ]; # No public ports; Cloudflare Tunnel handles HTTP traffic
     trustedInterfaces = [
       "tailscale0"
       "br-containers"
