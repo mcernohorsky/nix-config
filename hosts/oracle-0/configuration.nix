@@ -39,24 +39,43 @@ let
 
     http://chess.cernohorsky.ca {
       bind 127.0.0.1
-      reverse_proxy repertoire-builder:8090
 
       encode gzip
 
-      # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
-      header Cache-Control "no-store"
-      # Allow long-lived caching for content-hashed JS/CSS assets
-      header /assets/* Cache-Control "public, max-age=31536000, immutable"
+      # Separate handles so hashed assets carry exactly one Cache-Control
+      # value. A global `header Cache-Control no-store` plus a path-scoped
+      # override emits BOTH headers (verified live 2026-09-06), leaving
+      # caching ambiguous. The app serves these same values itself; Caddy
+      # repeats them as the outer authority.
+      handle /assets/* {
+        header Cache-Control "public, max-age=31536000, immutable"
+        header {
+          X-Content-Type-Options "nosniff"
+          X-Frame-Options "DENY"
+          Referrer-Policy "strict-origin-when-cross-origin"
+          # Required for SharedArrayBuffer (Stockfish WASM threading)
+          # Using credentialless instead of require-corp for broader compatibility
+          # with external resources (fonts, analytics, etc.)
+          Cross-Origin-Opener-Policy "same-origin"
+          Cross-Origin-Embedder-Policy "credentialless"
+        }
+        reverse_proxy repertoire-builder:8090
+      }
 
-      header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        # Required for SharedArrayBuffer (Stockfish WASM threading)
-        # Using credentialless instead of require-corp for broader compatibility
-        # with external resources (fonts, analytics, etc.)
-        Cross-Origin-Opener-Policy "same-origin"
-        Cross-Origin-Embedder-Policy "credentialless"
+      handle {
+        # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
+        header Cache-Control "no-store"
+        header {
+          X-Content-Type-Options "nosniff"
+          X-Frame-Options "DENY"
+          Referrer-Policy "strict-origin-when-cross-origin"
+          # Required for SharedArrayBuffer (Stockfish WASM threading)
+          # Using credentialless instead of require-corp for broader compatibility
+          # with external resources (fonts, analytics, etc.)
+          Cross-Origin-Opener-Policy "same-origin"
+          Cross-Origin-Embedder-Policy "credentialless"
+        }
+        reverse_proxy repertoire-builder:8090
       }
     }
 
