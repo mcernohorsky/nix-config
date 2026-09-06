@@ -190,6 +190,8 @@ in
         "--keep-weekly 8"
         "--keep-monthly 12"
         "--keep-yearly 2"
+        "--tag"
+        "vaultwarden"
       ];
     };
 
@@ -212,6 +214,8 @@ in
         "--keep-daily 14"
         "--keep-weekly 8"
         "--keep-monthly 12"
+        "--tag"
+        "chess"
       ];
     };
 

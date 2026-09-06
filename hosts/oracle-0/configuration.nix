@@ -48,7 +48,17 @@ let
       # caching ambiguous. The app serves these same values itself; Caddy
       # repeats them as the outer authority.
       handle /assets/* {
-        header Cache-Control "public, max-age=31536000, immutable"
+        # No Cache-Control here: the app serves immutable (verified) and any
+        # Caddy repeat would double the header. The general handle below must
+        # keep no-store — API responses set no Cache-Control themselves.
+        # Security headers the app does not set itself (it owns only
+        # COOP/COEP + Cache-Control; the release gate requires those
+        # single-valued, so Caddy must not repeat them).
+        header {
+          X-Content-Type-Options "nosniff"
+          X-Frame-Options "DENY"
+          Referrer-Policy "strict-origin-when-cross-origin"
+        }
         reverse_proxy repertoire-builder:8090 {
           # Overwrite the client-IP header with the edge-verified client IP so
           # the app (which trusts only the bridge-gateway peer) rate-limits
@@ -62,12 +72,15 @@ let
       handle {
         # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
         header Cache-Control "no-store"
+        # Security headers the app does not set itself (see above).
+        header {
+          X-Content-Type-Options "nosniff"
+          X-Frame-Options "DENY"
+          Referrer-Policy "strict-origin-when-cross-origin"
+        }
         reverse_proxy repertoire-builder:8090 {
-          # Overwrite the client-IP header with the edge-verified client IP so
-          # the app (which trusts only the bridge-gateway peer) rate-limits
-          # per real client instead of one shared loopback bucket. Cloudflare
-          # edge overwrites CF-Connecting-IP; only cloudflared dials this
-          # loopback vhost.
+          # Overwrite the client-IP header with the edge-verified client IP
+          # (see above).
           header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
         }
       }
