@@ -39,8 +39,11 @@ in
   # Cloudflare R2 credentials for restic backups
   "restic-r2-credentials.age".publicKeys = all;
 
-  # PocketBase superuser password for repertoire-builder
-  "pocketbase-superuser.age".publicKeys = all;
+  # Better Auth secret for repertoire-builder (oracle-0 only)
+  "repertoire-auth.age".publicKeys = [
+    macbook-pro-m2
+    oracle-0
+  ];
 
   # OpenCode v2 API password shared by the desktop server and remote Mac client
   "opencode-server-password.age".publicKeys = all;

@@ -12,8 +12,6 @@ let
       pruneOpts ? [ ],
     }:
     {
-      # environmentFile is nullOr with a null default upstream, so passing
-      # null through is identical to omitting the attribute.
       inherit repository environmentFile pruneOpts;
       passwordFile = config.age.secrets.restic-password.path;
 
@@ -45,6 +43,55 @@ let
         "--verbose"
         "--tag"
         "vaultwarden"
+        "--tag"
+        "oracle-0"
+      ];
+    };
+
+  # Chess (repertoire-builder) backup: same shape, distinct tag/path/retention
+  # (plan: consistent prepared DB, six-hour cadence, daily 14 / weekly 8 /
+  # monthly 12). The live DB lives at
+  # /var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3
+  # (host dir mode 0750, DB 0600); we back up the verified atomic copy, not
+  # the live WAL files.
+  mkChessBackup =
+    {
+      repository,
+      onCalendar,
+      environmentFile ? null,
+      pruneOpts ? [ ],
+    }:
+    {
+      inherit repository environmentFile pruneOpts;
+      passwordFile = config.age.secrets.restic-password.path;
+
+      paths = [
+        "/var/lib/containers/repertoire-builder-v2"
+      ];
+
+      exclude = [
+        # Exclude the live database (we backup the consistent copy)
+        "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3"
+        "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3-shm"
+        "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3-wal"
+      ];
+
+      timerConfig = {
+        OnCalendar = onCalendar;
+        Persistent = true;
+        RandomizedDelaySec = "5min";
+      };
+
+      backupPrepareCommand = ''
+        systemctl start --wait chess-backup-prepare.service
+      '';
+
+      initialize = true;
+
+      extraBackupArgs = [
+        "--verbose"
+        "--tag"
+        "chess"
         "--tag"
         "oracle-0"
       ];
@@ -81,6 +128,37 @@ in
     '';
   };
 
+  # Pre-backup service to create a consistent chess DB dump
+  systemd.services.chess-backup-prepare = {
+    description = "Prepare chess backup (SQLite backup)";
+    serviceConfig.Type = "oneshot";
+    script = ''
+      set -euo pipefail
+
+      db=/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3
+      backup=/var/lib/containers/repertoire-builder-v2/data/db-backup.sqlite3
+
+      # Fail closed rather than silently reusing an old backup if the live DB
+      # is missing. Write beside the final file, verify it, then replace it.
+      test -s "$db"
+      tmp=$(mktemp /var/lib/containers/repertoire-builder-v2/data/.db-backup.sqlite3.XXXXXX)
+      trap 'rm -f "$tmp"' EXIT
+
+      ${pkgs.sqlite}/bin/sqlite3 "$db" ".backup '$tmp'"
+      test "$(${pkgs.sqlite}/bin/sqlite3 "$tmp" 'PRAGMA integrity_check;')" = ok
+      chmod 0600 "$tmp"
+      mv -f "$tmp" "$backup"
+    '';
+  };
+
+  systemd.services.restic-backups-chess-r2.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = "15min";
+  };
+  systemd.services.restic-backups-chess-desktop.serviceConfig = {
+    Restart = "on-failure";
+    RestartSec = "15min";
+  };
   # The calendar timers provide the normal six-hour cadence. If either remote
   # destination is temporarily unavailable, retry that pipeline independently
   # instead of waiting for the next scheduled run.
@@ -119,6 +197,26 @@ in
     vaultwarden-desktop = mkVaultwardenBackup {
       repository = "rest:http://matt-desktop.tailc41cf5.ts.net:8000/";
       onCalendar = "*-*-* 00,06,12,18:30:00";
+    };
+
+    # Chess primary backup to Cloudflare R2 (same bucket, distinct tag/path).
+    # Offset by 15 minutes from the vaultwarden R2 run.
+    chess-r2 = mkChessBackup {
+      repository = "s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups";
+      environmentFile = config.age.secrets.restic-r2-credentials.path;
+      onCalendar = "*-*-* 00,06,12,18:15:00";
+
+      pruneOpts = [
+        "--keep-daily 14"
+        "--keep-weekly 8"
+        "--keep-monthly 12"
+      ];
+    };
+
+    # Chess secondary backup to matt-desktop, offset from the R2 chess run.
+    chess-desktop = mkChessBackup {
+      repository = "rest:http://matt-desktop.tailc41cf5.ts.net:8000/";
+      onCalendar = "*-*-* 00,06,12,18:45:00";
     };
   };
 }

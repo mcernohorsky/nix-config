@@ -46,7 +46,7 @@ let
       # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
       header Cache-Control "no-store"
       # Allow long-lived caching for content-hashed JS/CSS assets
-      header /_app/immutable/* Cache-Control "public, max-age=31536000, immutable"
+      header /assets/* Cache-Control "public, max-age=31536000, immutable"
 
       header {
         X-Content-Type-Options "nosniff"
@@ -195,8 +195,8 @@ in
 
   # Secrets management
   age.secrets.tailscale-oracle-authkey.file = ../../secrets/tailscale-oracle-authkey.age;
-  age.secrets.pocketbase-superuser = {
-    file = ../../secrets/pocketbase-superuser.age;
+  age.secrets.repertoire-auth = {
+    file = ../../secrets/repertoire-auth.age;
     mode = "0400";
   };
   age.secrets.grafana-secret-key = {
@@ -246,10 +246,15 @@ in
     configFile = caddyConfigFile;
   };
 
-  # Provide built frontend to the repertoire-builder container module
+  # Provide built frontend to the repertoire-builder container module.
+  # The proxy peer as seen from inside the container is the bridge gateway
+  # (verified 2026-09-06: br-containers 192.168.100.1/24, container .30,
+  # Caddy dials the container IP directly, no host port forward).
   services.repertoire-builder.webDist =
     inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
-  services.repertoire-builder.superuserPasswordFile = config.age.secrets.pocketbase-superuser.path;
+  services.repertoire-builder.authSecretFile =
+    config.age.secrets.repertoire-auth.path;
+  services.repertoire-builder.trustedProxies = "192.168.100.1";
 
   # Disable documentation for minimal install.
   documentation.enable = false;
