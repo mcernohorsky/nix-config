@@ -74,6 +74,8 @@ let
         "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3"
         "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3-shm"
         "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3-wal"
+        # Exclude runtime tool caches if any ever land beside the data
+        "/var/lib/containers/repertoire-builder-v2/data/.bun"
       ];
 
       timerConfig = {
