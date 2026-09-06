@@ -49,13 +49,27 @@ let
       # repeats them as the outer authority.
       handle /assets/* {
         header Cache-Control "public, max-age=31536000, immutable"
-        reverse_proxy repertoire-builder:8090
+        reverse_proxy repertoire-builder:8090 {
+          # Overwrite the client-IP header with the edge-verified client IP so
+          # the app (which trusts only the bridge-gateway peer) rate-limits
+          # per real client instead of one shared loopback bucket. Cloudflare
+          # edge overwrites CF-Connecting-IP; only cloudflared dials this
+          # loopback vhost.
+          header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
       }
 
       handle {
         # Prevent stale SPA shell caching (old HTML -> missing hashed chunks -> blank page)
         header Cache-Control "no-store"
-        reverse_proxy repertoire-builder:8090
+        reverse_proxy repertoire-builder:8090 {
+          # Overwrite the client-IP header with the edge-verified client IP so
+          # the app (which trusts only the bridge-gateway peer) rate-limits
+          # per real client instead of one shared loopback bucket. Cloudflare
+          # edge overwrites CF-Connecting-IP; only cloudflared dials this
+          # loopback vhost.
+          header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+        }
       }
     }
 
