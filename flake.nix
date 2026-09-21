@@ -63,8 +63,7 @@
     };
 
     # Repertoire Builder pins its own nixpkgs (bun-sensitive webDist hash).
-    # Preserve the release already live on Oracle (verified 2026-09-17).
-    repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder?rev=9db8eaf7b3d9e9367af440af708993c00ba91a39";
+    repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
 
     # Secrets management
     agenix = {
@@ -73,7 +72,7 @@
     };
 
     cosmic-manager = {
-      url = "github:HeitorAugustoLN/cosmic-manager/1630bbf792a95baffbd3169885580cd53a7027d8";
+      url = "github:HeitorAugustoLN/cosmic-manager";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
@@ -86,8 +85,12 @@
     # HEX voice dictation. Its flake packages the Linux beta (x86_64-linux
     # only); macOS installs from its Homebrew tap instead (see nix-homebrew
     # taps below and homebrew.casks on the Mac host).
+    # Pinned: upstream 2.1.20 (e579625) fails to compile voice-control on
+    # Linux (E0432: linux_transcriber imports crate::transcription, which
+    # is gated behind target_os = "macos"). Re-pin to the last good rev
+    # until upstream fixes the Linux build.
     hex = {
-      url = "github:anomalyco/hex";
+      url = "github:anomalyco/hex?rev=9a11b5fc7209ab04b9ae22a06d9ff153cffe4777";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };

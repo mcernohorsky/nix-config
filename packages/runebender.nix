@@ -11,6 +11,10 @@
   makeDesktopItem,
   # System libraries gpui's platform backends link against (mirrors the
   # Linux packages in upstream's CI job).
+  alsa-lib,
+  openssl,
+  zstd,
+  libgit2,
   fontconfig,
   libxkbcommon,
   wayland,
@@ -25,20 +29,20 @@
 let
   # Upstream has cut no releases yet; pin main and note the date so a
   # future `version` bump has something to anchor to.
-  version = "0.1.0-unstable-2026-09-07";
+  version = "0.1.0-unstable-2026-09-21";
   src = fetchFromGitHub {
     owner = "eliheuer";
     repo = "runebender-gpui";
-    rev = "edc7023b25f704c3e9dcc04a3a6dc3461691da68";
-    hash = "sha256-E9FZD+zSCXmZf8BUH4up3NRC5YtJJ04PcXHtAkznHv0=";
+    rev = "79e3ab1d096bdcf2538d946c796a8a0cf01f0573";
+    hash = "sha256-jk9+6zVM5kvgGHYjyfVfgG/yBTuubeBlQbrxD1iY+Pc=";
   };
   # Test fixtures: two tests compile feature code against Virtua Grotesk,
   # from a sibling checkout or $RUNEBENDER_TEST_FONTS (see src/tests.rs).
   testFonts = fetchFromGitHub {
     owner = "eliheuer";
     repo = "virtua-grotesk";
-    rev = "0c66c5c1dec632c710f703c838698538d1a53868";
-    hash = "sha256-sPJrYZ0B4RUzoX7VRKNsc+D0jImR+0blQ6SRfnzYKYc=";
+    rev = "8f9463b8a9272f3c6f1354eb8b8a8aeee13dc933";
+    hash = "sha256-bFROjpb9dL9+Oe3tM4XgjOtt/CR3BlPgxcPrVvjgdfI=";
   };
   # Upstream logo for the macOS bundle and Linux desktop icon, from the
   # runebender.org site repo (the editor repo ships no icon).
@@ -51,7 +55,7 @@ rustPlatform.buildRustPackage {
   pname = "runebender-gpui";
   inherit version src;
 
-  cargoHash = "sha256-1r/R1cOs7QhE0mWxEm5dF1mNe53bwuuzZBOG6//4IPY=";
+  cargoHash = "sha256-5mpTGaKs1xU9tgyW4Xyo0gNau7/Hy2477nSAGknmUSI=";
 
   nativeBuildInputs = [
     pkg-config
@@ -68,6 +72,10 @@ rustPlatform.buildRustPackage {
   ];
 
   buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    alsa-lib
+    openssl
+    zstd
+    libgit2
     fontconfig
     libxkbcommon
     wayland
@@ -148,7 +156,7 @@ rustPlatform.buildRustPackage {
       mit
     ];
     mainProgram = "runebender-gpui";
-    # Built and smoke-tested here on aarch64-darwin and x86_64-linux.
+    # Supported desktop platforms.
     platforms = [
       "aarch64-darwin"
       "x86_64-linux"
