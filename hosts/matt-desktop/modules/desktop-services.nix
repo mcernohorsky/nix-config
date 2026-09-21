@@ -11,10 +11,8 @@ let
   };
 in
 {
-  # Enable polkit for privilege escalation dialogs
   security.polkit.enable = true;
 
-  # Enable GNOME keyring for password storage
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.cosmic-greeter.enableGnomeKeyring = true;
 
@@ -66,7 +64,6 @@ in
     pwvucontrol
   ];
 
-  # Enable dconf for GNOME apps settings
   programs.dconf.enable = true;
 
   # Fonts

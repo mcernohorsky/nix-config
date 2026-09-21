@@ -6,7 +6,6 @@
 
 {
   networking = {
-    # Use NetworkManager for easy network management
     networkmanager = {
       enable = true;
       wifi.powersave = false; # Better stability
@@ -93,7 +92,6 @@
     keyMap = "us";
   };
 
-  # Enable TPM2 support
   security.tpm2 = {
     enable = true;
     pkcs11.enable = true;
