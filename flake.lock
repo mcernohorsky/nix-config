@@ -700,15 +700,16 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1788661226,
-        "narHash": "sha256-b/GG14cZ9w2aqrA8A6+1utx7VwP8wwgjDm5zBzW+u90=",
+        "lastModified": 1788908165,
+        "narHash": "sha256-U0usOFodVsgE+O8tpBcma9soNvNrxIV68lH04OE3lZQ=",
         "ref": "refs/heads/main",
-        "rev": "0e7d3a8894cc9014796b9342c0869b1340622f5a",
-        "revCount": 183,
+        "rev": "9db8eaf7b3d9e9367af440af708993c00ba91a39",
+        "revCount": 188,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/repertoire-builder"
       },
       "original": {
+        "rev": "9db8eaf7b3d9e9367af440af708993c00ba91a39",
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/repertoire-builder"
       }

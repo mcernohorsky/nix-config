@@ -63,7 +63,8 @@
     };
 
     # Repertoire Builder pins its own nixpkgs (bun-sensitive webDist hash).
-    repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
+    # Preserve the release already live on Oracle (verified 2026-09-17).
+    repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder?rev=9db8eaf7b3d9e9367af440af708993c00ba91a39";
 
     # Secrets management
     agenix = {
