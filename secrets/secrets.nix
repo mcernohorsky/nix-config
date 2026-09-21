@@ -27,6 +27,21 @@ in
     oracle-0
   ];
 
+  # Tailscale API OAuth client (policy_file scope only) for programmatic
+  # ACL management. Decryptable on the agent hosts only — never Oracle.
+  "tailscale-policy-oauth.age".publicKeys = [
+    macbook-pro-m2
+    matt-desktop
+  ];
+
+  # matt's personal SSH private key: the desktop's client identity for
+  # Mac-bound SSH (the Mac authorizes its public half via nix-darwin).
+  # Same recipients as above — Oracle never sees it.
+  "ssh-id-ed25519.age".publicKeys = [
+    macbook-pro-m2
+    matt-desktop
+  ];
+
   # Cloudflare Tunnel token for oracle-0
   "cloudflared-token.age".publicKeys = all;
 

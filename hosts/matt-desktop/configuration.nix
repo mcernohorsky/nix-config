@@ -51,8 +51,8 @@ in
 
   networking.hostName = "matt-desktop";
 
-  # The official OpenCode beta AppImage remains writable so its updater can
-  # follow the fast-moving beta channel outside the Nix store.
+  # The official OpenCode AppImage remains writable so its updater can
+  # follow the stable channel outside the Nix store.
   programs.appimage = {
     enable = true;
     binfmt = true;
@@ -123,6 +123,20 @@ in
       file = ../../secrets/restic-password.age;
       owner = "restic";
       group = "restic";
+      mode = "0400";
+    };
+    tailscale-policy-oauth = {
+      file = ../../secrets/tailscale-policy-oauth.age;
+      owner = "matt";
+      group = "users";
+      mode = "0400";
+    };
+    # matt's personal SSH private key (desktop client identity for Mac-bound
+    # SSH). Owner matt: Home Manager activation installs it into ~/.ssh.
+    ssh-user-key = {
+      file = ../../secrets/ssh-id-ed25519.age;
+      owner = "matt";
+      group = "users";
       mode = "0400";
     };
   };

@@ -5,6 +5,8 @@
 }:
 
 let
+  runebender = pkgs.callPackage ../../../packages/runebender.nix { };
+
   # Bindings shared by normal and select mode; normal mode adds C-j/C-k below.
   helixModalKeys = {
     "x" = "select_line_below";
@@ -25,13 +27,21 @@ in
 {
   imports = [
     ../../../modules/home/opencode-v2.nix
+    ../../../modules/home/tailscale-policy.nix
     ../../../modules/home/dev-templates.nix
     ../../../modules/home/uv-python.nix
+    ../../../modules/home/zed.nix
   ];
 
   modules.home.opencodeV2.enable = true;
+  modules.home.tailscalePolicy.enable = true;
   modules.home.devTemplates.enable = true;
   modules.home.uvPython.enable = true;
+  modules.home.zed.enable = true;
+
+  # Zed installs via the Homebrew cask (native bundle, self-updates);
+  # Home Manager owns only the config (mutable, merged at activation).
+  programs.zed-editor.package = null;
 
   home = {
     username = "matt";
@@ -41,6 +51,9 @@ in
     file = {
       ".hushlogin".text = ""; # Disable login messages in the terminal.
       "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
+      # Surface the nix-built bundle to Finder/Spotlight (the store itself
+      # is not indexed).
+      "Applications/Runebender.app".source = "${runebender}/Applications/Runebender.app";
       # Make the helix background transparent.
       ".config/helix/themes/custom.toml".text = ''
         inherits = "gruvbox_dark_hard"
@@ -58,11 +71,11 @@ in
       gh
 
       bitwarden-desktop
+      runebender # Font editor (custom package in ../../../packages)
 
       nixd
       nixfmt
 
-      bun # bun / bunx for daily JS/TS work
       nodejs # Node-targeted npm CLIs and language servers
     ];
 

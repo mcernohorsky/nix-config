@@ -4,7 +4,7 @@
 oracle_host := "oracle-0.tailc41cf5.ts.net"
 desktop_host := "matt-desktop.tailc41cf5.ts.net"
 
-desktop_ssh := "ssh matt@" + desktop_host
+desktop_ssh := "tailscale ssh matt@" + desktop_host
 
 # Show available commands
 default:
@@ -14,18 +14,13 @@ default:
 update:
     nix flake update
 
-# Update the official OpenCode v2 beta CLI on both agent hosts
-opencode-update:
-    @echo "Updating OpenCode v2 beta on macbook-pro-m2..."
-    bun install -g --trust @opencode-ai/cli@next
-    @echo "Updating OpenCode v2 beta on matt-desktop..."
-    {{desktop_ssh}} 'bun install -g --trust @opencode-ai/cli@next'
-    @printf "Mac:     "; $HOME/.bun/bin/opencode2 --version
-    @{{desktop_ssh}} 'printf "Desktop: "; "$HOME/.bun/bin/opencode2" --version'
-
 # Update just the repertoire-builder input
 update-app:
     nix flake update repertoire-builder
+
+# Update just the HEX voice dictation inputs (flake for Linux, Homebrew tap for macOS)
+update-hex:
+    nix flake update hex hex-homebrew-tap
 
 # Enter development shell with deploy-rs
 dev:
@@ -102,26 +97,38 @@ ping-all:
     ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || { echo "❌ matt-desktop unreachable" >&2; fail=1; }
     exit $fail
 
-# Desktop OpenCode v2 service commands
+# Desktop OpenCode v2 managed-service commands
 
-# Check Desktop OpenCode service status
+# Check Desktop OpenCode managed service status
 desktop-opencode-status:
-    @echo "Desktop OpenCode v2 service:"
-    @{{desktop_ssh}} "systemctl status opencode-v2 --no-pager"
+    @echo "Desktop OpenCode managed service:"
+    @{{desktop_ssh}} '"$HOME/.bun/bin/opencode" service status'
     @echo ""
     @echo "Tailscale Serve config:"
     @{{desktop_ssh}} "tailscale serve status"
 
-# View Desktop OpenCode service logs
+# View Desktop Tailscale sync logs
 desktop-opencode-logs:
-    @{{desktop_ssh}} "journalctl -u opencode-v2 -f"
+    @{{desktop_ssh}} "journalctl -u opencode-tailscale-sync.service -f"
 
-# Restart Desktop OpenCode service
+# Restart the Desktop managed service, then re-sync Serve (also exercises
+# the port-change watcher path end to end)
 desktop-opencode-restart:
-    @{{desktop_ssh}} "sudo systemctl restart opencode-v2 opencode-v2-serve"
-    @echo "✅ Restarted opencode-v2 and opencode-v2-serve services"
+    @{{desktop_ssh}} '"$HOME/.bun/bin/opencode" service restart && sleep 5 && sudo systemctl start opencode-tailscale-sync.service && tailscale serve status'
+    @echo "✅ Restarted managed service and re-synced Tailscale Serve"
 
-# Reset Desktop Tailscale Serve config
-desktop-opencode-reset-serve:
-    @{{desktop_ssh}} "tailscale serve reset && tailscale serve --bg http://127.0.0.1:4097"
-    @echo "✅ Reset Tailscale Serve to proxy to localhost:4097"
+# Tailscale policy-file management (policy_file-scoped OAuth client in
+# agenix; short-lived tokens minted per run). Apply prompts for YES unless
+# --yes is passed to the binary directly.
+
+# Show the live tailnet policy file
+tailscale-policy-show:
+    tailscale-policy show
+
+# Diff the repo policy against the live one
+tailscale-policy-diff:
+    tailscale-policy diff tailscale-acl.json
+
+# Apply the repo policy (guarded by the live ETag; prompts for YES)
+tailscale-policy-apply:
+    tailscale-policy apply tailscale-acl.json

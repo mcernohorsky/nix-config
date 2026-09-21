@@ -441,6 +441,45 @@
         "type": "github"
       }
     },
+    "hex": {
+      "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788567253,
+        "narHash": "sha256-+f9fbAL6SjGz6r+V2WVOtfhaVgfwCj02E6C4tiebhPE=",
+        "owner": "anomalyco",
+        "repo": "hex",
+        "rev": "9a11b5fc7209ab04b9ae22a06d9ff153cffe4777",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "hex",
+        "type": "github"
+      }
+    },
+    "hex-homebrew-tap": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788565561,
+        "narHash": "sha256-sGbzbGkNKznKcotQtV8GJFQ8OiQdqv65nMVvUTiWqvA=",
+        "owner": "anomalyco",
+        "repo": "homebrew-tap",
+        "rev": "20bb3f1dbcaee22084cb477c14245800b6592ba0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anomalyco",
+        "repo": "homebrew-tap",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -724,6 +763,8 @@
         "disko": "disko",
         "helium": "helium",
         "helix-master": "helix-master",
+        "hex": "hex",
+        "hex-homebrew-tap": "hex-homebrew-tap",
         "home-manager": "home-manager_2",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",

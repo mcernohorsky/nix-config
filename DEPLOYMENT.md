@@ -143,6 +143,16 @@ systemctl start restic-backups-vaultwarden-r2.timer restic-backups-vaultwarden-d
   deploy-rs compatibility.
 - Cloudflare Tunnel is outbound-only.
 - `tailscale-acl.json` isolates `tag:cloud` (Oracle) from trusted devices.
+- All SSH targets are tailnet MagicDNS names. Automation (`opencode-remote`,
+  the `just` desktop recipes, agent reboots) uses `tailscale ssh` where the
+  tailnet ssh policy applies, and plain `ssh` toward the Mac, which serves
+  Apple OpenSSH because the policy cannot address user-owned devices;
+  interactive logins may use plain `ssh` anywhere. `ocm`/`ocd` work from
+  either agent host (oracle-0 has no SSH access to query).
+- Desktop-to-Mac SSH authenticates with matt's personal key (agenix
+  `ssh-id-ed25519`, installed `0600` by activation); the Mac authorizes it
+  via nix-darwin and pins Apple's host keys with accept-new. Mac Remote
+  Login stays on for this.
 - Taildrive shares are configured declaratively; Oracle shares `/` and the
   desktop shares `/` and `/mnt/hdd`.
 
@@ -248,30 +258,48 @@ enabled, CSM disabled, Above 4G decoding and ReBAR enabled, Fast Boot disabled.
 After a failed memory change, power off fully and reboot into safe recovery;
 then reduce memory settings or return to the last known-good values.
 
-## OpenCode v2 beta
+## OpenCode v2
 
-OpenCode uses the official `@opencode-ai/cli@next` Bun package on both agent
-hosts. `oc` launches locally; `ocd` connects the MacBook CLI to the desktop at
-`https://matt-desktop.tailc41cf5.ts.net` through Tailscale.
+OpenCode uses the official `@opencode/cli` Bun package (stable, binary
+`opencode`) on both agent hosts. `oc` launches locally; `ocm`/`ocd`
+connect to the Mac/desktop managed service at
+`https://macbook-pro-m2.tailc41cf5.ts.net` /
+`https://matt-desktop.tailc41cf5.ts.net` through Tailscale (`oco` is reserved
+for a future Oracle server). The stable package also ships an `opencode2`
+compat shim; the beta-era `@opencode-ai/cli@beta` package is removed by Home
+Manager activation.
 
-The desktop server is systemd-owned at `127.0.0.1:4097` and published only
-through Tailscale Serve. `opencode2 serve` serves both the browser UI (HTML)
-and the API under `/api/*`, protected by HTTP Basic Auth, so the same tailnet
-URL works in a browser and as the remote CLI's `--server`. The shared password
-is the agenix secret `opencode-server-password.age`. Provider credentials,
-models, subagents, sessions, plugins, and MCPs intentionally start empty.
+Each host exposes its normal managed background service — the same server
+the local app/TUI uses — through Tailscale Serve. `opencode-tailscale-sync`
+reads the registered localhost endpoint from
+`~/.local/state/opencode/service.json`, health-checks it with the managed
+pairing credentials, and runs `tailscale serve --bg <url>`. A macOS
+LaunchAgent and a desktop systemd path+timer pair rerun it when the endpoint
+changes. Remote CLI auth (`opencode-remote`) fetches each host's current
+pairing password over the tailnet — `tailscale ssh` by default, plain `ssh`
+toward the Mac, whose user-owned device the tailnet ssh policy cannot
+address (its Apple host keys never rotate, so they are pinned once).
+Nothing is stored in Git or the Nix store. Provider
+credentials, models, subagents, sessions, plugins, and MCPs intentionally
+start empty.
 
 ```bash
-nix develop -c just opencode-update
 nix develop -c just desktop-opencode-status
 nix develop -c just desktop-opencode-logs
 nix develop -c just desktop-opencode-restart
-nix develop -c just desktop-opencode-reset-serve
 ```
 
-The Mac desktop beta DMG and Linux AppImage are writable, outside the Nix
-store, and follow their official update mechanisms. Do not add a legacy web
-backend or third-party phone app.
+Phone access uses the `app.opencode.ai` PWA: server
+`https://macbook-pro-m2.tailc41cf5.ts.net` (append `:443` if it demands an
+explicit port), password from `opencode pair` on that host. No CORS change
+is needed — the managed service already answers that origin. The managed
+service starts at boot (desktop, via lingering) or login (Mac); the Mac
+cannot serve the phone while logged out.
+
+The Mac desktop DMG and Linux AppImage (`~/.local/opt/opencode/`) are writable,
+outside the Nix store, and follow their official update mechanisms. Do not add
+a legacy web backend, third-party phone app, standalone `opencode serve` unit,
+or fixed OpenCode port. Never use Tailscale Funnel for OpenCode.
 
 ## Claude Code
 

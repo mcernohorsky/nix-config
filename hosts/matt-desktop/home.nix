@@ -4,11 +4,14 @@
   pkgs,
   inputs,
   lib,
+  osConfig,
   wallpaperImage,
   ...
 }:
 
 let
+  runebender = pkgs.callPackage ../../packages/runebender.nix { };
+
   # COSMIC's ron-style tagged values, collapsed to one line per setting.
   mkEnum = variant: {
     __type = "enum";
@@ -50,8 +53,10 @@ in
 {
   imports = [
     ../../modules/home/opencode-v2.nix
+    ../../modules/home/tailscale-policy.nix
     ../../modules/home/dev-templates.nix
     ../../modules/home/uv-python.nix
+    ../../modules/home/zed.nix
   ];
 
   # COSMIC's defaults reference uninstalled apps (Firefox, COSMIC Terminal,
@@ -237,8 +242,35 @@ in
   };
 
   modules.home.opencodeV2.enable = true;
+  modules.home.tailscalePolicy.enable = true;
+
+  # Provision matt's personal SSH keypair end for Mac-bound SSH (the Mac
+  # authorizes its public half). Sourced from agenix so the private key
+  # never enters the Nix store; enforced declaratively on each activation.
+  home.activation.installSshUserKey = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/.ssh"
+    run install -m 0600 ${osConfig.age.secrets.ssh-user-key.path} "$HOME/.ssh/id_ed25519"
+  '';
   modules.home.devTemplates.enable = true;
   modules.home.uvPython.enable = true;
+  modules.home.zed.enable = true;
+  # Zed ships from nixpkgs here (cached build): wrap it with nixd and
+  # disable self-updates so the store stays the source of truth.
+  programs.zed-editor = {
+    extraPackages = with pkgs; [ nixd ];
+    userSettings = {
+      auto_update = false;
+    };
+  };
+  # HEX voice dictation (Linux beta). Autostart runs `hex service` with the
+  # graphical session; run `hex model install` once as your user, then
+  # `hex app` for Settings. COSMIC is outside the beta's supported targets
+  # (i3/X11, wlroots Wayland), so paste/overlay may not work — set autostart
+  # to false and use `hex start` manually if the service misbehaves.
+  programs.hex = {
+    enable = true;
+    autostart = true;
+  };
   # Determinate manages Nix itself; Home Manager must not install a competing
   # nix package or daemon profile on this host.
   nix.package = lib.mkForce null;
@@ -325,39 +357,52 @@ in
           "$xmlstarlet" ed -L -u "$path" -v "$value" "$cemu_settings"
         }
 
-        install -d "$cemu_config_dir"
-        install -d "$cemu_game_dir"
-        install -d "$cemu_library_dir/installers/updates"
-        install -d "$cemu_library_dir/installers/dlc"
+        configure_cemu() {
+          install -d "$cemu_config_dir"
+          install -d "$cemu_game_dir"
+          install -d "$cemu_library_dir/installers/updates"
+          install -d "$cemu_library_dir/installers/dlc"
 
-        if [ ! -s "$cemu_settings" ]; then
-          seed_cemu_settings
-        elif ! "$xmlstarlet" val "$cemu_settings" >/dev/null 2>&1 || [ "$("$xmlstarlet" sel -t -v 'count(/content)' "$cemu_settings")" = "0" ]; then
-          mv "$cemu_settings" "$cemu_settings.invalid"
-          seed_cemu_settings
-        fi
+          if [ ! -s "$cemu_settings" ]; then
+            seed_cemu_settings
+          elif ! "$xmlstarlet" val "$cemu_settings" >/dev/null 2>&1 || [ "$("$xmlstarlet" sel -t -v 'count(/content)' "$cemu_settings")" = "0" ]; then
+            cemu_quarantine="$cemu_settings.invalid"
+            if [ -e "$cemu_quarantine" ]; then
+              cemu_suffix=1
+              while [ -e "$cemu_quarantine.$cemu_suffix" ]; do
+                cemu_suffix=$((cemu_suffix + 1))
+              done
+              cemu_quarantine="$cemu_quarantine.$cemu_suffix"
+            fi
+            warnEcho "Cemu settings.xml is malformed, quarantining to $cemu_quarantine"
+            mv "$cemu_settings" "$cemu_quarantine"
+            seed_cemu_settings
+          fi
 
-        ensure_element "/content/Graphic" "/content" "Graphic"
-        ensure_element "/content/Audio" "/content" "Audio"
-        ensure_element "/content/Input" "/content" "Input"
-        ensure_element "/content/GamePaths" "/content" "GamePaths"
+          ensure_element "/content/Graphic" "/content" "Graphic"
+          ensure_element "/content/Audio" "/content" "Audio"
+          ensure_element "/content/Input" "/content" "Input"
+          ensure_element "/content/GamePaths" "/content" "GamePaths"
 
-        "$xmlstarlet" ed -L -d "/content/GamePaths/Entry[text()='$cemu_legacy_game_dir']" "$cemu_settings"
+          "$xmlstarlet" ed -L -d "/content/GamePaths/Entry[text()='$cemu_legacy_game_dir']" "$cemu_settings"
 
-        if [ "$("$xmlstarlet" sel -t -v "count(/content/GamePaths/Entry[text()='$cemu_game_dir'])" "$cemu_settings")" = "0" ]; then
-          "$xmlstarlet" ed -L -s "/content/GamePaths" -t elem -n "Entry" -v "$cemu_game_dir" "$cemu_settings"
-        fi
+          if [ "$("$xmlstarlet" sel -t -v "count(/content/GamePaths/Entry[text()='$cemu_game_dir'])" "$cemu_settings")" = "0" ]; then
+            "$xmlstarlet" ed -L -s "/content/GamePaths" -t elem -n "Entry" -v "$cemu_game_dir" "$cemu_settings"
+          fi
 
-        set_value "/content/feral_gamemode" "/content" "feral_gamemode" "true"
-        set_value "/content/check_update" "/content" "check_update" "false"
-        set_value "/content/receive_untested_updates" "/content" "receive_untested_updates" "false"
-        set_value "/content/disable_screensaver" "/content" "disable_screensaver" "true"
-        set_value "/content/Graphic/api" "/content/Graphic" "api" "1"
-        set_value "/content/Graphic/VSync" "/content/Graphic" "VSync" "0"
-        set_value "/content/Graphic/AsyncCompile" "/content/Graphic" "AsyncCompile" "true"
-        set_value "/content/Audio/api" "/content/Audio" "api" "3"
-        set_value "/content/Audio/TVVolume" "/content/Audio" "TVVolume" "100"
-        set_value "/content/Audio/PadVolume" "/content/Audio" "PadVolume" "100"
+          set_value "/content/feral_gamemode" "/content" "feral_gamemode" "true"
+          set_value "/content/check_update" "/content" "check_update" "false"
+          set_value "/content/receive_untested_updates" "/content" "receive_untested_updates" "false"
+          set_value "/content/disable_screensaver" "/content" "disable_screensaver" "true"
+          set_value "/content/Graphic/api" "/content/Graphic" "api" "1"
+          set_value "/content/Graphic/VSync" "/content/Graphic" "VSync" "0"
+          set_value "/content/Graphic/AsyncCompile" "/content/Graphic" "AsyncCompile" "true"
+          set_value "/content/Audio/api" "/content/Audio" "api" "3"
+          set_value "/content/Audio/TVVolume" "/content/Audio" "TVVolume" "100"
+          set_value "/content/Audio/PadVolume" "/content/Audio" "PadVolume" "100"
+        }
+
+        run configure_cemu
   '';
 
   programs.ghostty = {
@@ -594,6 +639,9 @@ in
     inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
     solaar
 
+    # Font editor (custom package in ../../packages)
+    runebender
+
     # Development
     lazygit
     gh
@@ -665,10 +713,10 @@ in
     };
     desktopEntries = {
       "ai.opencode" = {
-        name = "OpenCode Beta";
+        name = "OpenCode";
         genericName = "AI Coding Agent";
-        comment = "Official OpenCode v2 beta desktop app";
-        exec = "/home/matt/.local/opt/opencode-beta/OpenCode.AppImage %U";
+        comment = "Official OpenCode v2 desktop app";
+        exec = "/home/matt/.local/opt/opencode/OpenCode.AppImage %U";
         icon = "applications-development";
         terminal = false;
         categories = [ "Development" ];

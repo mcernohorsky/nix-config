@@ -4,7 +4,7 @@
 	//
 	// Access model:
 	// - tag:trusted (matt-desktop): Full access to all devices
-	// - tag:cloud (oracle-0): Isolated, can only reach trusted devices on compute ports
+	// - tag:cloud (oracle-0): Isolated, can only reach trusted devices on the Restic port (tcp/8000)
 	// - autogroup:member (macbook, phone, iPad): Full access via user identity
 	"tagOwners": {
 		"tag:trusted": ["autogroup:admin"],
@@ -32,7 +32,10 @@
 			"dst":    ["autogroup:self", "tag:trusted", "tag:cloud"],
 			"users":  ["autogroup:nonroot", "root"],
 		},
-		// Trusted servers can SSH into cloud servers
+		// Trusted servers can SSH into cloud servers. (Desktop-to-Mac SSH
+		// intentionally bypasses Tailscale SSH: ssh-rule destinations cannot
+		// address a user-owned device without tagging it, so the Mac serves
+		// plain OpenSSH and filter rules govern that direction instead.)
 		{
 			"action": "accept",
 			"src":    ["tag:trusted"],

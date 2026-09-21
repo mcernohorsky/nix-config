@@ -83,6 +83,19 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # HEX voice dictation. Its flake packages the Linux beta (x86_64-linux
+    # only); macOS installs from its Homebrew tap instead (see nix-homebrew
+    # taps below and homebrew.casks on the Mac host).
+    hex = {
+      url = "github:anomalyco/hex";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+    hex-homebrew-tap = {
+      url = "github:anomalyco/homebrew-tap";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -130,6 +143,11 @@
               taps = {
                 "homebrew/homebrew-core" = inputs.homebrew-core;
                 "homebrew/homebrew-cask" = inputs.homebrew-cask;
+                "anomalyco/homebrew-tap" = inputs.hex-homebrew-tap;
+              };
+              # Third-party taps need an explicit trust entry for their casks.
+              trust = {
+                casks = [ "anomalyco/tap/hex" ];
               };
             };
           }
@@ -163,6 +181,7 @@
                 imports = [
                   ./hosts/matt-desktop/home.nix
                   inputs.cosmic-manager.homeManagerModules.default
+                  inputs.hex.homeManagerModules.hex
                 ];
               };
             };

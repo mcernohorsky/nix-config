@@ -1,68 +1,66 @@
+# OpenCode v2 remote access: expose the normal per-user managed
+# background service through Tailscale Serve.
+#
+# There is deliberately no standalone `opencode serve` unit here. The
+# user's own OpenCode clients own the managed service; this module only
+# keeps Tailscale Serve pointed at whatever localhost endpoint the
+# managed service is currently registered at, and makes sure the managed
+# service starts at boot so phone-only access survives reboots.
+{ ... }:
 {
-  config,
-  pkgs,
-  ...
-}:
-let
-  opencodeServer = pkgs.writeShellScript "opencode-v2-server" ''
-    set -euo pipefail
-
-    if [ -n "''${OPENCODE_SERVER_PASSWORD:-}" ]; then
-      export OPENCODE_PASSWORD="$OPENCODE_SERVER_PASSWORD"
-    fi
-
-    exec /home/matt/.bun/bin/opencode2 serve \
-      --hostname 127.0.0.1 \
-      --port 4097
-  '';
-in
-{
-  age.secrets.opencode-server-password = {
-    file = ../../../secrets/opencode-server-password.age;
-    owner = "matt";
-    group = "users";
-  };
-
   systemd.tmpfiles.rules = [
     "d /home/matt/Developer 0755 matt users -"
-    "d /home/matt/.local/opt/opencode-beta 0755 matt users -"
+    "d /home/matt/.local/opt/opencode 0755 matt users -"
+    "d /home/matt/.local/state/opencode 0755 matt users -"
   ];
 
-  systemd.services.opencode-v2 = {
-    description = "OpenCode v2 beta API server";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+  # The managed service runs in matt's user manager, which needs lingering
+  # to exist at boot without an active login.
+  users.users.matt.linger = true;
 
-    serviceConfig = {
-      Type = "simple";
-      User = "matt";
-      Group = "users";
-      WorkingDirectory = "/home/matt/Developer";
-      EnvironmentFile = config.age.secrets.opencode-server-password.path;
-      Environment = [ "HOME=/home/matt" ];
-      ExecStart = opencodeServer;
-      Restart = "on-failure";
-      RestartSec = "5s";
-    };
-  };
-
-  systemd.services.opencode-v2-serve = {
-    description = "Publish OpenCode v2 through Tailscale Serve";
-    wantedBy = [ "multi-user.target" ];
-    after = [
-      "tailscaled.service"
-      "opencode-v2.service"
-    ];
-    requires = [ "tailscaled.service" ];
+  systemd.user.services.opencode-managed-autostart = {
+    description = "Start the OpenCode managed service at boot";
+    wantedBy = [ "default.target" ];
+    unitConfig.ConditionPathExists = "/home/matt/.bun/bin/opencode";
 
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      Restart = "on-failure";
-      RestartSec = "5s";
-      TimeoutStartSec = "30s";
-      ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg http://127.0.0.1:4097";
+      ExecStart = "/home/matt/.bun/bin/opencode service start";
+    };
+  };
+
+  systemd.services.opencode-tailscale-sync = {
+    description = "Point Tailscale Serve at the OpenCode managed service";
+    after = [ "tailscaled.service" ];
+    requires = [ "tailscaled.service" ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutStartSec = "60s";
+      Environment = [ "OPENCODE_SERVICE_FILE=/home/matt/.local/state/opencode/service.json" ];
+      ExecStart = "/etc/profiles/per-user/matt/bin/opencode-tailscale-sync";
+    };
+  };
+
+  systemd.paths.opencode-tailscale-sync = {
+    description = "Resync Tailscale Serve when OpenCode re-registers";
+    wantedBy = [ "multi-user.target" ];
+
+    pathConfig = {
+      PathChanged = "/home/matt/.local/state/opencode";
+      Unit = "opencode-tailscale-sync.service";
+    };
+  };
+
+  systemd.timers.opencode-tailscale-sync = {
+    description = "Periodically resync Tailscale Serve with OpenCode";
+    wantedBy = [ "timers.target" ];
+
+    timerConfig = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "1min";
+      Unit = "opencode-tailscale-sync.service";
     };
   };
 }

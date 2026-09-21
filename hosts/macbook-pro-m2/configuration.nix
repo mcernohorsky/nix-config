@@ -8,30 +8,6 @@ let
   nordwand-mono = pkgs.callPackage ../../packages/nordwand-mono.nix {
     src = inputs.nordwand-mono;
   };
-  ocd = pkgs.writeShellApplication {
-    name = "ocd";
-    text = ''
-      cli="$HOME/.bun/bin/opencode2"
-      if [ ! -x "$cli" ]; then
-        echo "OpenCode v2 is not installed; run: just opencode-update" >&2
-        exit 1
-      fi
-
-      set -a
-      # The agenix secret is deliberately created at activation time.
-      # shellcheck disable=SC1091
-      source ${config.age.secrets.opencode-server-password.path}
-      set +a
-
-      if [ -n "''${OPENCODE_SERVER_PASSWORD:-}" ]; then
-        export OPENCODE_PASSWORD="$OPENCODE_SERVER_PASSWORD"
-      fi
-
-      exec "$cli" \
-        --server https://matt-desktop.tailc41cf5.ts.net \
-        "$@"
-    '';
-  };
 in
 {
   system = {
@@ -77,12 +53,15 @@ in
   nixpkgs.config.allowUnfree = true;
 
   age.identityPaths = [ "/Users/matt/.ssh/id_ed25519" ];
-  age.secrets.opencode-server-password = {
-    file = ../../secrets/opencode-server-password.age;
-    owner = "matt";
-  };
 
-  environment.systemPackages = [ ocd ];
+  # Tailscale API OAuth client (policy_file scope) for programmatic ACL
+  # management. Decrypted for matt so agent sessions can mint short-lived
+  # API tokens without interactive logins.
+  age.secrets.tailscale-policy-oauth = {
+    file = ../../secrets/tailscale-policy-oauth.age;
+    owner = "matt";
+    mode = "0400";
+  };
 
   fonts.packages = with pkgs; [
     nordwand-mono
@@ -98,6 +77,9 @@ in
 
   users.users.matt = {
     home = "/Users/matt";
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP"
+    ];
   };
 
   programs.bash.enable = true;
@@ -115,6 +97,8 @@ in
     taps = builtins.attrNames config.nix-homebrew.taps;
 
     casks = [
+      # Third-party tap (pinned via nix-homebrew.taps in flake.nix).
+      "anomalyco/tap/hex"
       "affinity"
       "betterdisplay"
       "blender"
@@ -143,6 +127,7 @@ in
       "stats"
       "steam"
       "surfshark"
+      "zed"
     ];
 
     masApps = {
@@ -187,6 +172,14 @@ in
   system.keyboard = {
     enableKeyMapping = true;
     remapCapsLockToEscape = true;
+    # Mic/dictation key -> F13 so Hex can see it as a normal shortcut.
+    # hidutil: 0xC000000CF -> 0x700000068. Merges with the Caps Lock remap.
+    userKeyMapping = [
+      {
+        HIDKeyboardModifierMappingSrc = 51539607759;
+        HIDKeyboardModifierMappingDst = 30064771176;
+      }
+    ];
   };
 
   system.activationScripts.extraActivation.text = ''
@@ -215,6 +208,13 @@ in
 
   services.tailscale.enable = true;
 
+  # Plain OpenSSH (Apple Remote Login) answers tailnet port 22 on this host
+  # instead of the Tailscale SSH intercept: ssh-rule destinations cannot
+  # address a user-owned device without tagging it, so desktop-to-Mac SSH
+  # is governed by filter rules (already allowed). Tailscale SSH remains
+  # available as a client for outbound connections.
+  services.openssh.enable = true;
+
   # Tailscale is the management path to the NixOS hosts. Keep its daemon alive
   # across crashes just like other long-running launchd services.
   launchd.daemons.tailscaled.serviceConfig = {
@@ -222,12 +222,37 @@ in
     ThrottleInterval = 5;
   };
 
-  # Enable Tailscale SSH (nix-darwin doesn't have extraUpFlags).
+  # Keep Tailscale Serve pointed at the normal OpenCode managed background
+  # service. This never starts, stops, or supervises OpenCode itself; it
+  # only re-proxies the current localhost endpoint when it changes.
+  launchd.user.agents.opencode-tailscale-sync = {
+    script = "exec /etc/profiles/per-user/matt/bin/opencode-tailscale-sync";
+    serviceConfig = {
+      RunAtLoad = true;
+      StartInterval = 60;
+      WatchPaths = [ "/Users/matt/.local/state/opencode" ];
+    };
+  };
+
+  # Start the managed service at login so remote access survives reboots
+  # without opening OpenCode first. No-op when already running. Note: this
+  # needs a login session; the Mac cannot serve the phone while logged out.
+  launchd.user.agents.opencode-autostart = {
+    script = "test -x $HOME/.bun/bin/opencode && exec $HOME/.bun/bin/opencode service start";
+    serviceConfig = {
+      RunAtLoad = true;
+    };
+  };
+
+  # Keep the Tailscale SSH server off: Apple OpenSSH answers tailnet port
+  # 22 instead (see services.openssh above), because the tailnet ssh policy
+  # cannot address this user-owned device. nix-darwin doesn't have
+  # extraUpFlags, hence `set` here.
   # Do not run `tailscale up` during every activation: it can block forever when
   # the machine is not authenticated. `set` changes only the SSH preference.
   system.activationScripts.postActivation.text = ''
     if ${pkgs.tailscale}/bin/tailscale status >/dev/null 2>&1; then
-      ${pkgs.tailscale}/bin/tailscale set --ssh || \
+      ${pkgs.tailscale}/bin/tailscale set --ssh=false || \
         echo "Tailscale is running but SSH preference could not be updated"
     else
       echo "Tailscale is not authenticated; skipping Tailscale SSH preference"
