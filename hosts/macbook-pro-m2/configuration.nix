@@ -5,6 +5,7 @@
   ...
 }:
 let
+  preferredMono = import ../../lib/mono-font.nix { inherit pkgs; };
   nordwand-mono = pkgs.callPackage ../../packages/nordwand-mono.nix {
     src = inputs.nordwand-mono;
   };
@@ -66,8 +67,8 @@ in
   fonts.packages = with pkgs; [
     nordwand-mono
     maple-mono.NF-unhinted
-    ioskeley-mono.normal-NF
-    ioskeley-mono.normal-term-NF
+    preferredMono.package
+    preferredMono.term.package
     nerd-fonts.jetbrains-mono
     iosevka
     inter
@@ -99,10 +100,12 @@ in
     casks = [
       # Third-party tap (pinned via nix-homebrew.taps in flake.nix).
       "anomalyco/tap/hex"
+      "abue-ammar/tinycast/tinycast"
       "affinity"
       "betterdisplay"
       "blender"
       "chatgpt"
+      "claude"
       "cursor"
       "discord"
       "ghostty"
@@ -120,13 +123,13 @@ in
       "orion"
       "qbittorrent"
       "raindropio"
-      "raycast"
       "readest"
       "rectangle"
       "shottr"
       "stats"
       "steam"
       "surfshark"
+      "t3-code"
       "zed"
     ];
 
@@ -139,7 +142,7 @@ in
   };
 
   system.defaults = {
-    CustomUserPreferences.NSGlobalDomain.NSFixedPitchFont = "NordwandMono Nerd Font Mono";
+    CustomUserPreferences.NSGlobalDomain.NSFixedPitchFont = preferredMono.family;
 
     dock = {
       autohide = true;
@@ -220,28 +223,6 @@ in
   launchd.daemons.tailscaled.serviceConfig = {
     KeepAlive = true;
     ThrottleInterval = 5;
-  };
-
-  # Keep Tailscale Serve pointed at the normal OpenCode managed background
-  # service. This never starts, stops, or supervises OpenCode itself; it
-  # only re-proxies the current localhost endpoint when it changes.
-  launchd.user.agents.opencode-tailscale-sync = {
-    script = "exec /etc/profiles/per-user/matt/bin/opencode-tailscale-sync";
-    serviceConfig = {
-      RunAtLoad = true;
-      StartInterval = 60;
-      WatchPaths = [ "/Users/matt/.local/state/opencode" ];
-    };
-  };
-
-  # Start the managed service at login so remote access survives reboots
-  # without opening OpenCode first. No-op when already running. Note: this
-  # needs a login session; the Mac cannot serve the phone while logged out.
-  launchd.user.agents.opencode-autostart = {
-    script = "test -x $HOME/.bun/bin/opencode && exec $HOME/.bun/bin/opencode service start";
-    serviceConfig = {
-      RunAtLoad = true;
-    };
   };
 
   # Keep the Tailscale SSH server off: Apple OpenSSH answers tailnet port

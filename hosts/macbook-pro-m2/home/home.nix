@@ -5,6 +5,7 @@
 }:
 
 let
+  preferredMono = import ../../../lib/mono-font.nix { inherit pkgs; };
   runebender = pkgs.callPackage ../../../packages/runebender.nix { };
 
   # Bindings shared by normal and select mode; normal mode adds C-j/C-k below.
@@ -26,14 +27,20 @@ let
 in
 {
   imports = [
+    ../../../modules/home/claude-code.nix
+    ../../../modules/home/codex-cli.nix
     ../../../modules/home/opencode-v2.nix
+    ../../../modules/home/t3code.nix
     ../../../modules/home/tailscale-policy.nix
     ../../../modules/home/dev-templates.nix
     ../../../modules/home/uv-python.nix
     ../../../modules/home/zed.nix
   ];
 
+  modules.home.claudeCode.enable = true;
+  modules.home.codexCli.enable = true;
   modules.home.opencodeV2.enable = true;
+  modules.home.t3code.enable = true;
   modules.home.tailscalePolicy.enable = true;
   modules.home.devTemplates.enable = true;
   modules.home.uvPython.enable = true;
@@ -235,7 +242,7 @@ in
         auto-update = "off";
         theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
         font-family = [
-          "NordwandMono Nerd Font Mono"
+          preferredMono.term.family
           "Noto Color Emoji"
         ];
         background-opacity = 0.95;

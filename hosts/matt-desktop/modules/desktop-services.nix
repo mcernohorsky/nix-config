@@ -6,6 +6,7 @@
 }:
 
 let
+  preferredMono = import ../../../lib/mono-font.nix { inherit pkgs; };
   nordwand-mono = pkgs.callPackage ../../../packages/nordwand-mono.nix {
     src = inputs.nordwand-mono;
   };
@@ -73,15 +74,13 @@ in
       nordwand-mono
       maple-mono.NF-unhinted
       ioskeley-mono.normal
-      ioskeley-mono.normal-NF
-      ioskeley-mono.normal-term-NF
+      preferredMono.package
+      preferredMono.term.package
       jetbrains-mono
       noto-fonts
       noto-fonts-color-emoji
       open-sans
     ];
-    fontconfig.defaultFonts.monospace = [
-      "NordwandMono Nerd Font Mono"
-    ];
+    fontconfig.defaultFonts.monospace = [ preferredMono.family ];
   };
 }

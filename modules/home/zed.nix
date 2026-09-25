@@ -6,6 +6,7 @@
 }:
 let
   cfg = config.modules.home.zed;
+  preferredMono = import ../../lib/mono-font.nix { inherit pkgs; };
 in
 {
   options.modules.home.zed.enable = lib.mkEnableOption "Zed editor";
@@ -30,10 +31,11 @@ in
           light = "Gruvbox Light";
           dark = "Gruvbox Dark Hard";
         };
-        buffer_font_family = "NordwandMono Nerd Font Mono";
-        # Terminal inherits the buffer font when `font_family` is unset,
-        # so only the shell needs pinning (Nushell, matching Ghostty).
+        buffer_font_family = preferredMono.family;
+        # Editor uses Standard spacing; the integrated terminal is
+        # cell-strict so it gets Term (upstream splits them the same way).
         terminal = {
+          font_family = preferredMono.term.family;
           shell = {
             program = lib.getExe pkgs.nushell;
           };

@@ -31,7 +31,6 @@ in
     ./modules/desktop-services.nix
     ./modules/gaming.nix
     ./modules/media.nix
-    ./modules/opencode-v2.nix
     ./modules/cosmic.nix
     ../../modules/nixos/tailscale-recover.nix
   ];
@@ -70,6 +69,8 @@ in
 
   users.users.matt = {
     isNormalUser = true;
+    # Keep T3 Code's native user service running after logout.
+    linger = true;
     extraGroups = [
       "wheel"
       "networkmanager"
@@ -155,6 +156,7 @@ in
     };
     extraUpFlags = [
       "--advertise-tags=tag:trusted"
+      "--operator=matt"
       "--ssh"
     ];
   };
@@ -232,6 +234,8 @@ in
   };
 
   systemd.tmpfiles.rules = [
+    "d /home/matt/Developer 0755 matt users -"
+    "d /home/matt/.local/opt/opencode 0755 matt users -"
     "d /backups 0755 matt users -"
     "d /backups/oracle-0 0755 matt users -"
     "d /backups/oracle-0/vaultwarden 0755 restic restic -"

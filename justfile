@@ -22,6 +22,10 @@ update-app:
 update-hex:
     nix flake update hex hex-homebrew-tap
 
+# Update the Tinycast Homebrew tap (including its pinned cask version)
+update-tinycast:
+    nix flake update tinycast-homebrew-tap
+
 # Enter development shell with deploy-rs
 dev:
     nix develop
@@ -45,6 +49,16 @@ deploy-desktop:
 deploy-mac:
     @echo "🚀 Deploying to macbook-pro-m2..."
     sudo env NIX_CONFIG='accept-flake-config = true' darwin-rebuild switch --flake .
+
+# Deploy whichever machine this runs on: macOS uses darwin-rebuild,
+# Linux rebuilds matt-desktop locally (no deploy-rs round trip).
+[macos]
+deploy-local: deploy-mac
+
+[linux]
+deploy-local:
+    @echo "🚀 Deploying to matt-desktop (local)..."
+    sudo nixos-rebuild switch --flake .#matt-desktop
 
 # Deploy all hosts in parallel; failures propagate through Just's dependency graph.
 [parallel]
@@ -97,25 +111,17 @@ ping-all:
     ping -c 1 {{desktop_host}} > /dev/null && echo "✅ matt-desktop reachable" || { echo "❌ matt-desktop unreachable" >&2; fail=1; }
     exit $fail
 
-# Desktop OpenCode v2 managed-service commands
+# T3 Code serves the three local providers from each host. Pairing links are
+# one-time credentials, so generate them only when adding a device.
+t3-status:
+    @"$HOME/.local/bin/t3" service status
+    @{{desktop_ssh}} '"$HOME/.local/bin/t3" service status'
 
-# Check Desktop OpenCode managed service status
-desktop-opencode-status:
-    @echo "Desktop OpenCode managed service:"
-    @{{desktop_ssh}} '"$HOME/.bun/bin/opencode" service status'
-    @echo ""
-    @echo "Tailscale Serve config:"
-    @{{desktop_ssh}} "tailscale serve status"
+t3-pair-mac:
+    @"$HOME/.local/bin/t3" pair --tailscale
 
-# View Desktop Tailscale sync logs
-desktop-opencode-logs:
-    @{{desktop_ssh}} "journalctl -u opencode-tailscale-sync.service -f"
-
-# Restart the Desktop managed service, then re-sync Serve (also exercises
-# the port-change watcher path end to end)
-desktop-opencode-restart:
-    @{{desktop_ssh}} '"$HOME/.bun/bin/opencode" service restart && sleep 5 && sudo systemctl start opencode-tailscale-sync.service && tailscale serve status'
-    @echo "✅ Restarted managed service and re-synced Tailscale Serve"
+t3-pair-desktop:
+    @{{desktop_ssh}} '"$HOME/.local/bin/t3" pair --tailscale'
 
 # Tailscale policy-file management (policy_file-scoped OAuth client in
 # agenix; short-lived tokens minted per run). Apply prompts for YES unless

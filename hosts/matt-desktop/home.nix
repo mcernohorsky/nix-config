@@ -10,6 +10,7 @@
 }:
 
 let
+  preferredMono = import ../../lib/mono-font.nix { inherit pkgs; };
   runebender = pkgs.callPackage ../../packages/runebender.nix { };
 
   # COSMIC's ron-style tagged values, collapsed to one line per setting.
@@ -52,7 +53,10 @@ let
 in
 {
   imports = [
+    ../../modules/home/claude-code.nix
+    ../../modules/home/codex-cli.nix
     ../../modules/home/opencode-v2.nix
+    ../../modules/home/t3code.nix
     ../../modules/home/tailscale-policy.nix
     ../../modules/home/dev-templates.nix
     ../../modules/home/uv-python.nix
@@ -89,7 +93,7 @@ in
         style = mkEnum "Normal";
       };
       monospace_font = {
-        family = "NordwandMono Nerd Font Mono";
+        family = preferredMono.family;
         weight = mkEnum "Normal";
         stretch = mkEnum "Normal";
         style = mkEnum "Normal";
@@ -241,7 +245,10 @@ in
     ];
   };
 
+  modules.home.claudeCode.enable = true;
+  modules.home.codexCli.enable = true;
   modules.home.opencodeV2.enable = true;
+  modules.home.t3code.enable = true;
   modules.home.tailscalePolicy.enable = true;
 
   # Provision matt's personal SSH keypair end for Mac-bound SSH (the Mac
@@ -410,7 +417,7 @@ in
     settings = {
       command = "${pkgs.nushell}/bin/nu";
       font-family = [
-        "NordwandMono Nerd Font Mono"
+        preferredMono.term.family
         "Noto Color Emoji"
       ];
       font-size = 13;
@@ -508,6 +515,22 @@ in
       grep = "rg";
       find = "fd";
     };
+  };
+
+  # Interactive bash (notably over SSH) is a non-login shell, so it never
+  # loads hm-session-vars.sh where sessionPath lives. Mirror the Nushell
+  # PATH handling so provider CLIs resolve here too. Non-interactive
+  # one-shots still need full paths; bash does not read bashrc there.
+  programs.bash = {
+    enable = true;
+    initExtra = ''
+      for dir in "$HOME/.bun/bin" "$HOME/.local/bin"; do
+        case ":$PATH:" in
+          *":$dir:"*) ;;
+          *) PATH="$dir''${PATH:+:}$PATH" ;;
+        esac
+      done
+    '';
   };
 
   programs.carapace = {

@@ -5,8 +5,8 @@ This repository deploys three Nix hosts:
 | Host | Role | Management path |
 | --- | --- | --- |
 | `oracle-0` | Oracle ARM VPS, Caddy, Cloudflare Tunnel, Vaultwarden, repertoire-builder | Tailscale SSH/deploy-rs |
-| `matt-desktop` | NixOS workstation, OpenCode server, Restic receiver | Tailscale SSH/deploy-rs |
-| `macbook-pro-m2` | nix-darwin workstation and remote OpenCode client | local `darwin-rebuild` |
+| `matt-desktop` | NixOS workstation, T3 Code server, Restic receiver | Tailscale SSH/deploy-rs |
+| `macbook-pro-m2` | nix-darwin workstation and T3 Code server | local `darwin-rebuild` |
 
 All routine deployment commands are `just` recipes from the flake development
 shell. Tailscale is the intended management network; Oracle's public SSH port
@@ -22,8 +22,8 @@ nix develop
 just update                 # update all inputs when desired
 just update-app             # update only repertoire-builder
 just deploy-oracle
-just deploy-desktop         # reports whether a reboot is advisable
-just deploy-mac
+just deploy-desktop         # from the Mac: build remote, reports reboot advice
+just deploy-local           # from either machine: rebuilds the local host
 ```
 
 Non-interactive equivalents are `nix develop -c just <recipe>`. Use
@@ -143,12 +143,11 @@ systemctl start restic-backups-vaultwarden-r2.timer restic-backups-vaultwarden-d
   deploy-rs compatibility.
 - Cloudflare Tunnel is outbound-only.
 - `tailscale-acl.json` isolates `tag:cloud` (Oracle) from trusted devices.
-- All SSH targets are tailnet MagicDNS names. Automation (`opencode-remote`,
-  the `just` desktop recipes, agent reboots) uses `tailscale ssh` where the
+- All SSH targets are tailnet MagicDNS names. Automation (the `just` desktop
+  recipes and agent reboots) uses `tailscale ssh` where the
   tailnet ssh policy applies, and plain `ssh` toward the Mac, which serves
   Apple OpenSSH because the policy cannot address user-owned devices;
-  interactive logins may use plain `ssh` anywhere. `ocm`/`ocd` work from
-  either agent host (oracle-0 has no SSH access to query).
+  interactive logins may use plain `ssh` anywhere.
 - Desktop-to-Mac SSH authenticates with matt's personal key (agenix
   `ssh-id-ed25519`, installed `0600` by activation); the Mac authorizes it
   via nix-darwin and pins Apple's host keys with accept-new. Mac Remote
@@ -261,58 +260,89 @@ then reduce memory settings or return to the last known-good values.
 ## OpenCode v2
 
 OpenCode uses the official `@opencode/cli` Bun package (stable, binary
-`opencode`) on both agent hosts. `oc` launches locally; `ocm`/`ocd`
-connect to the Mac/desktop managed service at
-`https://macbook-pro-m2.tailc41cf5.ts.net` /
-`https://matt-desktop.tailc41cf5.ts.net` through Tailscale (`oco` is reserved
-for a future Oracle server). The stable package also ships an `opencode2`
+`opencode`) on both agent hosts. `oc` launches locally. The stable package also ships an `opencode2`
 compat shim; the beta-era `@opencode-ai/cli@beta` package is removed by Home
 Manager activation.
 
-Each host exposes its normal managed background service — the same server
-the local app/TUI uses — through Tailscale Serve. `opencode-tailscale-sync`
-reads the registered localhost endpoint from
-`~/.local/state/opencode/service.json`, health-checks it with the managed
-pairing credentials, and runs `tailscale serve --bg <url>`. A macOS
-LaunchAgent and a desktop systemd path+timer pair rerun it when the endpoint
-changes. Remote CLI auth (`opencode-remote`) fetches each host's current
-pairing password over the tailnet — `tailscale ssh` by default, plain `ssh`
-toward the Mac, whose user-owned device the tailnet ssh policy cannot
-address (its Apple host keys never rotate, so they are pinned once).
-Nothing is stored in Git or the Nix store. Provider
-credentials, models, subagents, sessions, plugins, and MCPs intentionally
-start empty.
-
-```bash
-nix develop -c just desktop-opencode-status
-nix develop -c just desktop-opencode-logs
-nix develop -c just desktop-opencode-restart
-```
-
-Phone access uses the `app.opencode.ai` PWA: server
-`https://macbook-pro-m2.tailc41cf5.ts.net` (append `:443` if it demands an
-explicit port), password from `opencode pair` on that host. No CORS change
-is needed — the managed service already answers that origin. The managed
-service starts at boot (desktop, via lingering) or login (Mac); the Mac
-cannot serve the phone while logged out.
+OpenCode's Go subscription is authenticated through `opencode auth login` on
+each host. T3 Code reads the local OpenCode config and starts its local
+provider helper; OpenCode no longer has a remote service or Tailscale mapping.
+`autoupdate = true` remains enabled in `opencode.json`.
 
 The Mac desktop DMG and Linux AppImage (`~/.local/opt/opencode/`) are writable,
-outside the Nix store, and follow their official update mechanisms. Do not add
-a legacy web backend, third-party phone app, standalone `opencode serve` unit,
-or fixed OpenCode port. Never use Tailscale Funnel for OpenCode.
+outside the Nix store, and follow their official update mechanisms.
 
-## Claude Code
+## T3 Code
 
-Claude Code uses Anthropic's native `latest` installer on both agent hosts;
-native installs update in the background:
+The Mac desktop app is a declarative Homebrew cask (`t3-code`). Home Manager
+bootstraps the official writable `t3` CLI on both hosts, then installs its
+native per-user background service. T3 owns its service unit
+and versioned runtime so the web/mobile UI and `t3 update` can update it
+without a Nix deployment. The Mac service runs while matt is logged in and
+the machine is awake; the desktop service runs from boot through systemd
+lingering. T3's service PATH includes `~/.local/bin` for Claude Code,
+`~/.bun/bin` for Codex CLI and OpenCode, and the stable Nix profiles.
+Home Manager sets the Mac app to client mode before first launch so it does not
+start a second server against the service's database. Pair the app with the Mac
+service through its Tailscale HTTPS address.
+
+T3 is the only remote coding endpoint. Both hosts expose their own T3 server
+through Tailscale Serve HTTPS on port 443, after one `t3 pair --tailscale`
+per host. The tailnet URLs are:
+
+- `https://macbook-pro-m2.tailc41cf5.ts.net/`
+- `https://matt-desktop.tailc41cf5.ts.net/`
+
+The T3 iOS/iPadOS app, T3 desktop clients, or `app.t3.codes` can add each
+environment using a fresh pairing link. Do not put pairing links in Git or
+logs. The client can select the Mac now and the desktop later; provider
+credentials, threads, and projects live on the chosen host. Keep the same
+project checked out on both machines if both should work on it. Tailscale's
+ACL already allows matt's phone, iPad, Mac, and desktop to reach the two hosts.
 
 ```bash
-curl -fsSL https://claude.ai/install.sh | bash -s latest
-claude update                 # optional immediate update
+nix develop -c just t3-status
+nix develop -c just t3-pair-mac
+nix develop -c just t3-pair-desktop
 ```
 
-The binary is `~/.local/bin/claude`. Claude configuration and authentication
-are local to each machine and are not stored in Nix.
+Open Settings → Providers on each T3 environment and enable Codex, Claude
+Code, and OpenCode. Sign in to each CLI on the host if needed (`codex login`,
+`claude auth login`, `opencode auth login`); T3 then uses the existing local
+credentials. T3 0.0.42's OpenCode provider only works with OpenCode v1: it waits
+for `opencode serve` to print `opencode server listening`, but v2 prints
+`server listening on ...`, so the probe times out after 30s. Both hosts
+currently have OpenCode v2 (auto-updated past v1), so the T3 OpenCode provider
+stays unavailable until upstream T3 supports v2; use `oc` directly for
+OpenCode in the meantime. Do not downgrade to v1: `autoupdate = true` would
+pull v2 back. T3's provider status can
+update Bun-installed Codex CLI and OpenCode. Server updates can interrupt
+active turns, so use T3's update prompt when the host is idle. Enable
+Settings → General → Continue threads after restarts if desired.
+
+To retire the former OpenCode Serve endpoint on a host, run
+`tailscale serve --https=443 off` before `t3 pair --tailscale`. The old
+OpenCode service and sync units are no longer configured; do not reset all
+Tailscale Serve mappings, which could remove unrelated routes.
+
+## Claude
+
+Home Manager bootstraps Claude Code through Anthropic's native `latest`
+installer on the Mac and Linux desktop when `~/.local/bin/claude` is missing.
+The binary remains outside the Nix store so native background updates work;
+`claude update` can force an immediate update. Home Manager merges the selected
+privacy and attribution settings into the writable `~/.claude/settings.json`
+and installs a user-level Git rule. Authentication stays local to each machine.
+
+The Mac installs Claude Desktop through the `claude` Homebrew cask and lets the
+app update itself. Claude Desktop's Linux beta supports Debian and Ubuntu, not
+NixOS, and does not update itself; it is not installed on matt-desktop.
+
+`DISABLE_TELEMETRY=1` turns off Claude Code's telemetry and feature-flag
+fetching, including Remote Control. For a consumer account, model-training
+consent is separate: turn off **Help Improve our AI models** under Claude's
+Settings → Privacy. Claude Desktop does not document an app-wide telemetry
+switch.
 
 ## Agenix rule
 

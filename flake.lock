@@ -771,7 +771,8 @@
         "nixpkgs": "nixpkgs_4",
         "nixpkgs-server": "nixpkgs-server",
         "nordwand-mono": "nordwand-mono",
-        "repertoire-builder": "repertoire-builder"
+        "repertoire-builder": "repertoire-builder",
+        "tinycast-homebrew-tap": "tinycast-homebrew-tap"
       }
     },
     "rust-overlay": {
@@ -867,6 +868,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tinycast-homebrew-tap": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790285119,
+        "narHash": "sha256-elwONqkCM/SsB4UIhfdcIbSD6Ze3bg/U9VdLCO8I+kE=",
+        "owner": "abue-ammar",
+        "repo": "homebrew-tinycast",
+        "rev": "12b5b7cb3f321ab3259d2cb967ed835e244a6fc3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "abue-ammar",
+        "repo": "homebrew-tinycast",
         "type": "github"
       }
     },
