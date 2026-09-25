@@ -48,6 +48,11 @@ in
   # enrolled TPM2 token. The existing passphrase slot remains available.
   boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [ "tpm2-device=auto" ];
 
+  # Transparent aarch64 emulation (QEMU user-mode) so this x86_64 host can
+  # build Oracle's ARM closures when deploying from here. Cached binaries
+  # are still fetched normally; only local derivations emulate.
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+
   networking.hostName = "matt-desktop";
 
   # The official OpenCode AppImage remains writable so its updater can
