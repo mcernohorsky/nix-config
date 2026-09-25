@@ -3,6 +3,7 @@
 # MagicDNS hostnames
 oracle_host := "oracle-0.tailc41cf5.ts.net"
 desktop_host := "matt-desktop.tailc41cf5.ts.net"
+mac_host := "macbook-pro-m2.tailc41cf5.ts.net"
 
 desktop_ssh := "tailscale ssh matt@" + desktop_host
 
@@ -34,21 +35,34 @@ dev:
 build-oracle:
     nix build .#nixosConfigurations.oracle-0.config.system.build.toplevel
 
-# Deploy to Oracle VPS with Determinate Nix's native Linux builder.
+# Deploy to Oracle VPS. macOS builds ARM via Determinate's native Linux
+# builder; Linux builds via local binfmt emulation (see
+# boot.binfmt.emulatedSystems on matt-desktop).
 deploy-oracle:
-    @echo "🚀 Deploying to oracle-0 with the native Linux builder..."
+    @echo "🚀 Deploying to oracle-0..."
     nix run .#deploy-rs -- .#oracle-0 --skip-checks
 
-# Build on and deploy to the Linux desktop over Tailscale.
+# Deploy the Linux desktop: remotely from macOS, locally on Linux.
+[macos]
 deploy-desktop:
     @echo "🚀 Deploying to matt-desktop..."
     nix run .#deploy-rs -- .#matt-desktop --skip-checks
     @{{desktop_ssh}} 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ Running kernel and NVIDIA stack do not require a reboot"; fi'
 
-# Deploy to macbook (this machine)
+[linux]
+deploy-desktop: deploy-local
+
+# Deploy to macbook: locally on macOS, over SSH from Linux (password
+# prompts work through the allocated tty).
+[macos]
 deploy-mac:
     @echo "🚀 Deploying to macbook-pro-m2..."
     sudo env NIX_CONFIG='accept-flake-config = true' darwin-rebuild switch --flake .
+
+[linux]
+deploy-mac:
+    @echo "🚀 Deploying to macbook-pro-m2 over SSH..."
+    ssh -t matt@{{mac_host}} 'cd ~/.config/nix-config && nix develop -c just deploy-local'
 
 # Deploy whichever machine this runs on: macOS uses darwin-rebuild,
 # Linux rebuilds matt-desktop locally (no deploy-rs round trip).
