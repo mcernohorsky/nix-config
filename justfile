@@ -49,9 +49,6 @@ deploy-desktop:
     nix run .#deploy-rs -- .#matt-desktop --skip-checks
     @{{desktop_ssh}} 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ Running kernel and NVIDIA stack do not require a reboot"; fi'
 
-[linux]
-deploy-desktop: deploy-local
-
 # Deploy to macbook: locally on macOS, over SSH from Linux (password
 # prompts work through the allocated tty).
 [macos]
@@ -62,15 +59,10 @@ deploy-mac:
 [linux]
 deploy-mac:
     @echo "🚀 Deploying to macbook-pro-m2 over SSH..."
-    ssh -t matt@{{mac_host}} 'cd ~/.config/nix-config && nix develop -c just deploy-local'
-
-# Deploy whichever machine this runs on: macOS uses darwin-rebuild,
-# Linux rebuilds matt-desktop locally (no deploy-rs round trip).
-[macos]
-deploy-local: deploy-mac
+    ssh -t matt@{{mac_host}} 'cd ~/.config/nix-config && nix develop -c just deploy-mac'
 
 [linux]
-deploy-local:
+deploy-desktop:
     @echo "🚀 Deploying to matt-desktop (local)..."
     sudo nixos-rebuild switch --flake .#matt-desktop
 

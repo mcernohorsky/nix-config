@@ -24,7 +24,6 @@ just update-app             # update only repertoire-builder
 just deploy-oracle          # Mac (Determinate builder) or desktop (binfmt)
 just deploy-desktop         # remote from the Mac, local on the desktop
 just deploy-mac             # local on the Mac, over SSH from the desktop
-just deploy-local           # rebuild the local host, either machine
 ```
 
 Non-interactive equivalents are `nix develop -c just <recipe>`. Use
