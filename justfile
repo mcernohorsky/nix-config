@@ -78,8 +78,7 @@ t3-status:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" service status'
     {{ desktop_ssh }} '"$HOME/.local/bin/t3" service status'
 
-# Reconcile the service with the new CLI after updating. Older updaters can
-# leave an obsolete launcher protocol in service-state.json.
+# Update both T3 services and repair launcher state left by older updaters
 t3-update: t3-update-mac t3-update-desktop
 
 [macos]
