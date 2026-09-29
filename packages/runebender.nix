@@ -85,14 +85,15 @@ rustPlatform.buildRustPackage {
     vulkan-loader
   ];
 
-  env = lib.optionalAttrs stdenv.hostPlatform.isDarwin {
-    # nixpkgs' classic ld64 fails to insert ARM64 branch thunks for large
-    # GUI binaries; same workaround as nixpkgs' zed-editor.
-    NIX_CFLAGS_LINK = "-fuse-ld=lld";
-  }
-  // {
-    RUNEBENDER_TEST_FONTS = "${testFonts}/sources";
-  };
+  env =
+    lib.optionalAttrs stdenv.hostPlatform.isDarwin {
+      # nixpkgs' classic ld64 fails to insert ARM64 branch thunks for large
+      # GUI binaries; same workaround as nixpkgs' zed-editor.
+      NIX_CFLAGS_LINK = "-fuse-ld=lld";
+    }
+    // {
+      RUNEBENDER_TEST_FONTS = "${testFonts}/sources";
+    };
 
   desktopItems = lib.optionals stdenv.hostPlatform.isLinux [
     (makeDesktopItem {

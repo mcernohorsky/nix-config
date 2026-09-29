@@ -5,9 +5,6 @@
 }:
 
 let
-  preferredMono = import ../../../lib/mono-font.nix { inherit pkgs; };
-  runebender = pkgs.callPackage ../../../packages/runebender.nix { };
-
   # Bindings shared by normal and select mode; normal mode adds C-j/C-k below.
   helixModalKeys = {
     "x" = "select_line_below";
@@ -26,46 +23,21 @@ let
   };
 in
 {
-  imports = [
-    ../../../modules/home/claude-code.nix
-    ../../../modules/home/codex-cli.nix
-    ../../../modules/home/opencode-v2.nix
-    ../../../modules/home/t3code.nix
-    ../../../modules/home/tailscale-policy.nix
-    ../../../modules/home/dev-templates.nix
-    ../../../modules/home/uv-python.nix
-    ../../../modules/home/zed.nix
-  ];
-
-  modules.home.claudeCode.enable = true;
-  modules.home.codexCli.enable = true;
-  modules.home.opencodeV2.enable = true;
-  modules.home.t3code.enable = true;
-  modules.home.tailscalePolicy.enable = true;
-  modules.home.devTemplates.enable = true;
-  modules.home.uvPython.enable = true;
-  modules.home.zed.enable = true;
-
-  # Zed installs via the Homebrew cask (native bundle, self-updates);
-  # Home Manager owns only the config (mutable, merged at activation).
-  programs.zed-editor.package = null;
-
   home = {
-    username = "matt";
-    homeDirectory = "/Users/matt";
+    shellAliases = {
+      ld = "lazydocker";
+    };
     stateVersion = "23.11";
 
     file = {
       ".hushlogin".text = ""; # Disable login messages in the terminal.
-      # Surface the nix-built bundle to Finder/Spotlight (the store itself
-      # is not indexed).
-      "Applications/Runebender.app".source = "${runebender}/Applications/Runebender.app";
+      # Surface the Nix-built bundle to Finder and Spotlight.
+      "Applications/Runebender.app".source = "${pkgs.runebender}/Applications/Runebender.app";
       # Make the helix background transparent.
       ".config/helix/themes/custom.toml".text = ''
         inherits = "gruvbox_dark_hard"
         "ui.background" = {}
       '';
-      ".config/zellij/config.kdl".source = ./config.kdl;
     };
 
     packages = with pkgs; [
@@ -74,29 +46,9 @@ in
       fd
       bottom
       hyperfine
-      gh
-
-      runebender # Font editor (custom package in ../../../packages)
-
       nixd
       nixfmt
-
-      nodejs # Node-targeted npm CLIs and language servers
     ];
-
-    shellAliases = {
-      lg = "lazygit";
-      ld = "lazydocker";
-      zj = "zellij";
-    };
-  };
-
-  programs.home-manager.enable = true;
-
-  manual = {
-    manpages.enable = false;
-    html.enable = false;
-    json.enable = false;
   };
 
   programs = {
@@ -140,9 +92,7 @@ in
               "file-encoding"
             ];
           };
-          lsp = {
-            display-messages = true;
-          };
+          lsp.display-messages = true;
           cursor-shape = {
             normal = "block";
             insert = "bar";
@@ -184,28 +134,11 @@ in
             formatter.command = "rustfmt";
           }
         ];
-        language-server = {
-          rust-analyzer = {
-            config = {
-              files = {
-                watcher = "client";
-              };
-            };
-          };
-        };
+        language-server.rust-analyzer.config.files.watcher = "client";
       };
     };
 
-    git = {
-      enable = true;
-      signing.format = "openpgp";
-      settings = {
-        user.name = "Matt Cernohorsky";
-        user.email = "matt@cernohorsky.ca";
-        github.user = "mcernohorsky";
-        init.defaultBranch = "main";
-      };
-    };
+    git.signing.format = "openpgp";
 
     zsh = {
       enable = true;
@@ -214,46 +147,27 @@ in
         source ~/.orbstack/shell/init.zsh 2>/dev/null || :
       '';
     };
-    bash.enable = true;
-    nushell = {
-      enable = true;
-      settings = {
-        show_banner = false;
-      };
-      extraEnv = ''
-        let determinate_nix_bin_dir = "/nix/var/nix/profiles/default/bin"
-        let nix_darwin_system_bin_dir = "/run/current-system/sw/bin"
-        $env.PATH = (
-          $env.PATH
-          | prepend $nix_darwin_system_bin_dir
-          | prepend $determinate_nix_bin_dir
-          | uniq
-        )
-      '';
-    };
+    nushell.extraEnv = ''
+      $env.PATH = (
+        $env.PATH
+        | prepend ["/nix/var/nix/profiles/default/bin" "/run/current-system/sw/bin"]
+        | uniq
+      )
+    '';
 
     ghostty = {
       enable = true;
-      # System app bundle is installed outside Nix; only manage the config.
-      package = null;
+      package = null; # Homebrew cask
       settings = {
         auto-update = "off";
-        theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
-        font-family = [
-          preferredMono.term.family
-          "Noto Color Emoji"
-        ];
         background-opacity = 0.95;
         background-blur = 10;
         macos-option-as-alt = "left";
         mouse-hide-while-typing = true;
-        command = "${pkgs.nushell}/bin/nu";
         quick-terminal-animation-duration = 0;
         macos-non-native-fullscreen = true;
       };
     };
-
-    starship.enable = true;
 
     atuin = {
       enable = true;
@@ -265,36 +179,9 @@ in
 
     nix-index.enable = true;
 
-    direnv = {
-      enable = true;
-      nix-direnv.enable = true;
-      config = {
-        warn_timeout = 0;
-      };
-    };
-
-    fzf = {
-      enable = true;
-      # Atuin owns Ctrl-R; keep FZF enabled without a shadowed history binding.
-      historyWidget.command = "";
-    };
-
-    zellij.enable = true;
-
-    zoxide.enable = true;
-
-    bat.enable = true;
-
+    direnv.config.warn_timeout = 0;
+    # Atuin owns Ctrl-R.
+    fzf.historyWidget.command = "";
     jujutsu.enable = true;
-
-    lazygit.enable = true;
-
-    yazi = {
-      enable = true;
-      shellWrapperName = "y";
-    };
-
-    ripgrep.enable = true;
-
   };
 }

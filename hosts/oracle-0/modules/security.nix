@@ -1,29 +1,23 @@
 { config, pkgs, ... }:
 {
-  # Firewall - all ports closed by default; access via Tailscale (SSH) and Cloudflare Tunnel (HTTP)
-  networking.firewall = {
-    trustedInterfaces = [
-      "tailscale0"
-      "br-containers"
-    ];
-  };
+  # All public ports are closed; ingress is Tailscale and the outbound tunnel.
+  networking.firewall.trustedInterfaces = [
+    "tailscale0"
+    "br-containers"
+  ];
 
-  # Secrets
   age.secrets.cloudflared-token = {
     file = ../../../secrets/cloudflared-token.age;
-    mode = "0400";
     owner = "cloudflared";
-    group = "cloudflared";
   };
 
-  # Cloudflare Tunnel user/group
   users.users.cloudflared = {
     isSystemUser = true;
     group = "cloudflared";
   };
   users.groups.cloudflared = { };
 
-  # Cloudflare Tunnel for HTTP access (dashboard-managed with token)
+  # Dashboard-managed tunnel, authenticated by token.
   systemd.services.cloudflared-tunnel = {
     description = "Cloudflare Tunnel";
     after = [ "network-online.target" ];

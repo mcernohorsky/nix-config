@@ -1,19 +1,23 @@
-# Home Manager configuration for matt
 {
   config,
   pkgs,
   inputs,
   lib,
   osConfig,
-  wallpaperImage,
   ...
 }:
 
 let
-  preferredMono = import ../../lib/mono-font.nix { inherit pkgs; };
-  runebender = pkgs.callPackage ../../packages/runebender.nix { };
+  mono = import ../../lib/mono-font.nix { inherit pkgs; };
 
-  # COSMIC's ron-style tagged values, collapsed to one line per setting.
+  # NASA Artemis II Earthset, original 5568x3712 image from NASA's Flickr.
+  wallpaper = pkgs.fetchurl {
+    name = "artemis-ii-earthset.jpg";
+    url = "https://www.flickr.com/photo_download.gne?id=55192132107&secret=00dc598014&size=o&source=photoPageEngagement";
+    hash = "sha256-nsaMkJZmtPQjmkQcWbpZ0DNZvGSzUKzw/1LxhFwGScM=";
+  };
+
+  # COSMIC's RON-style tagged values.
   mkEnum = variant: {
     __type = "enum";
     inherit variant;
@@ -26,45 +30,42 @@ let
     __type = "tuple";
     inherit value;
   };
-  # Symmetric corner radius used for all non-zero COSMIC radii.
-  mkRadii =
-    v:
-    mkTuple [
-      v
-      v
-      v
-      v
-    ];
-  panelAutohideBehavior = {
-    wait_time = 1000;
-    transition_time = 200;
-    handle_size = 4;
-    unhide_delay = 200;
+  mkRadii = v: mkTuple (lib.replicate 4 v);
+  mkFont = family: {
+    inherit family;
+    weight = mkEnum "Normal";
+    stretch = mkEnum "Normal";
+    style = mkEnum "Normal";
+  };
+  mkPanel = entries: {
+    version = 1;
+    entries = {
+      anchor_gap = false;
+      autohide_behavior = {
+        wait_time = 1000;
+        transition_time = 200;
+        handle_size = 4;
+        unhide_delay = 200;
+      };
+      background = mkEnum "ThemeDefault";
+      margin = 0;
+      output = mkEnum "All";
+      spacing = 0;
+    }
+    // entries;
   };
 
-  # Fixed wrapper for Jellyfin Media Player (Forces XWayland and Fusion style to avoid crashes)
-  jellyfin-wrapped = pkgs.writeShellScriptBin "jellyfinmediaplayer" ''
-    export QT_QPA_PLATFORM=xcb
-    export QT_STYLE_OVERRIDE=Fusion
+  # Jellyfin Desktop crashes under native Wayland and the COSMIC Qt theme.
+  jellyfin = pkgs.writeShellScript "jellyfin-desktop" ''
+    export QT_QPA_PLATFORM=xcb QT_STYLE_OVERRIDE=Fusion
     unset QT_QPA_PLATFORMTHEME
-    exec ${pkgs.jellyfin-media-player}/bin/jellyfin-desktop "$@"
+    exec ${lib.getExe pkgs.jellyfin-desktop} "$@"
   '';
 
+  mimeDefaults = app: types: lib.genAttrs types (_: "${app}.desktop");
 in
 {
-  imports = [
-    ../../modules/home/claude-code.nix
-    ../../modules/home/codex-cli.nix
-    ../../modules/home/opencode-v2.nix
-    ../../modules/home/t3code.nix
-    ../../modules/home/tailscale-policy.nix
-    ../../modules/home/dev-templates.nix
-    ../../modules/home/uv-python.nix
-    ../../modules/home/zed.nix
-  ];
-
-  # COSMIC's defaults reference uninstalled apps (Firefox, COSMIC Terminal,
-  # COSMIC Store). Only these keys are managed; other Settings changes stay writable.
+  # Only these keys are managed; other COSMIC Settings changes stay writable.
   wayland.desktopManager.cosmic = {
     enable = true;
     applets.app-list.settings.favorites = [
@@ -83,21 +84,10 @@ in
     appearance.toolkit = {
       apply_theme_global = true;
       header_size = mkEnum "Standard";
-      # Trial: revert to Cosmic if the visual fit is worse.
       icon_theme = "Colloid-Dark";
       interface_density = mkEnum "Standard";
-      interface_font = {
-        family = "Open Sans";
-        weight = mkEnum "Normal";
-        stretch = mkEnum "Normal";
-        style = mkEnum "Normal";
-      };
-      monospace_font = {
-        family = preferredMono.family;
-        weight = mkEnum "Normal";
-        stretch = mkEnum "Normal";
-        style = mkEnum "Normal";
-      };
+      interface_font = mkFont "Open Sans";
+      monospace_font = mkFont mono.family;
     };
 
     compositor = {
@@ -130,9 +120,8 @@ in
       };
     };
 
-    # Keep the deliberate compact top panel and larger floating dock. The
-    # generic interface is necessary because cosmic-manager's typed autohide
-    # representation predates COSMIC 1.5's Never/OnOverlap enum.
+    # cosmic-manager's typed panel and theme modules predate COSMIC 1.5's
+    # autohide enum and the v2 theme builder, so use the generic interface.
     configFile."com.system76.CosmicPanel" = {
       version = 1;
       entries.entries = [
@@ -140,41 +129,23 @@ in
         "Dock"
       ];
     };
-    configFile."com.system76.CosmicPanel.Panel" = {
-      version = 1;
-      entries = {
-        anchor = mkEnum "Top";
-        anchor_gap = false;
-        autohide = mkEnum "Never";
-        autohide_behavior = panelAutohideBehavior;
-        background = mkEnum "ThemeDefault";
-        border_radius = 0;
-        exclusive_zone = true;
-        expand_to_edges = true;
-        margin = 0;
-        output = mkEnum "All";
-        padding = 0;
-        size = mkEnum "XS";
-        spacing = 0;
-      };
+    configFile."com.system76.CosmicPanel.Panel" = mkPanel {
+      anchor = mkEnum "Top";
+      autohide = mkEnum "Never";
+      border_radius = 0;
+      exclusive_zone = true;
+      expand_to_edges = true;
+      padding = 0;
+      size = mkEnum "XS";
     };
-    configFile."com.system76.CosmicPanel.Dock" = {
-      version = 1;
-      entries = {
-        anchor = mkEnum "Bottom";
-        anchor_gap = false;
-        autohide = mkEnum "OnOverlap";
-        autohide_behavior = panelAutohideBehavior;
-        background = mkEnum "ThemeDefault";
-        border_radius = 8;
-        exclusive_zone = false;
-        expand_to_edges = false;
-        margin = 0;
-        output = mkEnum "All";
-        padding = 4;
-        size = mkEnum "L";
-        spacing = 0;
-      };
+    configFile."com.system76.CosmicPanel.Dock" = mkPanel {
+      anchor = mkEnum "Bottom";
+      autohide = mkEnum "OnOverlap";
+      border_radius = 8;
+      exclusive_zone = false;
+      expand_to_edges = false;
+      padding = 4;
+      size = mkEnum "L";
     };
 
     configFile."com.system76.CosmicFiles" = {
@@ -191,9 +162,6 @@ in
         ++ [ (mkEnum "Path" // { value = [ "/mnt/hdd" ]; }) ];
     };
 
-    # COSMIC Initial Setup reset these user-selected values on its first run.
-    # Use the current v2 builder schema; cosmic-manager's typed theme module
-    # still emits v1, so these entries intentionally use the generic interface.
     configFile."com.system76.CosmicTheme.Dark.Builder" = {
       version = 2;
       entries = {
@@ -234,7 +202,7 @@ in
       {
         output = "all";
         source = mkEnum "Path" // {
-          value = [ "${wallpaperImage}" ];
+          value = [ "${wallpaper}" ];
         };
         filter_by_theme = true;
         rotation_frequency = 3600;
@@ -245,183 +213,28 @@ in
     ];
   };
 
-  modules.home.claudeCode.enable = true;
-  modules.home.codexCli.enable = true;
-  modules.home.opencodeV2.enable = true;
-  modules.home.t3code.enable = true;
-  modules.home.tailscalePolicy.enable = true;
-
-  # Provision matt's personal SSH keypair end for Mac-bound SSH (the Mac
-  # authorizes its public half). Sourced from agenix so the private key
-  # never enters the Nix store; enforced declaratively on each activation.
+  # Private half of matt's key for desktop-to-Mac SSH, kept out of the store.
   home.activation.installSshUserKey = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run mkdir -p "$HOME/.ssh"
-    run install -m 0600 ${osConfig.age.secrets.ssh-user-key.path} "$HOME/.ssh/id_ed25519"
+    run install -D -m 0600 ${osConfig.age.secrets.ssh-user-key.path} "$HOME/.ssh/id_ed25519"
   '';
-  modules.home.devTemplates.enable = true;
-  modules.home.uvPython.enable = true;
-  modules.home.zed.enable = true;
-  # Zed ships from nixpkgs here (cached build): wrap it with nixd and
-  # disable self-updates so the store stays the source of truth.
-  programs.zed-editor = {
-    extraPackages = with pkgs; [ nixd ];
-    userSettings = {
-      auto_update = false;
-    };
-  };
-  # HEX voice dictation (Linux beta). Autostart runs `hex service` with the
-  # graphical session; run `hex model install` once as your user, then
-  # `hex app` for Settings. COSMIC is outside the beta's supported targets
-  # (i3/X11, wlroots Wayland), so paste/overlay may not work — set autostart
-  # to false and use `hex start` manually if the service misbehaves.
+
+  # HEX voice dictation (Linux beta; COSMIC is outside its supported targets).
+  # Run `hex model install` once, then `hex app` for Settings.
   programs.hex = {
     enable = true;
     autostart = true;
   };
+
   # Determinate manages Nix itself; Home Manager must not install a competing
   # nix package or daemon profile on this host.
   nix.package = lib.mkForce null;
 
-  home.username = "matt";
-  home.homeDirectory = "/home/matt";
   home.stateVersion = "25.05";
-
-  programs.home-manager.enable = true;
-
-  manual = {
-    manpages.enable = false;
-    html.enable = false;
-    json.enable = false;
-  };
-
-  # Cemu rewrites settings.xml at runtime, so merge the declarative values via activation.
-  home.activation.configureCemu = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        cemu_config_dir="${config.home.homeDirectory}/.config/Cemu"
-        cemu_settings="$cemu_config_dir/settings.xml"
-        cemu_library_dir="${config.home.homeDirectory}/Games/WiiU"
-        cemu_game_dir="$cemu_library_dir/games"
-        cemu_legacy_game_dir="$cemu_library_dir"
-        xmlstarlet="${pkgs.xmlstarlet}/bin/xmlstarlet"
-
-        seed_cemu_settings() {
-          cat > "$cemu_settings" <<'EOF'
-    <?xml version="1.0" encoding="UTF-8"?>
-    <content>
-      <console_language>1</console_language>
-      <disable_screensaver>true</disable_screensaver>
-      <play_boot_sound>false</play_boot_sound>
-      <feral_gamemode>true</feral_gamemode>
-      <check_update>false</check_update>
-      <receive_untested_updates>false</receive_untested_updates>
-      <GamePaths/>
-      <Graphic>
-        <api>1</api>
-        <VSync>0</VSync>
-        <GX2DrawdoneSync>true</GX2DrawdoneSync>
-        <UpscaleFilter>1</UpscaleFilter>
-        <DownscaleFilter>0</DownscaleFilter>
-        <FullscreenScaling>0</FullscreenScaling>
-        <AsyncCompile>true</AsyncCompile>
-        <vkAccurateBarriers>true</vkAccurateBarriers>
-      </Graphic>
-      <Audio>
-        <api>3</api>
-        <delay>2</delay>
-        <TVChannels>1</TVChannels>
-        <PadChannels>1</PadChannels>
-        <InputChannels>0</InputChannels>
-        <TVVolume>100</TVVolume>
-        <PadVolume>100</PadVolume>
-        <InputVolume>100</InputVolume>
-        <PortalVolume>100</PortalVolume>
-        <TVDevice>default</TVDevice>
-        <PadDevice>default</PadDevice>
-        <InputDevice/>
-        <PortalDevice/>
-      </Audio>
-      <Input>
-        <DSUC host="127.0.0.1" port="26760"/>
-      </Input>
-    </content>
-    EOF
-        }
-
-        ensure_element() {
-          path="$1"
-          parent="$2"
-          name="$3"
-          if [ "$("$xmlstarlet" sel -t -v "count($path)" "$cemu_settings")" = "0" ]; then
-            "$xmlstarlet" ed -L -s "$parent" -t elem -n "$name" -v "" "$cemu_settings"
-          fi
-        }
-
-        set_value() {
-          path="$1"
-          parent="$2"
-          name="$3"
-          value="$4"
-          ensure_element "$path" "$parent" "$name"
-          "$xmlstarlet" ed -L -u "$path" -v "$value" "$cemu_settings"
-        }
-
-        configure_cemu() {
-          install -d "$cemu_config_dir"
-          install -d "$cemu_game_dir"
-          install -d "$cemu_library_dir/installers/updates"
-          install -d "$cemu_library_dir/installers/dlc"
-
-          if [ ! -s "$cemu_settings" ]; then
-            seed_cemu_settings
-          elif ! "$xmlstarlet" val "$cemu_settings" >/dev/null 2>&1 || [ "$("$xmlstarlet" sel -t -v 'count(/content)' "$cemu_settings")" = "0" ]; then
-            cemu_quarantine="$cemu_settings.invalid"
-            if [ -e "$cemu_quarantine" ]; then
-              cemu_suffix=1
-              while [ -e "$cemu_quarantine.$cemu_suffix" ]; do
-                cemu_suffix=$((cemu_suffix + 1))
-              done
-              cemu_quarantine="$cemu_quarantine.$cemu_suffix"
-            fi
-            warnEcho "Cemu settings.xml is malformed, quarantining to $cemu_quarantine"
-            mv "$cemu_settings" "$cemu_quarantine"
-            seed_cemu_settings
-          fi
-
-          ensure_element "/content/Graphic" "/content" "Graphic"
-          ensure_element "/content/Audio" "/content" "Audio"
-          ensure_element "/content/Input" "/content" "Input"
-          ensure_element "/content/GamePaths" "/content" "GamePaths"
-
-          "$xmlstarlet" ed -L -d "/content/GamePaths/Entry[text()='$cemu_legacy_game_dir']" "$cemu_settings"
-
-          if [ "$("$xmlstarlet" sel -t -v "count(/content/GamePaths/Entry[text()='$cemu_game_dir'])" "$cemu_settings")" = "0" ]; then
-            "$xmlstarlet" ed -L -s "/content/GamePaths" -t elem -n "Entry" -v "$cemu_game_dir" "$cemu_settings"
-          fi
-
-          set_value "/content/feral_gamemode" "/content" "feral_gamemode" "true"
-          set_value "/content/check_update" "/content" "check_update" "false"
-          set_value "/content/receive_untested_updates" "/content" "receive_untested_updates" "false"
-          set_value "/content/disable_screensaver" "/content" "disable_screensaver" "true"
-          set_value "/content/Graphic/api" "/content/Graphic" "api" "1"
-          set_value "/content/Graphic/VSync" "/content/Graphic" "VSync" "0"
-          set_value "/content/Graphic/AsyncCompile" "/content/Graphic" "AsyncCompile" "true"
-          set_value "/content/Audio/api" "/content/Audio" "api" "3"
-          set_value "/content/Audio/TVVolume" "/content/Audio" "TVVolume" "100"
-          set_value "/content/Audio/PadVolume" "/content/Audio" "PadVolume" "100"
-        }
-
-        run configure_cemu
-  '';
 
   programs.ghostty = {
     enable = true;
     settings = {
-      command = "${pkgs.nushell}/bin/nu";
-      font-family = [
-        preferredMono.term.family
-        "Noto Color Emoji"
-      ];
       font-size = 13;
-      theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
       background-opacity = 0.9;
       window-padding-x = 10;
       window-padding-y = 10;
@@ -432,111 +245,70 @@ in
     };
   };
 
-  programs.yazi = {
-    shellWrapperName = "y";
-    enable = true;
-    enableNushellIntegration = true;
-    settings = {
-      manager = {
-        show_hidden = false;
-        sort_by = "natural";
-        sort_dir_first = true;
-        linemode = "size";
-        show_symlink = true;
-      };
-      preview = {
-        image_filter = "triangle";
-        image_quality = 75;
-        max_width = 600;
-        max_height = 900;
-      };
+  programs.yazi.settings = {
+    mgr = {
+      sort_by = "natural";
+      linemode = "size";
+      show_symlink = true;
     };
+    preview = {
+      image_filter = "triangle";
+      image_quality = 75;
+      max_width = 600;
+      max_height = 900;
+    };
+  };
+
+  home.shellAliases = {
+    ga = "git add";
+    gc = "git commit";
+    gp = "git push";
+    gl = "git pull";
   };
 
   programs.nushell = {
-    enable = true;
-
-    # Extra config appended to config.nu
-    extraConfig = ''
-      $env.config.show_banner = false
-      $env.config.buffer_editor = "hx"
-      $env.config.history = {
-        max_size: 10000
-        sync_on_enter: true
-        file_format: "sqlite"
-      }
-
-      $env.config.completions = {
-        case_sensitive: false
-        quick: true
-        partial: true
-        algorithm: "fuzzy"
-      }
-
-      $env.config.table = {
-        mode: rounded
-        index_mode: auto
-        show_empty: true
-        padding: { left: 1, right: 1 }
-        trim: {
-          methodology: wrapping
-          wrapping_try_keep_words: true
-        }
-        header_on_separator: false
-      }
-
-      alias ll = ls -l
-      alias la = ls -la
-      alias lt = eza --tree --icons
-      alias cat = bat
-      alias vim = hx
-      alias vi = hx
-
-      alias nrs = sudo nixos-rebuild switch --flake ~/.config/nix-config#matt-desktop
-      alias nrt = sudo nixos-rebuild test --flake ~/.config/nix-config#matt-desktop
-
-      alias gs = git status
-      alias gd = git diff
-      alias ga = git add
-      alias gc = git commit
-      alias gp = git push
-      alias gl = git pull
-      alias lg = lazygit
-    '';
-
-    extraEnv = ''
-      $env.EDITOR = "hx"
-      $env.VISUAL = "hx"
-    '';
-
-    # Shell aliases (also available via alias command above, but this integrates with HM)
     shellAliases = {
       ls = "eza --icons";
+      ll = "ls -l";
+      la = "ls -la";
+      lt = "eza --tree --icons";
+      cat = "bat";
       grep = "rg";
       find = "fd";
+      nrs = "sudo nixos-rebuild switch --flake ~/.config/nix-config#matt-desktop";
+      nrt = "sudo nixos-rebuild test --flake ~/.config/nix-config#matt-desktop";
+    };
+    settings = {
+      buffer_editor = "hx";
+      history = {
+        max_size = 10000;
+        sync_on_enter = true;
+        file_format = "sqlite";
+      };
+      completions = {
+        case_sensitive = false;
+        quick = true;
+        partial = true;
+        algorithm = "fuzzy";
+      };
+      table = {
+        mode = "rounded";
+        index_mode = "auto";
+        show_empty = true;
+        padding = {
+          left = 1;
+          right = 1;
+        };
+        trim = {
+          methodology = "wrapping";
+          wrapping_try_keep_words = true;
+        };
+        header_on_separator = false;
+      };
     };
   };
 
-  # Interactive bash (notably over SSH) is a non-login shell, so it never
-  # loads hm-session-vars.sh where sessionPath lives. Mirror the Nushell
-  # PATH handling so provider CLIs resolve here too. Non-interactive
-  # one-shots still need full paths; bash does not read bashrc there.
-  programs.bash = {
-    enable = true;
-    initExtra = ''
-      for dir in "$HOME/.bun/bin" "$HOME/.local/bin"; do
-        case ":$PATH:" in
-          *":$dir:"*) ;;
-          *) PATH="$dir''${PATH:+:}$PATH" ;;
-        esac
-      done
-    '';
-  };
-
-  programs.carapace = {
-    enable = true;
-    enableNushellIntegration = true;
-  };
+  programs.carapace.enable = true;
 
   programs.starship = {
     enable = true;
@@ -603,18 +375,11 @@ in
     };
   };
 
-  programs.git = {
-    enable = true;
-    settings = {
-      user.name = "Matt Cernohorsky";
-      user.email = "matt@cernohorsky.ca";
-      init.defaultBranch = "main";
-      pull.rebase = true;
-      push.autoSetupRemote = true;
-      core.editor = "hx";
-      merge.conflictstyle = "diff3";
-      diff.colorMoved = "default";
-    };
+  programs.git.settings = {
+    pull.rebase = true;
+    push.autoSetupRemote = true;
+    merge.conflictstyle = "diff3";
+    diff.colorMoved = "default";
   };
 
   programs.delta = {
@@ -628,27 +393,9 @@ in
     };
   };
 
-  programs.bat.enable = true;
-
   programs.eza.enable = true;
   programs.fd.enable = true;
-  programs.ripgrep.enable = true;
-  programs.fzf = {
-    enable = true;
-    enableBashIntegration = true;
-  };
-  programs.zoxide = {
-    enable = true;
-    enableNushellIntegration = true;
-  };
-  programs.direnv = {
-    enable = true;
-    enableBashIntegration = true;
-    enableNushellIntegration = true;
-    nix-direnv.enable = true;
-  };
 
-  # Btop system monitor
   programs.btop = {
     enable = true;
     settings = {
@@ -658,34 +405,17 @@ in
   };
 
   home.packages = with pkgs; [
-    # Browser
     inputs.helium.packages.${pkgs.stdenv.hostPlatform.system}.default
     solaar
-
-    # Font editor (custom package in ../../packages)
-    runebender
-
-    # Development
-    lazygit
-    gh
     jq
     yq
-    nodejs # `node` on PATH for Node-targeted tools and language servers
-
-    # System info
     fastfetch
     cpufetch
-
     colloid-icon-theme
     papirus-icon-theme # Fallback for artwork Colloid doesn't cover
-
-    # Media
     celluloid
     loupe
-
-    # Archive tools
     unrar
-
   ];
 
   gtk = {
@@ -703,32 +433,32 @@ in
       enable = true;
       createDirectories = true;
       setSessionVariables = true;
-      desktop = "${config.home.homeDirectory}/Desktop";
-      documents = "${config.home.homeDirectory}/Documents";
-      download = "${config.home.homeDirectory}/Downloads";
-      music = "${config.home.homeDirectory}/Music";
-      pictures = "${config.home.homeDirectory}/Pictures";
-      videos = "${config.home.homeDirectory}/Videos";
     };
     mimeApps = {
       enable = true;
-      defaultApplications = {
-        "text/html" = "helium.desktop";
-        "x-scheme-handler/http" = "helium.desktop";
-        "x-scheme-handler/https" = "helium.desktop";
-        "text/plain" = "Helix.desktop";
-        "image/png" = "org.gnome.Loupe.desktop";
-        "image/jpeg" = "org.gnome.Loupe.desktop";
-        "image/webp" = "org.gnome.Loupe.desktop";
-        "image/gif" = "org.gnome.Loupe.desktop";
-        "video/mp4" = "io.github.celluloid_player.Celluloid.desktop";
-        "video/x-matroska" = "io.github.celluloid_player.Celluloid.desktop";
-        "video/webm" = "io.github.celluloid_player.Celluloid.desktop";
-        "audio/mpeg" = "io.github.celluloid_player.Celluloid.desktop";
-        "audio/ogg" = "io.github.celluloid_player.Celluloid.desktop";
-        "application/pdf" = "com.system76.CosmicReader.desktop";
-        "inode/directory" = "com.system76.CosmicFiles.desktop";
-      };
+      defaultApplications = lib.mergeAttrsList [
+        (mimeDefaults "helium" [
+          "text/html"
+          "x-scheme-handler/http"
+          "x-scheme-handler/https"
+        ])
+        (mimeDefaults "Helix" [ "text/plain" ])
+        (mimeDefaults "org.gnome.Loupe" [
+          "image/png"
+          "image/jpeg"
+          "image/webp"
+          "image/gif"
+        ])
+        (mimeDefaults "io.github.celluloid_player.Celluloid" [
+          "video/mp4"
+          "video/x-matroska"
+          "video/webm"
+          "audio/mpeg"
+          "audio/ogg"
+        ])
+        (mimeDefaults "com.system76.CosmicReader" [ "application/pdf" ])
+        (mimeDefaults "com.system76.CosmicFiles" [ "inode/directory" ])
+      ];
     };
     terminal-exec = {
       enable = true;
@@ -739,7 +469,7 @@ in
         name = "OpenCode";
         genericName = "AI Coding Agent";
         comment = "Official OpenCode v2 desktop app";
-        exec = "/home/matt/.local/opt/opencode/OpenCode.AppImage %U";
+        exec = "${config.home.homeDirectory}/.local/opt/opencode/OpenCode.AppImage %U";
         icon = "applications-development";
         terminal = false;
         categories = [ "Development" ];
@@ -765,9 +495,8 @@ in
       };
       "org.jellyfin.JellyfinDesktop" = {
         name = "Jellyfin Media Player";
-        exec = "${jellyfin-wrapped}/bin/jellyfinmediaplayer";
+        exec = "${jellyfin}";
         icon = "jellyfin";
-        comment = "Jellyfin Desktop Client (Fixed)";
         terminal = false;
         categories = [
           "Video"
@@ -779,7 +508,6 @@ in
         name = "Jellyfin Server Dashboard";
         exec = "xdg-open http://localhost:8096";
         icon = "org.jellyfin.JellyfinServer";
-        comment = "Jellyfin Server Administration";
         terminal = false;
         categories = [
           "Network"

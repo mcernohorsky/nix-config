@@ -1,30 +1,21 @@
-{
-  lib,
-  pkgs,
-  ...
-}:
+{ lib, pkgs, ... }:
 
 {
   networking = {
     networkmanager = {
       enable = true;
       wifi.powersave = false; # Better stability
-      ensureProfiles.profiles = {
-        # Direct ethernet cable to MacBook - use link-local so it doesn't timeout waiting for DHCP
-        direct-ethernet = {
-          connection = {
-            id = "direct-ethernet";
-            type = "ethernet";
-            interface-name = "enp4s0";
-          };
-          ipv4.method = "link-local";
-          ipv6.method = "link-local";
+      # Direct ethernet cable to the MacBook: link-local, so no DHCP timeout.
+      ensureProfiles.profiles.direct-ethernet = {
+        connection = {
+          id = "direct-ethernet";
+          type = "ethernet";
+          interface-name = "enp4s0";
         };
+        ipv4.method = "link-local";
+        ipv6.method = "link-local";
       };
     };
-
-    # Default deny; ports are opened as needed in other modules.
-    firewall.enable = true;
   };
 
   # Nothing needs the network that early; don't delay boot on it.
@@ -41,10 +32,7 @@
     ];
   };
 
-  time.timeZone = "America/Edmonton";
-
   i18n = {
-    defaultLocale = "en_CA.UTF-8";
     extraLocaleSettings = lib.genAttrs [
       "LC_ADDRESS"
       "LC_IDENTIFICATION"
@@ -59,12 +47,7 @@
   };
 
   boot = {
-    # Plymouth splash screen for a pretty boot & LUKS prompt
-    plymouth = {
-      enable = true;
-    };
-
-    # Use systemd in initrd (modern and required for TPM2/Plymouth)
+    plymouth.enable = true;
     initrd.systemd = {
       enable = true;
       tpm2.enable = true;
@@ -83,14 +66,8 @@
     ];
   };
 
-  # HiDPI Console Font
-  console = {
-    earlySetup = false; # Don't load in initrd to avoid red error
-    # Leave default console font; custom terminus font caused early boot vconsole failures.
-    packages = [ ];
-    font = null;
-    keyMap = "us";
-  };
+  # Custom console fonts caused early-boot vconsole failures.
+  console.earlySetup = false;
 
   security.tpm2 = {
     enable = true;
@@ -98,17 +75,9 @@
     tctiEnvironment.enable = true;
   };
 
-  security.sudo = {
-    enable = true;
-    wheelNeedsPassword = true;
-  };
-
   security.rtkit.enable = true;
 
-  services.dbus = {
-    enable = true;
-    implementation = "broker";
-  };
+  services.dbus.implementation = "broker";
 
   services.upower.enable = true;
   services.udisks2.enable = true;
@@ -116,10 +85,7 @@
   # GIO mounts, trash, and network locations for COSMIC Files and GTK apps.
   services.gvfs.enable = true;
 
-  services.smartd = {
-    enable = true;
-    autodetect = true;
-  };
+  services.smartd.enable = true;
 
   services.fwupd.enable = true;
 
@@ -138,10 +104,7 @@
     interval = "daily";
   };
 
-  services.fstrim = {
-    enable = true;
-    interval = "weekly";
-  };
+  services.fstrim.enable = true;
 
   services.btrfs.autoScrub = {
     enable = true;
@@ -199,14 +162,9 @@
     BROWSER = "helium";
   };
 
-  documentation = {
-    enable = true;
-    man.enable = true;
-    dev.enable = true;
-  };
+  documentation.dev.enable = true;
 
   hardware.enableRedistributableFirmware = true;
-  hardware.cpu.amd.updateMicrocode = true;
 
   # This is a plugged-in desktop. Keep CPU policy latency-oriented and ensure
   # boost is enabled under amd-pstate guided mode.
@@ -227,6 +185,5 @@
     '';
   };
 
-  # Allow running unpatched dynamic binaries
   programs.nix-ld.enable = true;
 }

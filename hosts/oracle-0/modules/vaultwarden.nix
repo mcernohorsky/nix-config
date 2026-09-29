@@ -1,18 +1,10 @@
+{ config, ... }:
 {
-  config,
-  ...
-}:
-{
-  # Vaultwarden secrets
-  age.secrets = {
-    vaultwarden-admin-token = {
-      file = ../../../secrets/vaultwarden-admin-token.age;
-      owner = "vaultwarden";
-      group = "vaultwarden";
-    };
+  age.secrets.vaultwarden-admin-token = {
+    file = ../../../secrets/vaultwarden-admin-token.age;
+    owner = "vaultwarden";
   };
 
-  # Vaultwarden service
   services.vaultwarden = {
     enable = true;
     environmentFile = config.age.secrets.vaultwarden-admin-token.path;

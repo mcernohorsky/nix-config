@@ -1,25 +1,19 @@
-{
-  config,
-  ...
-}:
+{ config, ... }:
 let
   grafanaPort = 3010;
   prometheusPort = 3020;
 in
 {
-  # Prometheus server
   services.prometheus = {
     enable = true;
     port = prometheusPort;
     globalConfig.scrape_interval = "15s";
-    # Exporters
     exporters.node = {
       enable = true;
       port = 3021;
       listenAddress = "127.0.0.1";
       enabledCollectors = [ "systemd" ];
     };
-    # Scrape targets
     scrapeConfigs = [
       {
         job_name = "node";

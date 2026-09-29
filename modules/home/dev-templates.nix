@@ -1,138 +1,63 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+# `dev <language> [directory]`: initialize a project from ../../templates.
+{ lib, pkgs, ... }:
 let
-  cfg = config.modules.home.devTemplates;
-  templates = import ../../templates;
-  supportedLanguages = builtins.attrNames templates;
-  supportedLanguagesString = lib.concatStringsSep " " supportedLanguages;
+  languages = lib.concatStringsSep " " (builtins.attrNames (import ../../templates));
+
   devCommand = pkgs.writeShellApplication {
     name = "dev";
-    # Intentionally omit pkgs.nix: writeShellApplication prepends runtimeInputs to PATH, which
-    # would shadow Determinate Nix with upstream nixpkgs Nix. Upstream then warns on
-    # Determinate-only settings in /etc/nix/nix.conf (eval-cores, lazy-trees, etc.).
+    # Omit pkgs.nix so it cannot shadow Determinate Nix on PATH.
     runtimeInputs = with pkgs; [
       direnv
       coreutils
       git
     ];
     text = ''
-            set -euo pipefail
+      repo="$HOME/.config/nix-config"
+      languages="${languages}"
 
-            supported_languages="${supportedLanguagesString}"
-            repo_path="$HOME/.config/nix-config"
-
-            usage() {
-              printf 'Usage: dev <language> [directory]\n' >&2
-              printf 'Supported languages: %s\n' "$supported_languages" >&2
-              exit 1
-            }
-
-            ensure_empty_dir() {
-              local dir="$1"
-              local entries=()
-
-              shopt -s dotglob nullglob
-              entries=("$dir"/*)
-              shopt -u dotglob nullglob
-
-              if [ "''${#entries[@]}" -ne 0 ]; then
-                printf 'Error: target directory is not empty: %s\n' "$dir" >&2
-                exit 1
-              fi
-            }
-
-            default_go_module() {
-              local project="$1"
-              local github_user
-
-              github_user="$(git config --global --get github.user 2>/dev/null || true)"
-
-              if [ -n "$github_user" ]; then
-                printf 'github.com/%s/%s\n' "$github_user" "$project"
-              else
-                printf '%s\n' "$project"
-              fi
-            }
-
-            if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-              usage
-            fi
-
-            language="$1"
-            # Canonicalize (handles ., .., relative, and absolute inputs alike).
-            target_dir="$(realpath -m -- "''${2:-.}")"
-
-            case " $supported_languages " in
-              *" $language "*) ;;
-              *)
-                printf 'Error: unsupported language %s\n' "$language" >&2
-                usage
-                ;;
-            esac
-
-            if [ ! -d "$repo_path" ]; then
-              printf 'Error: nix-config repo not found at %s\n' "$repo_path" >&2
-              exit 1
-            fi
-
-            project_name="$(basename "$target_dir")"
-
-            mkdir -p "$target_dir"
-            ensure_empty_dir "$target_dir"
-
-            (
-              cd "$target_dir"
-              nix flake init -t "path:$repo_path#$language"
-
-              case "$language" in
-                rust)
-                  nix develop --accept-flake-config -c cargo init --vcs none --name "$project_name"
-                  ;;
-                python)
-                  nix develop --accept-flake-config -c uv init --vcs none --name "$project_name" --no-python-downloads
-                  ;;
-                go)
-                  module_path="$(default_go_module "$project_name")"
-                  nix develop --accept-flake-config -c go mod init "$module_path"
-                  cat > main.go <<EOF
-      package main
-
-      import "fmt"
-
-      func main() {
-      	fmt.Println("hello from ''${project_name}")
+      usage() {
+        printf 'Usage: dev <language> [directory]\nSupported languages: %s\n' "$languages" >&2
+        exit 1
       }
-      EOF
-                  nix develop --accept-flake-config -c go fmt ./...
-                  ;;
-                svelte)
-                  nix develop --accept-flake-config -c bunx sv create . --template minimal --types ts --no-add-ons --install bun --no-dir-check
-                  ;;
-                typescript)
-                  nix develop --accept-flake-config -c bun init --yes
-                  ;;
-              esac
 
-              if [ -f .envrc ]; then
-                if ! direnv allow; then
-                  printf 'Warning: direnv allow failed for %s; shell authorization is incomplete, run direnv allow manually\n' "$target_dir" >&2
-                fi
-              fi
-            )
+      [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
+      language="$1"
+      case " $languages " in
+        *" $language "*) ;;
+        *) usage ;;
+      esac
+      [ -d "$repo" ] || { printf 'Error: nix-config repo not found at %s\n' "$repo" >&2; exit 1; }
 
-            printf 'Initialized %s project in %s\n' "$language" "$target_dir"
+      target="$(realpath -m -- "''${2:-.}")"
+      name="$(basename "$target")"
+      mkdir -p "$target"
+      if [ -n "$(ls -A "$target")" ]; then
+        printf 'Error: target directory is not empty: %s\n' "$target" >&2
+        exit 1
+      fi
+
+      cd "$target"
+      nix flake init -t "path:$repo#$language"
+      run() { nix develop --accept-flake-config -c "$@"; }
+      case "$language" in
+        rust) run cargo init --vcs none --name "$name" ;;
+        python) run uv init --vcs none --name "$name" --no-python-downloads ;;
+        go)
+          github_user="$(git config --global --get github.user || true)"
+          run go mod init "''${github_user:+github.com/$github_user/}$name"
+          printf 'package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("hello from %s")\n}\n' "$name" > main.go
+          ;;
+        svelte) run bunx sv create . --template minimal --types ts --no-add-ons --install bun --no-dir-check ;;
+        typescript) run bun init --yes ;;
+      esac
+
+      if [ -f .envrc ] && ! direnv allow; then
+        printf 'Warning: direnv allow failed; run it manually in %s\n' "$target" >&2
+      fi
+      printf 'Initialized %s project in %s\n' "$language" "$target"
     '';
   };
 in
 {
-  options.modules.home.devTemplates.enable =
-    lib.mkEnableOption "shared dev/template bootstrap command";
-
-  config = lib.mkIf cfg.enable {
-    home.packages = [ devCommand ];
-  };
+  home.packages = [ devCommand ];
 }

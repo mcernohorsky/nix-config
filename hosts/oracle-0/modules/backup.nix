@@ -1,228 +1,146 @@
+# Vaultwarden and chess backups, every six hours, to Cloudflare R2 (pruned
+# here) and to the append-only Restic server on matt-desktop (pruned there).
+# Restic backs up a verified SQLite copy, never the live WAL files.
 {
   config,
+  lib,
   pkgs,
   ...
 }:
 let
-  mkVaultwardenBackup =
-    {
-      repository,
-      onCalendar,
-      environmentFile ? null,
-      pruneOpts ? [ ],
-    }:
-    {
-      inherit repository environmentFile pruneOpts;
-      passwordFile = config.age.secrets.restic-password.path;
+  sqlite = "${pkgs.sqlite}/bin/sqlite3";
 
-      paths = [
-        "/var/lib/vaultwarden"
-      ];
-
-      exclude = [
-        # Exclude the live database (we backup the consistent copy)
-        "/var/lib/vaultwarden/db.sqlite3"
-        "/var/lib/vaultwarden/db.sqlite3-shm"
-        "/var/lib/vaultwarden/db.sqlite3-wal"
-      ];
-
-      timerConfig = {
-        OnCalendar = onCalendar;
-        Persistent = true;
-        RandomizedDelaySec = "5min";
-      };
-
-      # Prepare SQLite backup before running restic
-      backupPrepareCommand = ''
-        systemctl start --wait vaultwarden-backup-prepare.service
-      '';
-
-      initialize = true;
-
-      extraBackupArgs = [
-        "--verbose"
-        "--tag"
-        "vaultwarden"
-        "--tag"
-        "oracle-0"
-      ];
-    };
-
-  # Chess (repertoire-builder) backup: same shape, distinct tag/path/retention
-  # (plan: consistent prepared DB, six-hour cadence, daily 14 / weekly 8 /
-  # monthly 12). The live DB lives at
-  # /var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3
-  # (host dir mode 0750, DB 0600); we back up the verified atomic copy, not
-  # the live WAL files.
-  mkChessBackup =
-    {
-      repository,
-      onCalendar,
-      environmentFile ? null,
-      pruneOpts ? [ ],
-    }:
-    {
-      inherit repository environmentFile pruneOpts;
-      passwordFile = config.age.secrets.restic-password.path;
-
-      paths = [
-        "/var/lib/containers/repertoire-builder-v2"
-      ];
-
-      exclude = [
-        # Exclude the live database (we backup the consistent copy)
-        "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3"
-        "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3-shm"
-        "/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3-wal"
-        # Exclude runtime tool caches if any ever land beside the data
-        "/var/lib/containers/repertoire-builder-v2/data/.bun"
-      ];
-
-      timerConfig = {
-        OnCalendar = onCalendar;
-        Persistent = true;
-        RandomizedDelaySec = "5min";
-      };
-
-      backupPrepareCommand = ''
-        systemctl start --wait chess-backup-prepare.service
-      '';
-
-      initialize = true;
-
-      extraBackupArgs = [
-        "--verbose"
-        "--tag"
-        "chess"
-        "--tag"
-        "oracle-0"
-      ];
-    };
-in
-{
-  # Backup secrets (restic runs as root, so agenix defaults suffice).
-  age.secrets = {
-    restic-password.file = ../../../secrets/restic-password.age;
-    restic-r2-credentials.file = ../../../secrets/restic-r2-credentials.age;
-  };
-
-  # Pre-backup service to create consistent SQLite dump
-  systemd.services.vaultwarden-backup-prepare = {
-    description = "Prepare Vaultwarden backup (SQLite backup)";
-    serviceConfig.Type = "oneshot";
-    script = ''
-      set -euo pipefail
-
-      db=/var/lib/vaultwarden/db.sqlite3
-      backup=/var/lib/vaultwarden/db-backup.sqlite3
-
-      # Fail closed rather than silently reusing an old backup if the live DB
-      # is missing. Write beside the final file, verify it, then replace it.
-      test -s "$db"
-      tmp=$(mktemp /var/lib/vaultwarden/.db-backup.sqlite3.XXXXXX)
-      trap 'rm -f "$tmp"' EXIT
-
-      ${pkgs.sqlite}/bin/sqlite3 "$db" ".backup '$tmp'"
-      test "$(${pkgs.sqlite}/bin/sqlite3 "$tmp" 'PRAGMA integrity_check;')" = ok
-      chown vaultwarden:vaultwarden "$tmp"
-      chmod 0600 "$tmp"
-      mv -f "$tmp" "$backup"
-    '';
-  };
-
-  # Pre-backup service to create a consistent chess DB dump
-  systemd.services.chess-backup-prepare = {
-    description = "Prepare chess backup (SQLite backup)";
-    serviceConfig.Type = "oneshot";
-    script = ''
-      set -euo pipefail
-
-      db=/var/lib/containers/repertoire-builder-v2/data/repertoire.sqlite3
-      backup=/var/lib/containers/repertoire-builder-v2/data/db-backup.sqlite3
-
-      # Fail closed rather than silently reusing an old backup if the live DB
-      # is missing. Write beside the final file, verify it, then replace it.
-      test -s "$db"
-      tmp=$(mktemp /var/lib/containers/repertoire-builder-v2/data/.db-backup.sqlite3.XXXXXX)
-      trap 'rm -f "$tmp"' EXIT
-
-      ${pkgs.sqlite}/bin/sqlite3 "$db" ".backup '$tmp'"
-      test "$(${pkgs.sqlite}/bin/sqlite3 "$tmp" 'PRAGMA integrity_check;')" = ok
-      chmod 0600 "$tmp"
-      mv -f "$tmp" "$backup"
-    '';
-  };
-
-  systemd.services.restic-backups-chess-r2.serviceConfig = {
-    Restart = "on-failure";
-    RestartSec = "15min";
-  };
-  systemd.services.restic-backups-chess-desktop.serviceConfig = {
-    Restart = "on-failure";
-    RestartSec = "15min";
-  };
-  # The calendar timers provide the normal six-hour cadence. If either remote
-  # destination is temporarily unavailable, retry that pipeline independently
-  # instead of waiting for the next scheduled run.
-  systemd.services.restic-backups-vaultwarden-r2.serviceConfig = {
-    Restart = "on-failure";
-    RestartSec = "15min";
-  };
-  systemd.services.restic-backups-vaultwarden-desktop.serviceConfig = {
-    Restart = "on-failure";
-    RestartSec = "15min";
-  };
-
-  # Restic backup configuration
-  services.restic.backups = {
-    # Primary backup to Cloudflare R2
-    vaultwarden-r2 = mkVaultwardenBackup {
-      repository = "s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups";
-      environmentFile = config.age.secrets.restic-r2-credentials.path;
-      onCalendar = "*-*-* 00,06,12,18:00:00";
-
-      # Cleanup old backups (GFS retention policy)
-      # hourly: 6 days of granular recovery (24 × 6hr intervals)
-      # daily: 2 weeks, weekly: 2 months, monthly: 1 year, yearly: 2 years
-      pruneOpts = [
+  apps = {
+    vaultwarden = {
+      dir = "/var/lib/vaultwarden";
+      db = "db.sqlite3";
+      owner = "vaultwarden:vaultwarden";
+      minute = 0;
+      prune = [
         "--keep-hourly 24"
         "--keep-daily 14"
         "--keep-weekly 8"
         "--keep-monthly 12"
         "--keep-yearly 2"
-        "--tag"
-        "vaultwarden"
       ];
     };
-
-    # Secondary backup to matt-desktop via Restic REST Server.
-    # No pruneOpts: the REST server is append-only, pruning happens locally
-    # on matt-desktop. Runs offset by 30 minutes from the R2 backup.
-    vaultwarden-desktop = mkVaultwardenBackup {
-      repository = "rest:http://matt-desktop.tailc41cf5.ts.net:8000/";
-      onCalendar = "*-*-* 00,06,12,18:30:00";
-    };
-
-    # Chess primary backup to Cloudflare R2 (same bucket, distinct tag/path).
-    # Offset by 15 minutes from the vaultwarden R2 run.
-    chess-r2 = mkChessBackup {
-      repository = "s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups";
-      environmentFile = config.age.secrets.restic-r2-credentials.path;
-      onCalendar = "*-*-* 00,06,12,18:15:00";
-
-      pruneOpts = [
+    chess = {
+      dir = "/var/lib/containers/repertoire-builder-v2";
+      db = "data/repertoire.sqlite3";
+      owner = null;
+      minute = 15;
+      exclude = [ "data/.bun" ];
+      prune = [
         "--keep-daily 14"
         "--keep-weekly 8"
         "--keep-monthly 12"
-        "--tag"
-        "chess"
       ];
     };
+  };
 
-    # Chess secondary backup to matt-desktop, offset from the R2 chess run.
-    chess-desktop = mkChessBackup {
+  destinations = {
+    r2 = {
+      repository = "s3:https://7e3c26c90ada28d96fe960ee130dbebf.r2.cloudflarestorage.com/oracle-0-backups";
+      environmentFile = config.age.secrets.restic-r2-credentials.path;
+      offset = 0;
+      prune = true;
+    };
+    desktop = {
       repository = "rest:http://matt-desktop.tailc41cf5.ts.net:8000/";
-      onCalendar = "*-*-* 00,06,12,18:45:00";
+      environmentFile = null;
+      offset = 30;
+      prune = false;
     };
   };
+
+  mkBackup =
+    name: app: dest:
+    let
+      live = "${app.dir}/${app.db}";
+    in
+    {
+      inherit (dest) repository environmentFile;
+      passwordFile = config.age.secrets.restic-password.path;
+      initialize = true;
+      paths = [ app.dir ];
+      exclude = [
+        live
+        "${live}-shm"
+        "${live}-wal"
+      ]
+      ++ map (path: "${app.dir}/${path}") (app.exclude or [ ]);
+      backupPrepareCommand = "systemctl start --wait ${name}-backup-prepare.service";
+      pruneOpts = lib.optionals dest.prune (
+        app.prune
+        ++ [
+          "--tag"
+          name
+        ]
+      );
+      extraBackupArgs = [
+        "--verbose"
+        "--tag"
+        name
+        "--tag"
+        "oracle-0"
+      ];
+      timerConfig = {
+        OnCalendar = "*-*-* 00,06,12,18:${lib.fixedWidthNumber 2 (app.minute + dest.offset)}:00";
+        Persistent = true;
+        RandomizedDelaySec = "5min";
+      };
+    };
+
+  # Write a verified copy beside the live DB, failing closed if it is missing.
+  mkPrepare = name: app: {
+    description = "Prepare ${name} backup (SQLite backup)";
+    serviceConfig.Type = "oneshot";
+    script = ''
+      set -euo pipefail
+      db=${app.dir}/${app.db}
+      test -s "$db"
+      tmp=$(mktemp "$(dirname "$db")/.db-backup.sqlite3.XXXXXX")
+      trap 'rm -f "$tmp"' EXIT
+      ${sqlite} "$db" ".backup '$tmp'"
+      test "$(${sqlite} "$tmp" 'PRAGMA integrity_check;')" = ok
+      ${lib.optionalString (app.owner != null) ''chown ${app.owner} "$tmp"''}
+      chmod 0600 "$tmp"
+      mv -f "$tmp" "$(dirname "$db")/db-backup.sqlite3"
+    '';
+  };
+
+  forEach =
+    f:
+    lib.concatMapAttrs (
+      name: app: lib.mapAttrs' (dest: d: lib.nameValuePair "${name}-${dest}" (f name app d)) destinations
+    ) apps;
+in
+{
+  age.secrets = {
+    restic-password.file = ../../../secrets/restic-password.age;
+    restic-r2-credentials.file = ../../../secrets/restic-r2-credentials.age;
+  };
+
+  services.restic.backups = forEach mkBackup;
+
+  systemd.services =
+    lib.mapAttrs' (name: app: lib.nameValuePair "${name}-backup-prepare" (mkPrepare name app)) apps
+    # Retry an unavailable destination instead of waiting six hours.
+    //
+      lib.mapAttrs'
+        (
+          name: _:
+          lib.nameValuePair "restic-backups-${name}" {
+            serviceConfig = {
+              Restart = "on-failure";
+              RestartSec = "15min";
+            };
+          }
+        )
+        (
+          forEach (
+            _: _: _:
+            null
+          )
+        );
 }

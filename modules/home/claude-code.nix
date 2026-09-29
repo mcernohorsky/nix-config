@@ -1,12 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ lib, pkgs, ... }:
 let
-  cfg = config.modules.home.claudeCode;
-
   # Keep Claude's native installation writable so its background updater can
   # replace the binary without a Nix deployment. Only bootstrap it from HM.
   bootstrap = pkgs.writeShellApplication {
@@ -88,26 +81,10 @@ let
   };
 in
 {
-  options.modules.home.claudeCode.enable = lib.mkEnableOption "Claude Code";
-
-  config = lib.mkIf cfg.enable {
-    home.sessionPath = lib.mkAfter [ "$HOME/.local/bin" ];
-
-    # Nushell does not load Home Manager's POSIX session-variable script.
-    programs.nushell.extraEnv = lib.mkAfter ''
-      let claude_bin_dir = ($nu.home-dir | path join ".local" "bin")
-      $env.PATH = (
-        $env.PATH
-        | prepend $claude_bin_dir
-        | uniq
-      )
-    '';
-
-    home.activation.configureClaudeCode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${lib.getExe configure}
-    '';
-    home.activation.installClaudeCode = lib.hm.dag.entryAfter [ "configureClaudeCode" ] ''
-      run ${lib.getExe bootstrap}
-    '';
-  };
+  home.activation.configureClaudeCode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${lib.getExe configure}
+  '';
+  home.activation.installClaudeCode = lib.hm.dag.entryAfter [ "configureClaudeCode" ] ''
+    run ${lib.getExe bootstrap}
+  '';
 }

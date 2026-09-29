@@ -1,11 +1,9 @@
 _: {
   networking = {
-    # Enable systemd-networkd for proper container networking
     useNetworkd = true;
     useDHCP = false;
     networkmanager.enable = false;
 
-    # NAT configuration for containers
     nat = {
       enable = true;
       internalInterfaces = [
@@ -16,7 +14,6 @@ _: {
     };
   };
 
-  # systemd-networkd configuration
   systemd.network = {
     enable = true;
 
@@ -31,12 +28,9 @@ _: {
       linkConfig.RequiredForOnline = "routable";
     };
 
-    # Container bridge
-    netdevs."20-br-containers" = {
-      netdevConfig = {
-        Kind = "bridge";
-        Name = "br-containers";
-      };
+    netdevs."20-br-containers".netdevConfig = {
+      Kind = "bridge";
+      Name = "br-containers";
     };
 
     networks."20-br-containers" = {
@@ -53,7 +47,6 @@ _: {
       };
     };
 
-    # Container veth interfaces
     networks."30-container-ve" = {
       matchConfig.Name = "ve-* vb-*";
       networkConfig = {
@@ -63,11 +56,9 @@ _: {
     };
   };
 
-  # Most important: do not restart networkd just because the unit changed.
-  # This prevents SSH drops during activation.
+  # Restarting networkd during activation drops the management connection.
   systemd.services.systemd-networkd.restartIfChanged = false;
 
-  # DNS resolution
   services.resolved = {
     enable = true;
     settings.Resolve.FallbackDNS = [

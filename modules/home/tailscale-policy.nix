@@ -1,12 +1,5 @@
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 let
-  cfg = config.modules.home.tailscalePolicy;
-
   # Manages the tailnet policy file through the Tailscale API using the
   # policy_file-scoped OAuth client in agenix
   # (secrets/tailscale-policy-oauth.age, owner matt on both agent hosts).
@@ -18,13 +11,11 @@ let
     name = "tailscale-policy";
     runtimeInputs = [
       pkgs.curl
-      pkgs.python3
+      pkgs.jq
       pkgs.diffutils
       pkgs.coreutils
     ];
     text = ''
-      set -euo pipefail
-
       creds_file="''${TAILSCALE_POLICY_CREDENTIALS:-/run/agenix/tailscale-policy-oauth}"
       api="https://api.tailscale.com/api/v2/tailnet/-/acl"
 
@@ -47,7 +38,7 @@ let
         curl -fsS --max-time 20 \
           -d "client_id=$client_id" -d "client_secret=$client_secret" \
           https://api.tailscale.com/api/v2/oauth/token |
-          python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])'
+          jq -r .access_token
       }
 
       cmd="''${1:-}"
@@ -127,9 +118,5 @@ let
   };
 in
 {
-  options.modules.home.tailscalePolicy.enable = lib.mkEnableOption "Tailscale policy-file API helper";
-
-  config = lib.mkIf cfg.enable {
-    home.packages = [ tailscale-policy ];
-  };
+  home.packages = [ tailscale-policy ];
 }

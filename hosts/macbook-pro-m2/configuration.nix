@@ -5,12 +5,12 @@
   ...
 }:
 let
-  preferredMono = import ../../lib/mono-font.nix { inherit pkgs; };
-  nordwand-mono = pkgs.callPackage ../../packages/nordwand-mono.nix {
-    src = inputs.nordwand-mono;
-  };
+  mono = import ../../lib/mono-font.nix { inherit pkgs; };
 in
 {
+  nixpkgs.hostPlatform = "aarch64-darwin";
+  nixpkgs.config.allowUnfree = true;
+
   system = {
     stateVersion = 5;
     primaryUser = "matt";
@@ -19,10 +19,6 @@ in
   determinateNix = {
     enable = true;
     customSettings = {
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
       trusted-users = [
         "root"
         "@admin"
@@ -30,8 +26,6 @@ in
       ];
       download-buffer-size = 524288000; # 500 MiB
       eval-cores = 0;
-
-      # Binary caches for faster builds
       extra-substituters = [
         "https://helix.cachix.org"
       ];
@@ -51,13 +45,9 @@ in
     };
   };
 
-  nixpkgs.config.allowUnfree = true;
-
   age.identityPaths = [ "/Users/matt/.ssh/id_ed25519" ];
 
-  # Tailscale API OAuth client (policy_file scope) for programmatic ACL
-  # management. Decrypted for matt so agent sessions can mint short-lived
-  # API tokens without interactive logins.
+  # Read by the tailscale-policy helper.
   age.secrets.tailscale-policy-oauth = {
     file = ../../secrets/tailscale-policy-oauth.age;
     owner = "matt";
@@ -67,8 +57,8 @@ in
   fonts.packages = with pkgs; [
     nordwand-mono
     maple-mono.NF-unhinted
-    preferredMono.package
-    preferredMono.term.package
+    mono.package
+    mono.term.package
     nerd-fonts.jetbrains-mono
     iosevka
     inter
@@ -78,13 +68,32 @@ in
 
   users.users.matt = {
     home = "/Users/matt";
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+m8GdqyC7+Zya3fNjQcyJsYgLHtIOGQEH8a0BMmJJP"
-    ];
+    openssh.authorizedKeys.keys = [ (import ../../lib/keys.nix).matt ];
   };
 
   programs.bash.enable = true;
   programs.zsh.enable = true;
+
+  nix-homebrew = {
+    enable = true;
+    enableRosetta = true;
+    user = "matt";
+    mutableTaps = false;
+    autoMigrate = true;
+    taps = {
+      "homebrew/homebrew-core" = inputs.homebrew-core;
+      "homebrew/homebrew-cask" = inputs.homebrew-cask;
+      "anomalyco/homebrew-tap" = inputs.hex-homebrew-tap;
+      "abue-ammar/homebrew-tinycast" = inputs.tinycast-homebrew-tap;
+      "nolight132/homebrew-tap" = inputs.sonora-homebrew-tap;
+    };
+    # Third-party taps need an explicit trust entry for their casks.
+    trust.casks = [
+      "anomalyco/tap/hex"
+      "abue-ammar/tinycast/tinycast"
+      "nolight132/tap/sonora"
+    ];
+  };
 
   homebrew = {
     enable = true;
@@ -94,11 +103,9 @@ in
       upgrade = true;
     };
 
-    # Mirror nix-homebrew's pinned taps so the Brewfile agrees with them.
     taps = builtins.attrNames config.nix-homebrew.taps;
 
     casks = [
-      # Third-party tap (pinned via nix-homebrew.taps in flake.nix).
       "anomalyco/tap/hex"
       "abue-ammar/tinycast/tinycast"
       "nolight132/tap/sonora"
@@ -144,7 +151,7 @@ in
   };
 
   system.defaults = {
-    CustomUserPreferences.NSGlobalDomain.NSFixedPitchFont = preferredMono.family;
+    CustomUserPreferences.NSGlobalDomain.NSFixedPitchFont = mono.family;
 
     dock = {
       autohide = true;
@@ -202,8 +209,7 @@ in
   # Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
 
-  # Passwordless sudo for unattended agent and remote administration sessions.
-  # Keep this user-specific; the NixOS hosts use the same policy.
+  # Passwordless sudo for unattended agent sessions, as on the NixOS hosts.
   security.sudo.extraConfig = ''
     matt ALL=(root) NOPASSWD: ALL
   '';
@@ -213,26 +219,17 @@ in
 
   services.tailscale.enable = true;
 
-  # Plain OpenSSH (Apple Remote Login) answers tailnet port 22 on this host
-  # instead of the Tailscale SSH intercept: ssh-rule destinations cannot
-  # address a user-owned device without tagging it, so desktop-to-Mac SSH
-  # is governed by filter rules (already allowed). Tailscale SSH remains
-  # available as a client for outbound connections.
+  # Apple OpenSSH answers tailnet port 22 instead of Tailscale SSH: tailnet
+  # ssh rules cannot address an untagged user-owned device.
   services.openssh.enable = true;
 
-  # Tailscale is the management path to the NixOS hosts. Keep its daemon alive
-  # across crashes just like other long-running launchd services.
   launchd.daemons.tailscaled.serviceConfig = {
     KeepAlive = true;
     ThrottleInterval = 5;
   };
 
-  # Keep the Tailscale SSH server off: Apple OpenSSH answers tailnet port
-  # 22 instead (see services.openssh above), because the tailnet ssh policy
-  # cannot address this user-owned device. nix-darwin doesn't have
-  # extraUpFlags, hence `set` here.
-  # Do not run `tailscale up` during every activation: it can block forever when
-  # the machine is not authenticated. `set` changes only the SSH preference.
+  # Keep the Tailscale SSH server off (see services.openssh). nix-darwin has
+  # no extraUpFlags, and `tailscale up` can block when unauthenticated.
   system.activationScripts.postActivation.text = ''
     if ${pkgs.tailscale}/bin/tailscale status >/dev/null 2>&1; then
       ${pkgs.tailscale}/bin/tailscale set --ssh=false || \

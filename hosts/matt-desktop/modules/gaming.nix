@@ -1,35 +1,91 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
-  cemuX11Launcher = pkgs.writeShellScript "Cemu" ''
-    set -euo pipefail
+  # Cemu rewrites settings.xml at runtime, so enforce these at every launch.
+  # Seeded values only fill in a fresh file.
+  cemuSeed = {
+    console_language = "1";
+    play_boot_sound = "false";
+    "Graphic/GX2DrawdoneSync" = "true";
+    "Graphic/UpscaleFilter" = "1";
+    "Graphic/DownscaleFilter" = "0";
+    "Graphic/FullscreenScaling" = "0";
+    "Graphic/vkAccurateBarriers" = "true";
+    "Audio/delay" = "2";
+    "Audio/TVChannels" = "1";
+    "Audio/PadChannels" = "1";
+    "Audio/TVDevice" = "default";
+    "Audio/PadDevice" = "default";
+  };
+  cemuSettings = {
+    disable_screensaver = "true";
+    feral_gamemode = "true";
+    check_update = "false";
+    receive_untested_updates = "false";
+    "Graphic/api" = "1";
+    "Graphic/VSync" = "0";
+    "Graphic/AsyncCompile" = "true";
+    "Audio/api" = "3";
+    "Audio/TVVolume" = "100";
+    "Audio/PadVolume" = "100";
+  };
+  setAll = lib.concatMapAttrsStringSep "\n" (path: value: "set_value /content/${path} ${value}");
 
-    export GDK_BACKEND=x11
-    export SDL_VIDEODRIVER=x11
+  cemuX11Launcher = pkgs.writeShellApplication {
+    name = "Cemu";
+    runtimeInputs = [ pkgs.xmlstarlet ];
+    text = ''
+      # Cemu's native Wayland Vulkan presentation caps BotW at ~28 FPS.
+      export GDK_BACKEND=x11 SDL_VIDEODRIVER=x11
 
-    settings="''${XDG_CONFIG_HOME:-$HOME/.config}/Cemu/settings.xml"
-    if [ -f "$settings" ]; then
-      ${pkgs.xmlstarlet}/bin/xmlstarlet ed -L \
-        -u "/content/Graphic/api" -v "1" \
-        -u "/content/Graphic/VSync" -v "0" \
-        "$settings" || true
-    fi
+      config="''${XDG_CONFIG_HOME:-$HOME/.config}/Cemu"
+      settings="$config/settings.xml"
+      games="$HOME/Games/WiiU"
+      mkdir -p "$config" "$games/games" "$games/installers/updates" "$games/installers/dlc"
 
-    cmd=("${pkgs.cemu}/bin/Cemu")
-    if [ "''${CEMU_MANGOHUD:-0}" = "1" ]; then
-      cmd=("${pkgs.mangohud}/bin/mangohud" "''${cmd[@]}")
-    fi
+      # Set an element's text, creating it (and its parent) if missing.
+      set_value() {
+        local parent
+        parent="$(dirname "$1")"
+        if [ "$(xmlstarlet sel -t -v "count($parent)" "$settings")" = 0 ]; then
+          xmlstarlet ed -L -s "$(dirname "$parent")" -t elem -n "$(basename "$parent")" "$settings"
+        fi
+        if [ "$(xmlstarlet sel -t -v "count($1)" "$settings")" = 0 ]; then
+          xmlstarlet ed -L -s "$parent" -t elem -n "$(basename "$1")" "$settings"
+        fi
+        xmlstarlet ed -L -u "$1" -v "$2" "$settings"
+      }
 
-    exec ${pkgs.gamemode}/bin/gamemoderun "''${cmd[@]}" "$@"
-  '';
+      if [ -s "$settings" ] && ! xmlstarlet sel -t -v 'count(/content)' "$settings" 2>/dev/null | grep -qx 1; then
+        echo "Cemu settings.xml is malformed; moving it to settings.xml.invalid" >&2
+        mv -f "$settings" "$settings.invalid"
+      fi
+      if [ ! -s "$settings" ]; then
+        echo '<?xml version="1.0" encoding="UTF-8"?><content/>' > "$settings"
+        ${setAll cemuSeed}
+      fi
+      ${setAll cemuSettings}
+      if [ "$(xmlstarlet sel -t -v "count(/content/GamePaths)" "$settings")" = 0 ]; then
+        xmlstarlet ed -L -s /content -t elem -n GamePaths "$settings"
+      fi
+      if [ "$(xmlstarlet sel -t -v "count(/content/GamePaths/Entry[text()='$games/games'])" "$settings")" = 0 ]; then
+        xmlstarlet ed -L -s /content/GamePaths -t elem -n Entry -v "$games/games" "$settings"
+      fi
+
+      cmd=(${pkgs.cemu}/bin/Cemu)
+      if [ "''${CEMU_MANGOHUD:-0}" = 1 ]; then
+        cmd=(${pkgs.mangohud}/bin/mangohud "''${cmd[@]}")
+      fi
+      exec ${pkgs.gamemode}/bin/gamemoderun "''${cmd[@]}" "$@"
+    '';
+  };
 
   cemuX11 = pkgs.symlinkJoin {
     name = "cemu-x11";
     paths = [ pkgs.cemu ];
-    nativeBuildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
       rm -f "$out/bin/Cemu" "$out/bin/cemu"
-      makeWrapper ${cemuX11Launcher} "$out/bin/Cemu"
+      ln -s ${lib.getExe cemuX11Launcher} "$out/bin/Cemu"
       ln -s Cemu "$out/bin/cemu"
 
       # symlinkJoin materializes directories and symlinks only files, so
@@ -70,8 +126,6 @@ in
   };
 
   environment.systemPackages = with pkgs; [
-    # Wrapped to use Xwayland: Cemu's native Wayland Vulkan presentation path
-    # caps BotW around 27-28 FPS on this host.
     cemuX11
 
     mangohud
@@ -83,5 +137,4 @@ in
   ];
 
   hardware.graphics.enable32Bit = true;
-
 }

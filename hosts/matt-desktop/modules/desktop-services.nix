@@ -1,15 +1,7 @@
 # Desktop services used by COSMIC and graphical applications
-{
-  inputs,
-  pkgs,
-  ...
-}:
-
+{ pkgs, ... }:
 let
-  preferredMono = import ../../../lib/mono-font.nix { inherit pkgs; };
-  nordwand-mono = pkgs.callPackage ../../../packages/nordwand-mono.nix {
-    src = inputs.nordwand-mono;
-  };
+  mono = import ../../../lib/mono-font.nix { inherit pkgs; };
 in
 {
   security.polkit.enable = true;
@@ -17,7 +9,6 @@ in
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.cosmic-greeter.enableGnomeKeyring = true;
 
-  # Audio via PipeWire
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -50,7 +41,6 @@ in
     };
   };
 
-  # Bluetooth
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
@@ -67,20 +57,19 @@ in
 
   programs.dconf.enable = true;
 
-  # Fonts
   fonts = {
     enableDefaultPackages = true;
     packages = with pkgs; [
       nordwand-mono
       maple-mono.NF-unhinted
-      ioskeley-mono.normal
-      preferredMono.package
-      preferredMono.term.package
+      ioskeley-mono.standard
+      mono.package
+      mono.term.package
       jetbrains-mono
       noto-fonts
       noto-fonts-color-emoji
       open-sans
     ];
-    fontconfig.defaultFonts.monospace = [ preferredMono.family ];
+    fontconfig.defaultFonts.monospace = [ mono.family ];
   };
 }
