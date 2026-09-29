@@ -772,6 +772,7 @@
         "nixpkgs-server": "nixpkgs-server",
         "nordwand-mono": "nordwand-mono",
         "repertoire-builder": "repertoire-builder",
+        "sonora-homebrew-tap": "sonora-homebrew-tap",
         "tinycast-homebrew-tap": "tinycast-homebrew-tap"
       }
     },
@@ -793,6 +794,22 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "sonora-homebrew-tap": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790362374,
+        "narHash": "sha256-gOMvdBzEPHL0vMYS5COVY+npV6NRpUGOG9V+nee6ITc=",
+        "owner": "nolight132",
+        "repo": "homebrew-tap",
+        "rev": "f3fb9f60c47e586b201e44631b8e91da8eaab485",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nolight132",
+        "repo": "homebrew-tap",
         "type": "github"
       }
     },

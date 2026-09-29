@@ -102,6 +102,10 @@
       url = "github:abue-ammar/homebrew-tinycast";
       flake = false;
     };
+    sonora-homebrew-tap = {
+      url = "github:nolight132/homebrew-tap";
+      flake = false;
+    };
 
   };
 
@@ -152,12 +156,14 @@
                 "homebrew/homebrew-cask" = inputs.homebrew-cask;
                 "anomalyco/homebrew-tap" = inputs.hex-homebrew-tap;
                 "abue-ammar/homebrew-tinycast" = inputs.tinycast-homebrew-tap;
+                "nolight132/homebrew-tap" = inputs.sonora-homebrew-tap;
               };
               # Third-party taps need an explicit trust entry for their casks.
               trust = {
                 casks = [
                   "anomalyco/tap/hex"
                   "abue-ammar/tinycast/tinycast"
+                  "nolight132/tap/sonora"
                 ];
               };
             };

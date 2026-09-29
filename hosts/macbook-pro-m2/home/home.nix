@@ -57,7 +57,6 @@ in
 
     file = {
       ".hushlogin".text = ""; # Disable login messages in the terminal.
-      "Developer/.keep".text = ""; # The Developer directory has a cool icon on macOS.
       # Surface the nix-built bundle to Finder/Spotlight (the store itself
       # is not indexed).
       "Applications/Runebender.app".source = "${runebender}/Applications/Runebender.app";
@@ -77,7 +76,6 @@ in
       hyperfine
       gh
 
-      bitwarden-desktop
       runebender # Font editor (custom package in ../../../packages)
 
       nixd

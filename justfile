@@ -27,6 +27,10 @@ update-hex:
 update-tinycast:
     nix flake update tinycast-homebrew-tap
 
+# Update the Sonora Homebrew tap (including its pinned cask version)
+update-sonora:
+    nix flake update sonora-homebrew-tap
+
 # Enter development shell with deploy-rs
 dev:
     nix develop

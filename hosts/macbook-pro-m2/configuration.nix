@@ -101,8 +101,10 @@ in
       # Third-party tap (pinned via nix-homebrew.taps in flake.nix).
       "anomalyco/tap/hex"
       "abue-ammar/tinycast/tinycast"
+      "nolight132/tap/sonora"
       "affinity"
       "betterdisplay"
+      "bitwarden"
       "blender"
       "chatgpt"
       "claude"
