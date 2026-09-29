@@ -3,6 +3,8 @@ desktop_host := "matt-desktop.tailc41cf5.ts.net"
 mac_host := "macbook-pro-m2.tailc41cf5.ts.net"
 desktop_ssh := "tailscale ssh matt@" + desktop_host
 chess_url := "https://chess.cernohorsky.ca"
+# T3 snapshots PATH when it installs its service; use the same stable set here
+t3_path := "$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 default:
     @just --list
@@ -82,26 +84,38 @@ ping-all:
     done
     exit $fail
 
+# Report the T3 service version and unit on both workstations
+[macos]
+t3-status:
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" service status
+    {{ desktop_ssh }} '"$HOME/.local/bin/t3" service status'
+
+[linux]
 t3-status:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" service status'
-    {{ desktop_ssh }} '"$HOME/.local/bin/t3" service status'
+    "$HOME/.local/bin/t3" service status
 
 # Update both T3 services and repair launcher state left by older updaters
 t3-update: t3-update-mac t3-update-desktop
 
 [macos]
 t3-update-mac:
-    PATH="$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$HOME/.local/bin/t3" update --channel stable --yes
-    PATH="$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$HOME/.local/bin/t3" service install
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" update --channel stable --yes
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" service install
 
 [linux]
 t3-update-mac:
     ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just t3-update-mac'
 
 t3-update-desktop:
-    {{ desktop_ssh }} 'export PATH="$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/usr/bin:/bin"; "$HOME/.local/bin/t3" update --channel stable --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
+    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel stable --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
 
 # Pairing links are one-time credentials; generate them only when adding a device
+[macos]
+t3-pair-mac:
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" pair --tailscale
+
+[linux]
 t3-pair-mac:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" pair --tailscale'
 

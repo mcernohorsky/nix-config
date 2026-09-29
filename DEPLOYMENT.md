@@ -115,6 +115,7 @@ per-user service; the desktop keeps it running through lingering. Each host serv
 `https://<host>.tailc41cf5.ts.net/`. Pair clients with `just t3-pair-mac` or
 `just t3-pair-desktop`. Pairing links are credentials, so keep them out of Git and logs.
 Sign in to each CLI once per host (`claude auth login`, `codex login`, `opencode auth login`).
+Check both services with `just t3-status`, which works from either workstation.
 
 In the desktop app, keep **Settings → Connections → Local environment** off.
 Add both workstation HTTPS URLs as **Remote link** environments, including the
