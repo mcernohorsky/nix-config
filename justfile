@@ -7,6 +7,14 @@ chess_url := "https://chess.cernohorsky.ca"
 default:
     @just --list
 
+# Publish main and synchronize the other workstation without discarding work
+sync:
+    bash scripts/sync-workstations.sh
+
+# Check both workstations for unpublished work without pushing
+sync-check:
+    bash scripts/sync-workstations.sh --check
+
 # Update all flake inputs, or only the named ones (e.g. `just update hex hex-homebrew-tap`)
 update *inputs:
     nix flake update {{ inputs }}

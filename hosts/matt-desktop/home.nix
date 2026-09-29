@@ -259,13 +259,6 @@ in
     };
   };
 
-  home.shellAliases = {
-    ga = "git add";
-    gc = "git commit";
-    gp = "git push";
-    gl = "git pull";
-  };
-
   programs.nushell = {
     shellAliases = {
       ls = "eza --icons";

@@ -182,6 +182,5 @@ in
     direnv.config.warn_timeout = 0;
     # Atuin owns Ctrl-R.
     fzf.historyWidget.command = "";
-    jujutsu.enable = true;
   };
 }

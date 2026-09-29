@@ -2,6 +2,7 @@
 result
 result-*
 .direnv/
+.jj/
 
 # macOS specific
 .DS_Store

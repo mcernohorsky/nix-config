@@ -57,6 +57,7 @@ in
         "rm -rf *"
         "sudo rm -rf *"
         "git push *"
+        "jj git push *"
       ]
       ++ rules "subagent" "allow" [
         "muse"

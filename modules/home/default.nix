@@ -31,8 +31,12 @@ in
   home.shellAliases = {
     vi = "hx";
     vim = "hx";
-    gs = "git status";
-    gd = "git diff";
+    js = "jj status";
+    jd = "jj diff";
+    jl = "jj log";
+    jc = "jj commit";
+    jf = "jj git fetch";
+    jp = "jj git push --bookmark main";
   };
 
   # Interactive non-login bash (notably over SSH) never sources
@@ -89,13 +93,32 @@ in
     };
   };
 
+  programs.jujutsu = {
+    enable = true;
+    settings = {
+      user = {
+        name = "Matt Cernohorsky";
+        email = "matt@cernohorsky.ca";
+      };
+      ui = {
+        default-command = "status";
+        editor = "hx";
+      };
+      git.colocate = true;
+      aliases = {
+        st = [ "status" ];
+        d = [ "diff" ];
+        l = [ "log" ];
+      };
+    };
+  };
+
   programs.bat.enable = true;
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
   };
   programs.fzf.enable = true;
-  programs.lazygit.enable = true;
   programs.ripgrep.enable = true;
   programs.starship.enable = true;
   programs.yazi = {

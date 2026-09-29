@@ -212,6 +212,7 @@
               inputs.deploy-rs.packages.${system}.deploy-rs
               inputs.agenix.packages.${system}.default
               pkgs.just
+              pkgs.jujutsu
               pkgs.ssh-to-age
             ];
           };

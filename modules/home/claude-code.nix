@@ -35,11 +35,13 @@ let
     }
   );
 
-  gitRule = pkgs.writeText "claude-code-git-rule.md" ''
-    # Git commits and pull requests
+  gitRule = pkgs.writeText "claude-code-vcs-rule.md" ''
+    # Version control and pull requests
 
-    Before committing, inspect Git status and the repository's recent commit style.
-    Use the repository's configured Git author and committer. Never add Claude or
+    Use Jujutsu (jj) in repositories with a .jj directory. Inspect jj status,
+    jj diff, and recent descriptions before committing. Follow the repository's
+    AGENTS.md for bookmarks and synchronization. In other repositories, use Git.
+    Use the repository's configured author and committer. Never add Claude or
     other AI co-author trailers, "Generated with" text, or Claude session links to
     commit messages or pull request descriptions.
   '';

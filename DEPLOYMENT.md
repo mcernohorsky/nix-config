@@ -15,6 +15,31 @@ just deploy-all
 deploy-rs `magicRollback` is off because activation restarts networking on the only SSH path.
 Verify Oracle deploys with `just verify-chess`.
 
+## Version control and workstation sync
+
+Both workstations use Jujutsu in the existing checkout (`jj git init --colocate`
+when setting up an existing Git clone). There is one shared `main` bookmark.
+Jujutsu snapshots edits automatically; there is no staging step or stash workflow.
+
+```bash
+jj status
+jj diff
+jj commit -m 'Describe the change'
+jj bookmark set main -r @-
+nix develop -c just sync
+```
+
+`sync` works from either workstation. It checks that both working copies match
+their local `main` and that the peer has no unpublished commits, pushes `main`
+to GitHub, fetches it on the peer, and verifies identical commit IDs. If it
+finds unpublished work, commit and combine it before retrying; it does not
+discard changes. `just sync-check` runs the checks without publishing.
+
+To bring down changes published elsewhere, first check `jj status`, then run
+`jj git fetch --remote origin` and `jj new main` from an empty working copy.
+The `.git` directory remains for Nix flakes, GitHub, and Git-based application
+integrations. Daily version-control commands use `jj`.
+
 ## Oracle services
 
 - **repertoire-builder**: NixOS container `repertoire-builder` (PocketBase on private
