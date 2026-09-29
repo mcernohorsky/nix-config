@@ -91,6 +91,11 @@ per-user service; the desktop keeps it running through lingering. Each host serv
 `just t3-pair-desktop`. Pairing links are credentials, so keep them out of Git and logs.
 Sign in to each CLI once per host (`claude auth login`, `codex login`, `opencode auth login`).
 
+Run `just t3-update` to update both workstation servers on the stable channel. It
+reconciles each service with the newly installed CLI, repairing obsolete launcher
+state left by older updaters. This restarts T3 and interrupts active agent turns
+and terminals; saved threads, settings, and project files remain.
+
 ## Desktop BIOS reference
 
 Ryzen 7 5700X3D, ASUS ROG STRIX B450-F (BIOS 5901), 64 GiB DDR4, RTX 4080. Stable settings:

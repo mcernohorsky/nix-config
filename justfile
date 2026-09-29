@@ -78,6 +78,22 @@ t3-status:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" service status'
     {{ desktop_ssh }} '"$HOME/.local/bin/t3" service status'
 
+# Reconcile the service with the new CLI after updating. Older updaters can
+# leave an obsolete launcher protocol in service-state.json.
+t3-update: t3-update-mac t3-update-desktop
+
+[macos]
+t3-update-mac:
+    PATH="$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$HOME/.local/bin/t3" update --channel stable --yes
+    PATH="$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" "$HOME/.local/bin/t3" service install
+
+[linux]
+t3-update-mac:
+    ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just t3-update-mac'
+
+t3-update-desktop:
+    {{ desktop_ssh }} 'export PATH="$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/usr/bin:/bin"; "$HOME/.local/bin/t3" update --channel stable --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
+
 # Pairing links are one-time credentials; generate them only when adding a device
 t3-pair-mac:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" pair --tailscale'
