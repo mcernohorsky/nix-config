@@ -116,6 +116,9 @@ per-user service; the desktop keeps it running through lingering. Each host serv
 `just t3-pair-desktop`. Pairing links are credentials, so keep them out of Git and logs.
 Sign in to each CLI once per host (`claude auth login`, `codex login`, `opencode auth login`).
 Check both services with `just t3-status`, which works from either workstation.
+If code renders as missing-glyph boxes, T3's Settings → Appearance → Code font
+is pointing at a font family that no longer exists (renames in
+`lib/mono-font.nix` do not follow into T3's own settings).
 
 In the desktop app, keep **Settings → Connections → Local environment** off.
 Add both workstation HTTPS URLs as **Remote link** environments, including the
