@@ -1,6 +1,7 @@
-# Vaultwarden and chess backups, every six hours, to Cloudflare R2 (pruned
-# here) and to the append-only Restic server on matt-desktop (pruned there).
-# Restic backs up a verified SQLite copy, never the live WAL files.
+# Vaultwarden, chess and Groundwork backups, every six hours, to Cloudflare
+# R2 (pruned here) and to the append-only Restic server on matt-desktop
+# (pruned there). Restic backs up a verified SQLite copy, never the live WAL
+# files.
 {
   config,
   lib,
@@ -34,6 +35,30 @@ let
         "--keep-daily 14"
         "--keep-weekly 8"
         "--keep-monthly 12"
+      ];
+    };
+    # Groundwork's database must not be opened by a second program, so the
+    # server writes its own copy (VACUUM INTO) when asked by `request`;
+    # `db` is that copy. Map data is refetchable.
+    groundwork = {
+      dir = "/var/lib/containers/groundwork";
+      db = "state/tenants/main/backup/main.db";
+      request = "state/tenants/main/backup-now";
+      owner = null;
+      minute = 5;
+      exclude = [
+        "data"
+        "state/tenants/dev"
+        "state/tenants/main/main.db"
+        "state/tenants/main/main.db-wal"
+        "state/tenants/main/main.db-shm"
+      ];
+      prune = [
+        "--keep-hourly 24"
+        "--keep-daily 14"
+        "--keep-weekly 8"
+        "--keep-monthly 12"
+        "--keep-yearly 2"
       ];
     };
   };
@@ -98,6 +123,20 @@ let
     script = ''
       set -euo pipefail
       db=${app.dir}/${app.db}
+      ${lib.optionalString (app ? request) ''
+        # The app deletes the request once its fresh copy is in place.
+        request=${app.dir}/${app.request}
+        touch "$request"
+        for _ in $(seq 120); do
+          test -e "$request" || break
+          sleep 1
+        done
+        if test -e "$request"; then
+          rm -f "$request"
+          echo "${name} did not write a fresh copy" >&2
+          exit 1
+        fi
+      ''}
       test -s "$db"
       tmp=$(mktemp "$(dirname "$db")/.db-backup.sqlite3.XXXXXX")
       trap 'rm -f "$tmp"' EXIT

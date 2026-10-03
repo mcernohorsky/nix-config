@@ -65,6 +65,12 @@ let
       reverse_proxy 127.0.0.1:${toString config.services.vaultwarden.config.ROCKET_PORT}
     }
 
+    http://groundwork.cernohorsky.ca {
+      import common
+      # The app rate-limits sign-in by CF-Connecting-IP, passed through as-is.
+      reverse_proxy groundwork:7171
+    }
+
     http://metrics.cernohorsky.ca {
       import common
       header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -77,6 +83,7 @@ in
     ./hardware-configuration.nix
     ./disk-config.nix
     inputs.repertoire-builder.nixosModules.container
+    inputs.groundwork.nixosModules.container
     ./modules/backup.nix
     ./modules/monitoring.nix
     ./modules/networking.nix
@@ -163,4 +170,8 @@ in
     authSecretFile = config.age.secrets.repertoire-auth.path;
     trustedProxies = "192.168.100.1";
   };
+
+  # Data in /var/lib/containers/groundwork. A new server logs a setup code:
+  # `just groundwork-logs`.
+  services.groundwork.publicUrl = "https://groundwork.cernohorsky.ca";
 }

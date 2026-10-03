@@ -48,11 +48,19 @@ integrations. Daily version-control commands use `jj`.
   `just ssh-container`. If the frontend is stale, check the input revision with
   `nix flake metadata` and run `just update repertoire-builder`. Never bump versions
   to defeat caching.
+- **groundwork**: NixOS container `groundwork` (Rust server on private port 7171, module
+  from the groundwork flake). Caddy publishes <https://groundwork.cernohorsky.ca>. Data in
+  `/var/lib/containers/groundwork`: `state/` (back up) and `data/` (map data, fetched on
+  first start; delete to refetch). A new server logs a setup code: `just groundwork-logs`.
+  Locked out: `just groundwork-recover` logs a one-day owner sign-in code. Update with
+  `just update groundwork`.
 - **Vaultwarden**: <https://vault.cernohorsky.ca> through the Cloudflare Tunnel.
 - **Grafana**: <https://metrics.cernohorsky.ca>.
-- **Backups**: every six hours, Restic backs up verified SQLite copies of Vaultwarden and
-  chess to R2 (`oracle-0-backups`, pruned on Oracle) and to the append-only REST server
-  `rest:http://matt-desktop.tailc41cf5.ts.net:8000/` (pruned weekly on the desktop).
+- **Backups**: every six hours, Restic backs up verified SQLite copies of Vaultwarden,
+  chess and Groundwork to R2 (`oracle-0-backups`, pruned on Oracle) and to the append-only
+  REST server `rest:http://matt-desktop.tailc41cf5.ts.net:8000/` (pruned weekly on the
+  desktop). Groundwork's database must not be opened by a second program, so the server
+  writes its own copy when the backup asks for one.
 
 ### Restore Vaultwarden
 

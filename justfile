@@ -64,6 +64,13 @@ container-status:
 container-logs:
     ssh matt@{{ oracle_host }} sudo journalctl -M repertoire-builder -f
 
+groundwork-logs:
+    ssh matt@{{ oracle_host }} sudo journalctl -M groundwork -u groundwork -u groundwork-geodata -f
+
+# A one-day owner sign-in code in the log, for when no one can sign in.
+groundwork-recover:
+    ssh matt@{{ oracle_host }} 'sudo touch /var/lib/containers/groundwork/state/tenants/main/recover && sudo machinectl restart groundwork'
+
 container-restart:
     ssh matt@{{ oracle_host }} sudo machinectl restart repertoire-builder
 
