@@ -147,12 +147,21 @@ For the one-time stable-to-nightly Mac app switch, quit T3 and run
 `just t3-migrate-mac-app`. It removes the stable cask without `--zap` before
 deploying the nightly cask, preserving the shared T3 data directory.
 
+Home Manager installs OpenCode only when `~/.bun/bin/opencode` is missing. It
+does not pin or replace an existing installation, and `autoupdate` stays enabled.
+OpenCode's own updater controls its version between Nix deployments.
+
 Run `just opencode-update` to update OpenCode on both workstations and restart its
 background servers. Updating the CLI alone can leave an older server running;
 for example, a 2.0.19 server rejected free models with "OpenCode's free tier can
 only be used from within OpenCode" while a fresh 2.0.22 server worked. Restarting
 interrupts active turns; saved sessions remain. `opencode --standalone` uses a
 fresh private server when diagnosing an installed-versus-running version mismatch.
+Restarting fixes that mismatch, but does not guarantee free-tier access: official
+v2.0.22 clients also have upstream reports of this rejection
+([#52903](https://github.com/anomalyco/opencode/issues/52903),
+[#52904](https://github.com/anomalyco/opencode/issues/52904)). Compare a fresh
+session and another host before attributing a persistent rejection to local plugins.
 
 OpenCode uses native v2 permissions, without an approval-reviewer plugin. Routine
 tools, subagent launches, ordinary pushes, and external-directory access are
