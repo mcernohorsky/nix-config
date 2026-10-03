@@ -21,13 +21,6 @@ sync-check:
 update *inputs:
     nix flake update {{ inputs }}
 
-# Update the Sonora Homebrew tap (including its pinned cask version)
-update-sonora:
-    nix flake update sonora-homebrew-tap
-
-build-oracle:
-    nix build .#nixosConfigurations.oracle-0.config.system.build.toplevel
-
 # Builds on the Mac's native Linux builder or the desktop's binfmt emulation
 deploy-oracle:
     nix run .#deploy-rs -- .#oracle-0 --skip-checks
@@ -55,9 +48,6 @@ deploy-all: deploy-oracle deploy-desktop deploy-mac
 
 reboot_check := 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ No reboot needed"; fi'
 
-ssh host=oracle_host:
-    ssh matt@{{ host }}
-
 container-status:
     ssh matt@{{ oracle_host }} sudo machinectl list
 
@@ -81,15 +71,6 @@ ssh-container:
 verify-chess:
     curl -fsSL {{ chess_url }}/api/version | jq .
     curl -fsSL {{ chess_url }}/version.json | jq .
-
-# Exit non-zero if any host is unreachable
-ping-all:
-    #!/usr/bin/env bash
-    fail=0
-    for host in {{ oracle_host }} {{ desktop_host }} {{ mac_host }}; do
-      ping -c 1 "$host" >/dev/null && echo "✅ $host" || { echo "❌ $host" >&2; fail=1; }
-    done
-    exit $fail
 
 # Report the T3 service version and unit on both workstations
 [macos]
@@ -117,21 +98,11 @@ t3-update-mac:
 t3-update-desktop:
     {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel nightly --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
 
-# Remove the stable app without zapping shared T3 data, then install the configured nightly cask
-[macos]
-t3-migrate-mac-app:
-    /opt/homebrew/bin/brew uninstall --cask t3-code
-    just deploy-mac
-
 # Update OpenCode's Bun install and replace the running background server too
 opencode-update: opencode-update-mac opencode-update-desktop
 
 [macos]
-opencode-update-mac:
-    "$HOME/.bun/bin/opencode" upgrade --method bun
-    "$HOME/.bun/bin/opencode" service restart
-    # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
-    -pkill -P 1 -f 'opencode serve --hostname='
+opencode-update-mac: opencode-update-local
 
 [linux]
 opencode-update-mac:
@@ -140,41 +111,11 @@ opencode-update-mac:
 opencode-update-desktop:
     {{ desktop_ssh }} 'cd ~/.config/nix-config && nix develop -c just opencode-update-local'
 
-[linux]
 opencode-update-local:
     "$HOME/.bun/bin/opencode" upgrade --method bun
     "$HOME/.bun/bin/opencode" service restart
     # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
     -pkill -P 1 -f 'opencode serve --hostname='
-
-# Pairing links are one-time credentials; generate them only when adding a device
-[macos]
-t3-pair-mac:
-    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" pair --tailscale
-
-[linux]
-t3-pair-mac:
-    ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" pair --tailscale'
-
-t3-pair-desktop:
-    {{ desktop_ssh }} '"$HOME/.local/bin/t3" pair --tailscale'
-
-# T3 Connect only publishes push notifications; remote access stays on Tailscale.
-# Restarting the service applies the link but interrupts active turns.
-
-# Link T3 Connect for push notifications, then restart the service
-[macos]
-t3-connect-mac:
-    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" connect link --publish-only
-    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" service restart
-
-[linux]
-t3-connect-mac:
-    ssh -t matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just t3-connect-mac'
-
-# Link T3 Connect for push notifications, then restart the service
-t3-connect-desktop:
-    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" connect link --publish-only --headless && "$HOME/.local/bin/t3" service restart'
 
 # Tailnet policy: show | diff | apply (apply prompts for YES, guarded by the live ETag)
 tailscale-policy action="diff":
