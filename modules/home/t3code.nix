@@ -16,7 +16,7 @@ let
     ];
     text = ''
       if [ ! -x "$HOME/.local/bin/t3" ]; then
-        curl -fsSL https://t3.codes/install.sh | sh
+        curl -fsSL https://t3.codes/install.sh | T3CODE_CHANNEL=nightly sh
       fi
     '';
   };
@@ -31,7 +31,7 @@ let
       settings_dir="$HOME/.t3/userdata"
       settings="$settings_dir/desktop-settings.json"
       mkdir -p "$settings_dir"
-      if [ -f "$settings" ] && jq -e '.localEnvironmentEnabled == false' "$settings" >/dev/null; then
+      if [ -f "$settings" ] && jq -e '.localEnvironmentEnabled == false and .updateChannel == "nightly" and .updateChannelConfiguredByUser == true' "$settings" >/dev/null; then
         exit 0
       fi
 
@@ -39,9 +39,9 @@ let
       tmp=$(mktemp "$settings_dir/.desktop-settings.XXXXXX")
       trap 'rm -f "$tmp"' EXIT
       if [ -f "$settings" ]; then
-        jq '.localEnvironmentEnabled = false' "$settings" > "$tmp"
+        jq '.localEnvironmentEnabled = false | .updateChannel = "nightly" | .updateChannelConfiguredByUser = true' "$settings" > "$tmp"
       else
-        printf '%s\n' '{"localEnvironmentEnabled":false}' > "$tmp"
+        printf '%s\n' '{"localEnvironmentEnabled":false,"updateChannel":"nightly","updateChannelConfiguredByUser":true}' > "$tmp"
       fi
       mv "$tmp" "$settings"
     '';

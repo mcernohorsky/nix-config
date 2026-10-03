@@ -134,10 +134,18 @@ Mac's own URL when using the app on the Mac. "Local environment" starts a second
 embedded server; the remote link connects to the persistent service already
 managed by this configuration.
 
-Run `just t3-update` to update both workstation servers on the stable channel. It
-reconciles each service with the newly installed CLI, repairing obsolete launcher
+Run `just t3-update` to update both workstation servers on the nightly channel. The
+Mac desktop app uses Homebrew's `t3-code@nightly` cask and follows nightly through
+its own updater. Home Manager keeps Local environment off and selects the nightly app channel.
+V2 uses `statev2.sqlite`, copied once from the V1 database; later chats do not sync
+between V1 and V2. All connected apps must support V2 (mobile requires the V2 beta).
+The update recipe reconciles each service with the newly installed CLI, repairing obsolete launcher
 state left by older updaters. This restarts T3 and interrupts active agent turns
 and terminals; saved threads, settings, and project files remain.
+
+For the one-time stable-to-nightly Mac app switch, quit T3 and run
+`just t3-migrate-mac-app`. It removes the stable cask without `--zap` before
+deploying the nightly cask, preserving the shared T3 data directory.
 
 Run `just opencode-update` to update OpenCode on both workstations and restart its
 background servers. Updating the CLI alone can leave an older server running;

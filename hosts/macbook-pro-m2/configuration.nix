@@ -138,7 +138,7 @@ in
       "stats"
       "steam"
       "surfshark"
-      "t3-code"
+      "t3-code@nightly"
       "zed"
     ];
 

@@ -107,7 +107,7 @@ t3-update: t3-update-mac t3-update-desktop
 
 [macos]
 t3-update-mac:
-    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" update --channel stable --yes
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" update --channel nightly --yes
     PATH="{{ t3_path }}" "$HOME/.local/bin/t3" service install
 
 [linux]
@@ -115,7 +115,13 @@ t3-update-mac:
     ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just t3-update-mac'
 
 t3-update-desktop:
-    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel stable --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
+    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel nightly --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
+
+# Remove the stable app without zapping shared T3 data, then install the configured nightly cask
+[macos]
+t3-migrate-mac-app:
+    /opt/homebrew/bin/brew uninstall --cask t3-code
+    just deploy-mac
 
 # Update OpenCode's Bun install and replace the running background server too
 opencode-update: opencode-update-mac opencode-update-desktop
