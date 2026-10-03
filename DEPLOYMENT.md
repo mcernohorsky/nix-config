@@ -112,68 +112,21 @@ promote `data/db-backup.sqlite3` to `data/repertoire.sqlite3`.
 - **Native Linux builder**: `determinate-nixd status`, `determinate-nixd auth login`,
   `sudo launchctl kickstart -k system/systems.determinate.nix-daemon`.
 - **Changed host key**: `ssh-keygen -R <host>` and then `ssh-keyscan -H <host> >> ~/.ssh/known_hosts`.
-- **bun2nix EPERM in repertoire-builder**: keep `bunInstallFlags = "--linker=isolated --backend=copyfile";`
-  (a string). `BUN_CONFIG_INSTALL_BACKEND` does not override the hook.
 
 ## Workstation tools
 
-Claude Code, Codex CLI, OpenCode, and T3 Code are bootstrapped by Home Manager into writable
-locations (`~/.local/bin` and `~/.bun/bin`) and then update themselves. T3 installs its own
-per-user service; the desktop keeps it running through lingering. Each host serves T3 on
-`https://<host>.tailc41cf5.ts.net/`. Pair clients with `just t3-pair-mac` or
-`just t3-pair-desktop`. Pairing links are credentials, so keep them out of Git and logs.
-Sign in to each CLI once per host (`claude auth login`, `codex login`, `opencode auth login`).
-Check both services with `just t3-status`, which works from either workstation.
-If code renders as missing-glyph boxes, T3's Settings → Appearance → Code font
-is pointing at a font family that no longer exists (renames in
-`lib/mono-font.nix` do not follow into T3's own settings).
+Home Manager bootstraps Claude Code, Codex CLI, OpenCode, and T3 Code into `~/.local/bin`
+and `~/.bun/bin`; they update themselves afterwards. On each new host:
 
-In the desktop app, keep **Settings → Connections → Local environment** off.
-Add both workstation HTTPS URLs as **Remote link** environments, including the
-Mac's own URL when using the app on the Mac. "Local environment" starts a second
-embedded server; the remote link connects to the persistent service already
-managed by this configuration.
+1. Sign in once: `claude auth login`, `codex login`, `opencode auth login`.
+2. Pair T3 clients with `just t3-pair-mac` or `just t3-pair-desktop`. Pairing links are
+   credentials; keep them out of Git and logs.
+3. In the T3 desktop app, keep **Settings → Connections → Local environment** off and add
+   both `https://<host>.tailc41cf5.ts.net/` URLs (including the Mac's own) as **Remote link**
+   environments.
 
-Run `just t3-update` to update both workstation servers on the nightly channel. The
-Mac desktop app uses Homebrew's `t3-code@nightly` cask and follows nightly through
-its own updater. Home Manager keeps Local environment off and selects the nightly app channel.
-V2 uses `statev2.sqlite`, copied once from the V1 database; later chats do not sync
-between V1 and V2. All connected apps must support V2 (mobile requires the V2 beta).
-The update recipe reconciles each service with the newly installed CLI, repairing obsolete launcher
-state left by older updaters. This restarts T3 and interrupts active agent turns
-and terminals; saved threads, settings, and project files remain.
-
-For the one-time stable-to-nightly Mac app switch, quit T3 and run
-`just t3-migrate-mac-app`. It removes the stable cask without `--zap` before
-deploying the nightly cask, preserving the shared T3 data directory.
-
-Home Manager installs OpenCode only when `~/.bun/bin/opencode` is missing. It
-does not pin or replace an existing installation, and `autoupdate` stays enabled.
-OpenCode's own updater controls its version between Nix deployments.
-
-Run `just opencode-update` to update OpenCode on both workstations and restart its
-background servers. Updating the CLI alone can leave an older server running;
-for example, a 2.0.19 server rejected free models with "OpenCode's free tier can
-only be used from within OpenCode" while a fresh 2.0.22 server worked. Restarting
-interrupts active turns; saved sessions remain. The recipe also stops orphaned
-`opencode serve --hostname=…` processes that T3 Code left behind when it restarted;
-one 2.0.18 orphan ran for days after upgrades. `opencode --standalone` uses a
-fresh private server when diagnosing an installed-versus-running version mismatch.
-Restarting fixes that mismatch, but does not guarantee free-tier access: official
-v2.0.22 clients also have upstream reports of this rejection
-([#52903](https://github.com/anomalyco/opencode/issues/52903),
-[#52904](https://github.com/anomalyco/opencode/issues/52904)). Compare a fresh
-session and another host before attributing a persistent rejection to local plugins.
-
-OpenCode uses native v2 permissions, without an approval-reviewer plugin. Routine
-tools, subagent launches, ordinary pushes, and external-directory access are
-allowed. Upstream `.env` read prompts and agent-specific restrictions remain.
-Recursive deletion, destructive Git commands, forced pushes, infrastructure
-destruction, and backup forgetting ask for approval; disk formatting/wiping and
-file shredding are denied. Command matching covers common wrappers and absolute
-executable paths, but is not a sandbox. Do not use `--auto` to retain the ask rules.
-The default and Muse subagent use Muse Free; the Go route requires an active Go
-subscription and is separately selectable in `/models`.
+`just t3-status` checks both T3 services. `just t3-update` and `just opencode-update` update
+both workstations and restart their servers, interrupting active turns.
 
 ## Desktop BIOS reference
 
