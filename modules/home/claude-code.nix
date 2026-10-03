@@ -18,6 +18,8 @@ let
   desiredSettings = pkgs.writeText "claude-code-settings.json" (
     builtins.toJSON {
       autoUpdatesChannel = "latest";
+      # Keep learned cross-session context out of coding sessions.
+      autoMemoryEnabled = false;
       attribution = {
         commit = "";
         pr = "";
