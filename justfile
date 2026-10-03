@@ -159,6 +159,23 @@ t3-pair-mac:
 t3-pair-desktop:
     {{ desktop_ssh }} '"$HOME/.local/bin/t3" pair --tailscale'
 
+# T3 Connect only publishes push notifications; remote access stays on Tailscale.
+# Restarting the service applies the link but interrupts active turns.
+
+# Link T3 Connect for push notifications, then restart the service
+[macos]
+t3-connect-mac:
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" connect link --publish-only
+    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" service restart
+
+[linux]
+t3-connect-mac:
+    ssh -t matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just t3-connect-mac'
+
+# Link T3 Connect for push notifications, then restart the service
+t3-connect-desktop:
+    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" connect link --publish-only --headless && "$HOME/.local/bin/t3" service restart'
+
 # Tailnet policy: show | diff | apply (apply prompts for YES, guarded by the live ETag)
 tailscale-policy action="diff":
     tailscale-policy {{ action }} {{ if action == "show" { "" } else { "tailscale-acl.json" } }}

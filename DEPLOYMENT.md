@@ -110,6 +110,8 @@ and `~/.bun/bin`; they update themselves afterwards. On each new host:
 3. In the T3 desktop app, keep **Settings → Connections → Local environment** off and add
    both `https://<host>.tailc41cf5.ts.net/` URLs (including the Mac's own) as **Remote link**
    environments.
+4. For push notifications, run `just t3-connect-mac` or `just t3-connect-desktop` and approve
+   in the browser.
 
 `just t3-status` checks both T3 services. `just t3-update` and `just opencode-update` update
 both workstations and restart their servers, interrupting active turns.
