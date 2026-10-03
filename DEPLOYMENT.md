@@ -155,7 +155,9 @@ Run `just opencode-update` to update OpenCode on both workstations and restart i
 background servers. Updating the CLI alone can leave an older server running;
 for example, a 2.0.19 server rejected free models with "OpenCode's free tier can
 only be used from within OpenCode" while a fresh 2.0.22 server worked. Restarting
-interrupts active turns; saved sessions remain. `opencode --standalone` uses a
+interrupts active turns; saved sessions remain. The recipe also stops orphaned
+`opencode serve --hostname=…` processes that T3 Code left behind when it restarted;
+one 2.0.18 orphan ran for days after upgrades. `opencode --standalone` uses a
 fresh private server when diagnosing an installed-versus-running version mismatch.
 Restarting fixes that mismatch, but does not guarantee free-tier access: official
 v2.0.22 clients also have upstream reports of this rejection

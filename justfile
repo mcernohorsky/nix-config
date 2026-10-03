@@ -130,6 +130,8 @@ opencode-update: opencode-update-mac opencode-update-desktop
 opencode-update-mac:
     "$HOME/.bun/bin/opencode" upgrade --method bun
     "$HOME/.bun/bin/opencode" service restart
+    # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
+    -pkill -P 1 -f 'opencode serve --hostname='
 
 [linux]
 opencode-update-mac:
@@ -142,6 +144,8 @@ opencode-update-desktop:
 opencode-update-local:
     "$HOME/.bun/bin/opencode" upgrade --method bun
     "$HOME/.bun/bin/opencode" service restart
+    # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
+    -pkill -P 1 -f 'opencode serve --hostname='
 
 # Pairing links are one-time credentials; generate them only when adding a device
 [macos]
