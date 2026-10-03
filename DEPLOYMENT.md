@@ -17,28 +17,17 @@ Verify Oracle deploys with `just verify-chess`.
 
 ## Version control and workstation sync
 
-Both workstations use Jujutsu in the existing checkout (`jj git init --colocate`
-when setting up an existing Git clone). There is one shared `main` bookmark.
-Jujutsu snapshots edits automatically; there is no staging step or stash workflow.
+Both workstations share one jj `main` bookmark (colocated with Git for Nix and GitHub).
 
 ```bash
-jj status
-jj diff
 jj commit -m 'Describe the change'
 jj bookmark set main -r @-
-nix develop -c just sync
+nix develop -c just sync    # push main and update the other workstation
 ```
 
-`sync` works from either workstation. It checks that both working copies match
-their local `main` and that the peer has no unpublished commits, pushes `main`
-to GitHub, fetches it on the peer, and verifies identical commit IDs. If it
-finds unpublished work, commit and combine it before retrying; it does not
-discard changes. `just sync-check` runs the checks without publishing.
-
-To bring down changes published elsewhere, first check `jj status`, then run
-`jj git fetch --remote origin` and `jj new main` from an empty working copy.
-The `.git` directory remains for Nix flakes, GitHub, and Git-based application
-integrations. Daily version-control commands use `jj`.
+`sync` refuses to run if either host has unpublished work; commit and combine it first.
+`just sync-check` runs the checks only. To pull changes from an empty working copy:
+`jj git fetch --remote origin && jj new main`.
 
 ## Oracle services
 
@@ -48,19 +37,16 @@ integrations. Daily version-control commands use `jj`.
   `just ssh-container`. If the frontend is stale, check the input revision with
   `nix flake metadata` and run `just update repertoire-builder`. Never bump versions
   to defeat caching.
-- **groundwork**: NixOS container `groundwork` (Rust server on private port 7171, module
-  from the groundwork flake). Caddy publishes <https://groundwork.cernohorsky.ca>. Data in
-  `/var/lib/containers/groundwork`: `state/` (back up) and `data/` (map data, fetched on
-  first start; delete to refetch). A new server logs a setup code: `just groundwork-logs`.
-  Locked out: `just groundwork-recover` logs a one-day owner sign-in code. Update with
-  `just update groundwork`.
+- **groundwork**: NixOS container `groundwork` (port 7171), published at
+  <https://groundwork.cernohorsky.ca>. Data in `/var/lib/containers/groundwork`: back up
+  `state/`; `data/` is refetchable map data. `just groundwork-logs` shows a new server's
+  setup code; `just groundwork-recover` logs a one-day owner sign-in code.
 - **Vaultwarden**: <https://vault.cernohorsky.ca> through the Cloudflare Tunnel.
 - **Grafana**: <https://metrics.cernohorsky.ca>.
 - **Backups**: every six hours, Restic backs up verified SQLite copies of Vaultwarden,
   chess and Groundwork to R2 (`oracle-0-backups`, pruned on Oracle) and to the append-only
   REST server `rest:http://matt-desktop.tailc41cf5.ts.net:8000/` (pruned weekly on the
-  desktop). Groundwork's database must not be opened by a second program, so the server
-  writes its own copy when the backup asks for one.
+  desktop).
 
 ### Restore Vaultwarden
 

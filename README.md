@@ -25,8 +25,4 @@ nix-darwin, NixOS, and Home Manager for three hosts:
 3. `nix shell nixpkgs#jujutsu -c jj git clone --colocate git@github.com:mcernohorsky/nix-config.git ~/.config/nix-config`
 4. `nix develop -c just deploy-mac`
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment, recovery, and operations.
-
-Use `jj` for version control and keep configuration work on `main`. Run
-`nix develop -c just sync` after committing to publish and synchronize both
-workstations. The Git storage remains colocated for Nix and GitHub compatibility.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment, sync, recovery, and operations.
