@@ -1,6 +1,4 @@
 # OpenCode and Browser Control are Bun globals so their self-updaters work.
-# The repo-local reviewer plugin lives in .opencode/plugins (absolute-path
-# global plugins do not load in v2).
 { lib, pkgs, ... }:
 let
   bun = lib.getExe pkgs.bun;
@@ -25,6 +23,18 @@ let
       inherit action resource effect;
     });
 
+  # The shell scanner checks each command in a compound expression, but keeps
+  # wrappers and executable paths. Cover sudo/env prefixes and /bin/rm too.
+  shellRules =
+    effect: commands:
+    rules "shell" effect (
+      lib.concatMap (command: [
+        command
+        "* ${command}"
+        "*/${command}"
+      ]) commands
+    );
+
   astra = level: extra: {
     mode = "subagent";
     model = "openai/gpt-6-astra#${lib.toLower level}";
@@ -47,29 +57,44 @@ in
   xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
     "$schema" = "https://opencode.ai/config.json";
     autoupdate = true;
-    model = "opencode-go/muse-spark-1.3-contributor";
-    # Ask-by-default is suspended: the reviewer plugin runs on the full
-    # session model, doubling cost and hitting rate limits. Subagent launches
-    # other than the routine targets still ask.
+    model = "opencode/muse-spark-1.3-contributor-free";
+    # V2 already allows routine tools and subagents. Keep its agent-specific
+    # restrictions and .env prompts, while allowing access outside the project.
+    # These command patterns are guardrails, not a shell sandbox. Avoid --auto:
+    # it bypasses ask rules (deny rules remain enforced).
     permissions =
-      rules "shell" "allow" [ "*" ]
-      ++ rules "shell" "ask" [
-        "rm -rf *"
-        "sudo rm -rf *"
-        "git push *"
-        "jj git push *"
+      rules "external_directory" "allow" [ "*" ]
+      ++ shellRules "ask" [
+        "rm *-*r*"
+        "rm *-*R*"
+        "rm *--recursive*"
+        "git *reset *--hard*"
+        "git *clean *-*f*"
+        "git *clean *--force*"
+        "git *push *--force*"
+        "git *push *-f*"
+        "git *push *+*"
+        "jj *git push *--allow-backwards*"
+        "terraform *destroy *"
+        "tofu *destroy *"
+        "terraform *apply *-destroy*"
+        "tofu *apply *-destroy*"
+        "restic *forget *"
       ]
-      ++ rules "subagent" "allow" [
-        "muse"
-        "explore"
-        "general"
-      ]
-      ++ rules "subagent" "ask" [ "*" ];
+      ++ shellRules "deny" [
+        "mkfs* *"
+        "wipefs *"
+        "shred *"
+        "dd *of=/dev/*"
+        "diskutil erase* *"
+        "diskutil partitionDisk *"
+        "sgdisk *--zap*"
+      ];
     # Model-routing subagents only; Build and Plan keep upstream defaults.
     agents = {
       muse = {
         mode = "subagent";
-        model = "opencode-go/muse-spark-1.3-contributor#xhigh";
+        model = "opencode/muse-spark-1.3-contributor-free#xhigh";
         description = ''
           Muse Spark 1.3 Contributor at XHIGH reasoning.
           Always use this target when delegating work to Muse. It suits

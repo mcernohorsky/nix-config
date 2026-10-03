@@ -117,6 +117,26 @@ t3-update-mac:
 t3-update-desktop:
     {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel stable --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
 
+# Update OpenCode's Bun install and replace the running background server too
+opencode-update: opencode-update-mac opencode-update-desktop
+
+[macos]
+opencode-update-mac:
+    "$HOME/.bun/bin/opencode" upgrade --method bun
+    "$HOME/.bun/bin/opencode" service restart
+
+[linux]
+opencode-update-mac:
+    ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just opencode-update-mac'
+
+opencode-update-desktop:
+    {{ desktop_ssh }} 'cd ~/.config/nix-config && nix develop -c just opencode-update-local'
+
+[linux]
+opencode-update-local:
+    "$HOME/.bun/bin/opencode" upgrade --method bun
+    "$HOME/.bun/bin/opencode" service restart
+
 # Pairing links are one-time credentials; generate them only when adding a device
 [macos]
 t3-pair-mac:

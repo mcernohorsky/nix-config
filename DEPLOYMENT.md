@@ -139,6 +139,23 @@ reconciles each service with the newly installed CLI, repairing obsolete launche
 state left by older updaters. This restarts T3 and interrupts active agent turns
 and terminals; saved threads, settings, and project files remain.
 
+Run `just opencode-update` to update OpenCode on both workstations and restart its
+background servers. Updating the CLI alone can leave an older server running;
+for example, a 2.0.19 server rejected free models with "OpenCode's free tier can
+only be used from within OpenCode" while a fresh 2.0.22 server worked. Restarting
+interrupts active turns; saved sessions remain. `opencode --standalone` uses a
+fresh private server when diagnosing an installed-versus-running version mismatch.
+
+OpenCode uses native v2 permissions, without an approval-reviewer plugin. Routine
+tools, subagent launches, ordinary pushes, and external-directory access are
+allowed. Upstream `.env` read prompts and agent-specific restrictions remain.
+Recursive deletion, destructive Git commands, forced pushes, infrastructure
+destruction, and backup forgetting ask for approval; disk formatting/wiping and
+file shredding are denied. Command matching covers common wrappers and absolute
+executable paths, but is not a sandbox. Do not use `--auto` to retain the ask rules.
+The default and Muse subagent use Muse Free; the Go route requires an active Go
+subscription and is separately selectable in `/models`.
+
 ## Desktop BIOS reference
 
 Ryzen 7 5700X3D, ASUS ROG STRIX B450-F (BIOS 5901), 64 GiB DDR4, RTX 4080. Stable settings:
