@@ -35,17 +35,6 @@ let
       ]) commands
     );
 
-  astra = level: extra: {
-    mode = "subagent";
-    model = "openai/gpt-6-astra#${lib.toLower level}";
-    steps = 30;
-    description = ''
-      GPT-6 Astra at ${level} reasoning.
-      ${extra}
-      Complete the assigned task and return the result to the parent. Near the
-      step limit, prioritize reporting findings, completed work, and open issues.
-    '';
-  };
 in
 {
   home.packages = [
@@ -98,17 +87,9 @@ in
         description = ''
           Muse Spark 1.3 Contributor at XHIGH reasoning.
           Always use this target when delegating work to Muse. It suits
-          implementation, research, exploration, review, parallelizable work,
-          and cheaper supporting work when the primary model is GPT-6 Astra.
+          implementation, research, exploration, review, and parallelizable work.
         '';
       };
-      astra = astra "LOW" ''
-        The default Astra target: use it whenever Astra is requested without a
-        reasoning level. For medium or high, use astra-medium or astra-high; for
-        xhigh or max, the user runs Astra directly as the primary model.
-      '';
-      astra-medium = astra "MEDIUM" "Use when the user explicitly requests Astra medium.";
-      astra-high = astra "HIGH" "Use when the user explicitly requests Astra high.";
     };
   };
 
