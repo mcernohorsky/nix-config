@@ -1,5 +1,10 @@
 # OpenCode and Browser Control are Bun globals so their self-updaters work.
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   bun = lib.getExe pkgs.bun;
   browserControl = "$HOME/.bun/bin/browser-control";
@@ -42,6 +47,14 @@ in
     browser-control-extension-path
   ];
   home.shellAliases.oc = "opencode";
+
+  # XDG_CACHE_HOME changes Bun's default global install location. Pin both
+  # paths so T3's updater modifies the same binaries that its PATH resolves.
+  home.file.".bunfig.toml".text = ''
+    [install]
+    globalDir = "${config.home.homeDirectory}/.bun/install/global"
+    globalBinDir = "${config.home.homeDirectory}/.bun/bin"
+  '';
 
   xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
     "$schema" = "https://opencode.ai/config.json";
