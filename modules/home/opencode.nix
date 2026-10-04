@@ -8,6 +8,11 @@
 let
   bun = lib.getExe pkgs.bun;
   browserControl = "$HOME/.bun/bin/browser-control";
+  bunConfig = ''
+    [install]
+    globalDir = "${config.home.homeDirectory}/.bun/install/global"
+    globalBinDir = "${config.home.homeDirectory}/.bun/bin"
+  '';
 
   # Upstream documents `npm root --global`, which misses the Bun layout.
   browser-control-extension-path = pkgs.writeShellApplication {
@@ -50,11 +55,10 @@ in
 
   # XDG_CACHE_HOME changes Bun's default global install location. Pin both
   # paths so T3's updater modifies the same binaries that its PATH resolves.
-  home.file.".bunfig.toml".text = ''
-    [install]
-    globalDir = "${config.home.homeDirectory}/.bun/install/global"
-    globalBinDir = "${config.home.homeDirectory}/.bun/bin"
-  '';
+  # Bun checks the XDG file instead of the home file when XDG_CONFIG_HOME
+  # is set; T3's Mac launchd environment does not set it.
+  home.file.".bunfig.toml".text = bunConfig;
+  xdg.configFile.".bunfig.toml".text = bunConfig;
 
   xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
     "$schema" = "https://opencode.ai/config.json";
