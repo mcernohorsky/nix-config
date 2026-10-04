@@ -49,7 +49,8 @@ let
 in
 {
   home.packages = [
-    bunPackage
+    (lib.hiPrio bunPackage)
+    pkgs.bun # Keep bunx alongside the wrapped bun command.
     browser-control-extension-path
   ];
   home.shellAliases.oc = "opencode";
