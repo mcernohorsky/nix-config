@@ -44,7 +44,7 @@ in
   '';
   home.activation.installCodexCli = lib.hm.dag.entryAfter [ "installOpenCode" ] ''
     if [ ! -x "$HOME/.bun/bin/codex" ]; then
-      run ${lib.getExe pkgs.bun} install -g @openai/codex
+      run env BUN_INSTALL="$HOME/.bun" ${lib.getExe pkgs.bun} install -g @openai/codex
     fi
   '';
 }

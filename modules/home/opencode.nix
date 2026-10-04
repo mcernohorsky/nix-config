@@ -6,13 +6,14 @@
   ...
 }:
 let
-  bun = lib.getExe pkgs.bun;
-  browserControl = "$HOME/.bun/bin/browser-control";
-  bunConfig = ''
-    [install]
-    globalDir = "${config.home.homeDirectory}/.bun/install/global"
-    globalBinDir = "${config.home.homeDirectory}/.bun/bin"
+  # Bun's XDG default differs from our provider PATH, and its globalDir
+  # setting does not redirect installs in 1.4.2. The environment variable does.
+  bunPackage = pkgs.writeShellScriptBin "bun" ''
+    export BUN_INSTALL="${config.home.homeDirectory}/.bun"
+    exec ${lib.getExe pkgs.bun} "$@"
   '';
+  bun = lib.getExe bunPackage;
+  browserControl = "$HOME/.bun/bin/browser-control";
 
   # Upstream documents `npm root --global`, which misses the Bun layout.
   browser-control-extension-path = pkgs.writeShellApplication {
@@ -48,17 +49,10 @@ let
 in
 {
   home.packages = [
-    pkgs.bun
+    bunPackage
     browser-control-extension-path
   ];
   home.shellAliases.oc = "opencode";
-
-  # XDG_CACHE_HOME changes Bun's default global install location. Pin both
-  # paths so T3's updater modifies the same binaries that its PATH resolves.
-  # Bun checks the XDG file instead of the home file when XDG_CONFIG_HOME
-  # is set; T3's Mac launchd environment does not set it.
-  home.file.".bunfig.toml".text = bunConfig;
-  xdg.configFile.".bunfig.toml".text = bunConfig;
 
   xdg.configFile."opencode/opencode.json".text = builtins.toJSON {
     "$schema" = "https://opencode.ai/config.json";
