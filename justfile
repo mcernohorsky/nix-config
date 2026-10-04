@@ -98,7 +98,7 @@ t3-update-mac:
 t3-update-desktop:
     {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel nightly --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
 
-# Update OpenCode's Bun install and replace the running background server too
+# Update OpenCode's Bun install and stop T3's stale per-session servers
 opencode-update: opencode-update-mac opencode-update-desktop
 
 [macos]
@@ -113,7 +113,6 @@ opencode-update-desktop:
 
 opencode-update-local:
     "$HOME/.bun/bin/opencode" upgrade --method bun
-    "$HOME/.bun/bin/opencode" service restart
     # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
     -pkill -P 1 -f 'opencode serve --hostname='
 

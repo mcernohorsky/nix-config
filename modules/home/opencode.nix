@@ -79,18 +79,6 @@ in
         "diskutil partitionDisk *"
         "sgdisk *--zap*"
       ];
-    # Model-routing subagents only; Build and Plan keep upstream defaults.
-    agents = {
-      muse = {
-        mode = "subagent";
-        model = "opencode/muse-spark-1.3-contributor-free#xhigh";
-        description = ''
-          Muse Spark 1.3 Contributor at XHIGH reasoning.
-          Always use this target when delegating work to Muse. It suits
-          implementation, research, exploration, review, and parallelizable work.
-        '';
-      };
-    };
   };
 
   # Bootstrap once; the tools update themselves afterwards.
