@@ -41,8 +41,6 @@ nix develop -c just sync    # push main and update the other workstation
   <https://groundwork.cernohorsky.ca>. Data in `/var/lib/containers/groundwork`: back up
   `state/`; `data/` is refetchable map data. `just groundwork-logs` shows a new server's
   setup code; `just groundwork-recover` logs a one-day owner sign-in code.
-- **Cernohorsky website**: stateless container `cernohorsky` serves <https://cernohorsky.ca>.
-  Publish the website repo, then `just update cernohorsky-site` and `just deploy-oracle`.
 - **Vaultwarden**: <https://vault.cernohorsky.ca> through the Cloudflare Tunnel.
 - **Grafana**: <https://metrics.cernohorsky.ca>.
 - **Backups**: every six hours, Restic backs up verified SQLite copies of Vaultwarden,

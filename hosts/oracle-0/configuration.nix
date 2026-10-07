@@ -41,18 +41,8 @@ let
     }
 
     http://cernohorsky.ca {
-      import common
-      reverse_proxy cernohorsky:8080
-    }
-
-    http://www.cernohorsky.ca {
-      import common
-      redir https://cernohorsky.ca{uri} 308
-    }
-
-    http:// {
-      import common
-      respond "Not found" 404
+      bind 127.0.0.1
+      respond "Matt's website will be here someday." 200
     }
 
     http://chess.cernohorsky.ca {
@@ -94,7 +84,6 @@ in
     ./disk-config.nix
     inputs.repertoire-builder.nixosModules.container
     inputs.groundwork.nixosModules.container
-    inputs.cernohorsky-site.nixosModules.container
     ./modules/backup.nix
     ./modules/monitoring.nix
     ./modules/networking.nix
