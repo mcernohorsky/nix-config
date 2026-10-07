@@ -547,11 +547,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1791358226,
-        "narHash": "sha256-GpngJwXNVxQGDCtwFAEloBcl7fhyTCVfd9Csy/IWJPY=",
+        "lastModified": 1791360271,
+        "narHash": "sha256-fTUwADE1B5mRj68r2IL0mvDMSRnyLfviT0dykaQEg9s=",
         "ref": "refs/heads/main",
-        "rev": "6ee176eddaba7c01d0f28696cf75cb9618c2e4cd",
-        "revCount": 3,
+        "rev": "5592f4f813dd47b08ee4ebd354ba89c917e0ae8b",
+        "revCount": 4,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/cernohorsky-site"
       },
