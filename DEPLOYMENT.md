@@ -103,10 +103,10 @@ promote `data/db-backup.sqlite3` to `data/repertoire.sqlite3`.
 
 ## Workstation tools
 
-Home Manager bootstraps Claude Code, Codex CLI, OpenCode, and T3 Code into `~/.local/bin`
-and `~/.bun/bin`; they update themselves afterwards. On each new host:
+Home Manager bootstraps Claude Code, Codex CLI, Grok Build, OpenCode, and T3 Code into
+`~/.local/bin` and `~/.bun/bin`; they update themselves afterwards. On each new host:
 
-1. Sign in once: `claude auth login`, `codex login`, `opencode auth login`.
+1. Sign in once: `claude auth login`, `codex login`, `grok login`, `opencode auth login`.
 2. Pair T3 clients with `t3 pair --tailscale`. Pairing links are credentials; keep them out
    of Git and logs.
 3. In the T3 desktop app, keep **Settings → Connections → Local environment** off and add
