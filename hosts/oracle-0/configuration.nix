@@ -40,9 +40,14 @@ let
       }
     }
 
-    http://cernohorsky.ca, http://exo.cernohorsky.ca, http://bunny.cernohorsky.ca {
+    http://cernohorsky.ca {
       import common
       reverse_proxy cernohorsky:8080
+    }
+
+    http:// {
+      import common
+      respond "Not found" 404
     }
 
     http://chess.cernohorsky.ca {
