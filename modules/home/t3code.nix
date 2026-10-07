@@ -74,7 +74,6 @@ in
   home.activation.installT3Code = lib.hm.dag.entryAfter [
     "installCodexCli"
     "installClaudeCode"
-    "installGrokBuild"
   ] ''
     run ${lib.getExe bootstrap}
   '';
