@@ -45,6 +45,11 @@ let
       reverse_proxy cernohorsky:8080
     }
 
+    http://www.cernohorsky.ca {
+      import common
+      redir https://cernohorsky.ca{uri} 308
+    }
+
     http:// {
       import common
       respond "Not found" 404
