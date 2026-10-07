@@ -40,9 +40,9 @@ let
       }
     }
 
-    http://cernohorsky.ca {
-      bind 127.0.0.1
-      respond "Matt's website will be here someday." 200
+    http://cernohorsky.ca, http://exo.cernohorsky.ca, http://bunny.cernohorsky.ca {
+      import common
+      reverse_proxy cernohorsky:8080
     }
 
     http://chess.cernohorsky.ca {
@@ -84,6 +84,7 @@ in
     ./disk-config.nix
     inputs.repertoire-builder.nixosModules.container
     inputs.groundwork.nixosModules.container
+    inputs.cernohorsky-site.nixosModules.container
     ./modules/backup.nix
     ./modules/monitoring.nix
     ./modules/networking.nix
