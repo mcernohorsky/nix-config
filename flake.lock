@@ -544,14 +544,15 @@
     },
     "leskly-site": {
       "inputs": {
-        "nixpkgs": "nixpkgs_5"
+        "nixpkgs": "nixpkgs_5",
+        "rust-overlay": "rust-overlay_3"
       },
       "locked": {
-        "lastModified": 1791395767,
-        "narHash": "sha256-wc25WtGIsmgKeFw5W5QpdJTqArjI5mFTu59aG+c2dBA=",
+        "lastModified": 1791398187,
+        "narHash": "sha256-w6nBKH0r0CKjsWrIcXVHrzrrSmYUOgEx0SVA5cG+zOc=",
         "ref": "refs/heads/main",
-        "rev": "7a6644b138cb8d9398ada095bd7b5d540cfd6b5f",
-        "revCount": 5,
+        "rev": "0267d718f83f03cb4447f86f1bbe5ed7d80e1b81",
+        "revCount": 6,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/cernohorsky-site"
       },
@@ -851,6 +852,27 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "rev": "20fd44bc663daa53a2575e01293e24e681d62244",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_3": {
+      "inputs": {
+        "nixpkgs": [
+          "leskly-site",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791361643,
+        "narHash": "sha256-HMdfSb1ONHs1RbSkQtCXm+tWEsTikisWWtXDnv0aQ+I=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "8afee9fa8caa877a4feb65adc33e8d72f3747dc9",
         "type": "github"
       },
       "original": {
