@@ -76,6 +76,7 @@
     repertoire-builder.url = "git+ssh://git@github.com/mcernohorsky/repertoire-builder";
     # Pins its own nixpkgs and Rust toolchain (rust-toolchain.toml).
     groundwork.url = "git+ssh://git@github.com/mcernohorsky/groundwork";
+    leskly-site.url = "git+ssh://git@github.com/mcernohorsky/cernohorsky-site";
     cosmic-manager = {
       url = "github:HeitorAugustoLN/cosmic-manager";
       inputs.nixpkgs.follows = "nixpkgs";

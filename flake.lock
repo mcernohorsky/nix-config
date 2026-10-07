@@ -542,6 +542,24 @@
         "type": "github"
       }
     },
+    "leskly-site": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_5"
+      },
+      "locked": {
+        "lastModified": 1791358226,
+        "narHash": "sha256-GpngJwXNVxQGDCtwFAEloBcl7fhyTCVfd9Csy/IWJPY=",
+        "ref": "refs/heads/main",
+        "rev": "6ee176eddaba7c01d0f28696cf75cb9618c2e4cd",
+        "revCount": 3,
+        "type": "git",
+        "url": "ssh://git@github.com/mcernohorsky/cernohorsky-site"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/mcernohorsky/cernohorsky-site"
+      }
+    },
     "nix": {
       "inputs": {
         "flake-parts": "flake-parts_2",
@@ -691,6 +709,22 @@
     },
     "nixpkgs_5": {
       "locked": {
+        "lastModified": 1790667561,
+        "narHash": "sha256-lyxynSjGp3iwU0pP+qSAkOusB7HulvCoeYoRv2FkxLg=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d51c455eef38fab6cbdf10a089b87b5be2c7a950",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-26.05-small",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_6": {
+      "locked": {
         "lastModified": 1790600678,
         "narHash": "sha256-6k3n7X2UsZ6tAlWTz99RimiZab+17tMUrw9sRUcELiA=",
         "owner": "nixos",
@@ -705,7 +739,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_6": {
+    "nixpkgs_7": {
       "locked": {
         "lastModified": 1785571196,
         "narHash": "sha256-KoTsyMQqnXQZq8deCEnu4QkyldkwH/bpMMhUcfMdGIw=",
@@ -741,7 +775,7 @@
       "inputs": {
         "bun2nix": "bun2nix",
         "flake-utils": "flake-utils_2",
-        "nixpkgs": "nixpkgs_6"
+        "nixpkgs": "nixpkgs_7"
       },
       "locked": {
         "lastModified": 1788908165,
@@ -773,8 +807,9 @@
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
+        "leskly-site": "leskly-site",
         "nix-homebrew": "nix-homebrew",
-        "nixpkgs": "nixpkgs_5",
+        "nixpkgs": "nixpkgs_6",
         "nixpkgs-server": "nixpkgs-server",
         "nordwand-mono": "nordwand-mono",
         "repertoire-builder": "repertoire-builder",

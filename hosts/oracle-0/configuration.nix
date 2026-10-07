@@ -45,6 +45,16 @@ let
       respond "Matt's website will be here someday." 200
     }
 
+    http://leskly.com {
+      import common
+      reverse_proxy leskly:8080
+    }
+
+    http://www.leskly.com {
+      import common
+      redir https://leskly.com{uri} 308
+    }
+
     http://chess.cernohorsky.ca {
       import common
       # Hashed assets are served immutable by the app. Everything else is
@@ -84,6 +94,7 @@ in
     ./disk-config.nix
     inputs.repertoire-builder.nixosModules.container
     inputs.groundwork.nixosModules.container
+    inputs.leskly-site.nixosModules.container
     ./modules/backup.nix
     ./modules/monitoring.nix
     ./modules/networking.nix
