@@ -548,11 +548,11 @@
         "rust-overlay": "rust-overlay_3"
       },
       "locked": {
-        "lastModified": 1791441627,
-        "narHash": "sha256-ngoRm7Gmg4vydTRonEzuikGw8dTeph9nRR01pd5rTNM=",
+        "lastModified": 1791441876,
+        "narHash": "sha256-3W6Y2dmrIhtld7not1A0NCyS5M28ijs0gL20x7xz4s0=",
         "ref": "refs/heads/main",
-        "rev": "a1daf9591c569163dce47c3f80be707bd0a1035a",
-        "revCount": 14,
+        "rev": "b1296f4d3c7aeda0bbef1dcfa405d8056d43d93a",
+        "revCount": 15,
         "type": "git",
         "url": "ssh://git@github.com/mcernohorsky/cernohorsky-site"
       },
