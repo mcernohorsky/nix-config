@@ -80,6 +80,10 @@ t3-status:
 # Update both T3 services and repair launcher state left by older updaters
 t3-update: t3-update-mac t3-update-desktop
 
+# Prints a credential QR/link to the caller's terminal; never capture it in logs.
+t3-pair-full host:
+    bash scripts/t3-pair-full.sh {{ host }}
+
 [macos]
 t3-update-mac:
     PATH="{{ t3_path }}" "$HOME/.local/bin/t3" update --channel nightly --yes
@@ -106,9 +110,27 @@ opencode-update-desktop:
     {{ desktop_ssh }} 'cd ~/.config/nix-config && nix develop -c just opencode-update-local'
 
 opencode-update-local:
-    "$HOME/.bun/bin/opencode" upgrade --method bun
+    # Fall back to npm when OpenCode's release service is unavailable.
+    "$HOME/.bun/bin/opencode" upgrade --method bun || BUN_INSTALL="$HOME/.bun" bun install -g --trust @opencode/cli@latest
     # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
     -pkill -P 1 -f 'opencode serve --hostname='
+
+# Keep the writable provider installs current on both workstations.
+providers-update: providers-update-mac providers-update-desktop opencode-update
+
+[macos]
+providers-update-mac: providers-update-local
+
+[linux]
+providers-update-mac:
+    ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just providers-update-local'
+
+providers-update-desktop:
+    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/claude" update && BUN_INSTALL="$HOME/.bun" bun install -g @openai/codex'
+
+providers-update-local:
+    "$HOME/.local/bin/claude" update
+    BUN_INSTALL="$HOME/.bun" bun install -g @openai/codex
 
 # Tailnet policy: show | diff | apply (apply prompts for YES, guarded by the live ETag)
 tailscale-policy action="diff":

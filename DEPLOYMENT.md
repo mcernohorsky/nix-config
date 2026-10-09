@@ -101,8 +101,8 @@ Home Manager bootstraps Claude Code, Codex CLI, OpenCode, and T3 Code into
 `~/.local/bin` and `~/.bun/bin`; they update themselves afterwards. On each new host:
 
 1. Sign in once: `claude auth login`, `codex login`, `opencode auth login`.
-2. Pair T3 clients with `t3 pair --tailscale`. Pairing links are credentials; keep them out
-   of Git and logs.
+2. Pair full-access T3 clients with `just t3-pair-full mac` or `just t3-pair-full desktop`.
+   Pairing links are credentials; keep them out of Git and logs.
 3. In the T3 desktop app, keep **Settings → Connections → Local environment** off and add
    both `https://<host>.tailc41cf5.ts.net/` URLs (including the Mac's own) as **Remote link**
    environments.
@@ -111,6 +111,7 @@ Home Manager bootstraps Claude Code, Codex CLI, OpenCode, and T3 Code into
 
 `just t3-status` checks both T3 services. `just t3-update` and `just opencode-update` update
 both workstations and restart their servers, interrupting active turns.
+`just providers-update` updates Claude Code, Codex CLI, and OpenCode on both workstations.
 
 ## Desktop BIOS reference
 
