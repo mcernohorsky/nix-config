@@ -24,6 +24,5 @@ in
   "vaultwarden-admin-token.age".publicKeys = all;
   "restic-password.age".publicKeys = all;
   "restic-r2-credentials.age".publicKeys = all;
-  "repertoire-auth.age".publicKeys = oracle;
   "grafana-secret-key.age".publicKeys = all;
 }

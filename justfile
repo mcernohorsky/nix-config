@@ -2,7 +2,6 @@ oracle_host := "oracle-0.tailc41cf5.ts.net"
 desktop_host := "matt-desktop.tailc41cf5.ts.net"
 mac_host := "macbook-pro-m2.tailc41cf5.ts.net"
 desktop_ssh := "tailscale ssh matt@" + desktop_host
-chess_url := "https://chess.cernohorsky.ca"
 # T3 snapshots PATH when it installs its service; use the same stable set here
 t3_path := "$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
@@ -51,8 +50,8 @@ reboot_check := 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink 
 container-status:
     ssh matt@{{ oracle_host }} sudo machinectl list
 
-container-logs:
-    ssh matt@{{ oracle_host }} sudo journalctl -M repertoire-builder -f
+container-logs name:
+    ssh matt@{{ oracle_host }} sudo journalctl -M {{ name }} -f
 
 groundwork-logs:
     ssh matt@{{ oracle_host }} sudo journalctl -M groundwork -u groundwork -u groundwork-geodata -f
@@ -61,16 +60,11 @@ groundwork-logs:
 groundwork-recover:
     ssh matt@{{ oracle_host }} 'sudo touch /var/lib/containers/groundwork/state/tenants/main/recover && sudo machinectl restart groundwork'
 
-container-restart:
-    ssh matt@{{ oracle_host }} sudo machinectl restart repertoire-builder
+container-restart name:
+    ssh matt@{{ oracle_host }} sudo machinectl restart {{ name }}
 
-ssh-container:
-    ssh -t matt@{{ oracle_host }} sudo machinectl shell repertoire-builder
-
-# Backend and frontend versions of the deployed chess app
-verify-chess:
-    curl -fsSL {{ chess_url }}/api/version | jq .
-    curl -fsSL {{ chess_url }}/version.json | jq .
+ssh-container name:
+    ssh -t matt@{{ oracle_host }} sudo machinectl shell {{ name }}
 
 # Report the T3 service version and unit on both workstations
 [macos]

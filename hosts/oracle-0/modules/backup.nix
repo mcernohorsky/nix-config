@@ -1,4 +1,4 @@
-# Vaultwarden, chess and Groundwork backups, every six hours, to Cloudflare
+# Vaultwarden and Groundwork backups, every six hours, to Cloudflare
 # R2 (pruned here) and to the append-only Restic server on matt-desktop
 # (pruned there). Restic backs up a verified SQLite copy, never the live WAL
 # files.
@@ -23,18 +23,6 @@ let
         "--keep-weekly 8"
         "--keep-monthly 12"
         "--keep-yearly 2"
-      ];
-    };
-    chess = {
-      dir = "/var/lib/containers/repertoire-builder-v2";
-      db = "data/repertoire.sqlite3";
-      owner = null;
-      minute = 15;
-      exclude = [ "data/.bun" ];
-      prune = [
-        "--keep-daily 14"
-        "--keep-weekly 8"
-        "--keep-monthly 12"
       ];
     };
     # Groundwork's database must not be opened by a second program, so the

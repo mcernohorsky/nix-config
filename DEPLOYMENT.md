@@ -4,8 +4,8 @@ All commands are `just` recipes, run inside `nix develop` (or `nix develop -c ju
 Tailscale is the only management network. Oracle's public SSH port is closed.
 
 ```bash
-just update [inputs...]  # all inputs, or named ones (e.g. repertoire-builder)
-just deploy-oracle       # Mac: Determinate native Linux builder; desktop: binfmt
+just update [inputs...]  # all inputs, or named ones (e.g. groundwork)
+just deploy-oracle       # builds natively on oracle-0
 just deploy-desktop      # remote deploy-rs from the Mac, nixos-rebuild locally
 just deploy-mac          # local on the Mac, over SSH from the desktop
 just deploy-all
@@ -13,7 +13,7 @@ just deploy-all
 
 `deploy-desktop` reports whether a reboot is needed (kernel change or failed `nvidia-smi`).
 deploy-rs `magicRollback` is off because activation restarts networking on the only SSH path.
-Verify Oracle deploys with `just verify-chess`.
+Verify Oracle deploys with `just container-status`.
 
 ## Version control and workstation sync
 
@@ -31,12 +31,8 @@ nix develop -c just sync    # push main and update the other workstation
 
 ## Oracle services
 
-- **repertoire-builder**: NixOS container `repertoire-builder` (PocketBase on private
-  port 8090, data in `/var/lib/containers/repertoire-builder-v2`). Caddy publishes
-  <https://chess.cernohorsky.ca>. Use `just container-{status,logs,restart}` and
-  `just ssh-container`. If the frontend is stale, check the input revision with
-  `nix flake metadata` and run `just update repertoire-builder`. Never bump versions
-  to defeat caching.
+- Containers use private UID ranges. Use `just container-status`,
+  `just container-{logs,restart} <name>` and `just ssh-container <name>`.
 - **groundwork**: NixOS container `groundwork` (port 7171), published at
   <https://groundwork.cernohorsky.ca>. Data in `/var/lib/containers/groundwork`: back up
   `state/`; `data/` is refetchable map data. `just groundwork-logs` shows a new server's
@@ -45,8 +41,8 @@ nix develop -c just sync    # push main and update the other workstation
   <https://leskly.com> when its Cloudflare Tunnel routes are configured.
 - **Vaultwarden**: <https://vault.cernohorsky.ca> through the Cloudflare Tunnel.
 - **Grafana**: <https://metrics.cernohorsky.ca>.
-- **Backups**: every six hours, Restic backs up verified SQLite copies of Vaultwarden,
-  chess and Groundwork to R2 (`oracle-0-backups`, pruned on Oracle) and to the append-only
+- **Backups**: every six hours, Restic backs up verified SQLite copies of Vaultwarden and
+  Groundwork to R2 (`oracle-0-backups`, pruned on Oracle) and to the append-only
   REST server `rest:http://matt-desktop.tailc41cf5.ts.net:8000/` (pruned weekly on the
   desktop).
 
@@ -71,8 +67,6 @@ install -o vaultwarden -g vaultwarden -m 0600 db-backup.sqlite3 db.sqlite3
 systemctl start vaultwarden restic-backups-vaultwarden-r2.timer restic-backups-vaultwarden-desktop.timer
 ```
 
-Chess restores work the same way with `--tag chess`. Stop the container first, then
-promote `data/db-backup.sqlite3` to `data/repertoire.sqlite3`.
 
 ## Security model
 
@@ -93,7 +87,7 @@ promote `data/db-backup.sqlite3` to `data/repertoire.sqlite3`.
 3. `nixos-anywhere --flake .#oracle-0 root@<ip>` (disko: `/dev/sda`, 512 MiB ESP and ext4 root).
    If that fails, run disko manually and then `nixos-install --flake .#oracle-0`.
 4. Verify `ssh matt@oracle-0` over Tailscale, remove public SSH, then check
-   `systemctl status cloudflared-tunnel` and `curl -fsS https://chess.cernohorsky.ca`.
+   `systemctl status cloudflared-tunnel` and `curl -fsS https://groundwork.cernohorsky.ca`.
 
 ## Troubleshooting
 

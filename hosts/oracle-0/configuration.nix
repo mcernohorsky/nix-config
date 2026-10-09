@@ -55,20 +55,6 @@ let
       redir https://leskly.com{uri} 308
     }
 
-    http://chess.cernohorsky.ca {
-      import common
-      # Hashed assets are served immutable by the app. Everything else is
-      # no-store so a stale SPA shell cannot reference missing chunks; `>`
-      # replaces the app's own value so the header stays single-valued.
-      @mutable not path /assets/*
-      header @mutable >Cache-Control "no-store"
-      # The app trusts only the bridge gateway, so pass the edge-verified
-      # client IP for per-client rate limiting.
-      reverse_proxy repertoire-builder:8090 {
-        header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
-      }
-    }
-
     http://vault.cernohorsky.ca {
       bind 127.0.0.1
       encode gzip
@@ -92,7 +78,6 @@ in
   imports = [
     ./hardware-configuration.nix
     ./disk-config.nix
-    inputs.repertoire-builder.nixosModules.container
     inputs.groundwork.nixosModules.container
     inputs.leskly-site.nixosModules.container
     ./modules/backup.nix
@@ -154,7 +139,6 @@ in
 
   age.secrets = {
     tailscale-oracle-authkey.file = ../../secrets/tailscale-oracle-authkey.age;
-    repertoire-auth.file = ../../secrets/repertoire-auth.age;
     grafana-secret-key = {
       file = ../../secrets/grafana-secret-key.age;
       owner = "grafana";
@@ -169,20 +153,37 @@ in
   };
   services.taildrive.shares.root = "/";
 
+  # Tailscale is the only way in. MemoryMin keeps its pages resident under
+  # memory pressure; OOMScoreAdjust keeps the kernel OOM killer off it.
+  systemd.services.tailscaled.serviceConfig = {
+    MemoryMin = "128M";
+    OOMScoreAdjust = -900;
+  };
+
+  # There is no disk swap, so compressed RAM swap gives idle pages somewhere
+  # to go before the OOM killer runs. Swapping to zram is cheap, so the kernel
+  # docs recommend high swappiness and no readahead.
+  zramSwap.enable = true;
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 180;
+    "vm.page-cluster" = 0;
+  };
+
   services.caddy = {
     enable = true;
     configFile = caddyfile;
   };
 
-  # Caddy dials the container IP directly; the app sees the bridge gateway
-  # (br-containers 192.168.100.1) as its proxy peer.
-  services.repertoire-builder = {
-    webDist = inputs.repertoire-builder.packages.${pkgs.stdenv.hostPlatform.system}.web;
-    authSecretFile = config.age.secrets.repertoire-auth.path;
-    trustedProxies = "192.168.100.1";
-  };
-
   # Data in /var/lib/containers/groundwork. A new server logs a setup code:
   # `just groundwork-logs`.
   services.groundwork.publicUrl = "https://groundwork.cernohorsky.ca";
+
+  # Each container gets its own 64k UID range, so its root is an unprivileged
+  # user on the host. `idmap` keeps host-side ownership of the data bind mount
+  # (UID 999 here is groundwork inside the container).
+  containers.groundwork = {
+    privateUsers = "pick";
+    bindMounts."/var/lib/groundwork".mountPoint = "/var/lib/groundwork:idmap";
+  };
+  containers.leskly.privateUsers = "pick";
 }

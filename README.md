@@ -6,7 +6,7 @@ nix-darwin, NixOS, and Home Manager for three hosts:
 | --- | --- |
 | `macbook-pro-m2` | nix-darwin workstation, T3 Code server |
 | `matt-desktop` | NixOS/COSMIC workstation, T3 Code server, Restic receiver |
-| `oracle-0` | Oracle ARM VPS: Caddy, Cloudflare Tunnel, Vaultwarden, repertoire-builder, Grafana |
+| `oracle-0` | Oracle ARM VPS: Caddy, Cloudflare Tunnel, Vaultwarden, Groundwork, Leskly, Grafana |
 
 ## Layout
 
