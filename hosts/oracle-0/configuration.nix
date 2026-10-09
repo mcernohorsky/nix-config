@@ -148,7 +148,7 @@ in
   };
   services.taildrive.shares.root = "/";
 
-  # Desktop deploys build here when the Mac is away. Builds run in the
+  # `just deploy-oracle` builds here by default. Builds run in the
   # daemon's cgroup, so they get only idle CPU and I/O, are reclaimed into
   # zram above half of RAM, and are the OOM killer's first choice.
   nix = {

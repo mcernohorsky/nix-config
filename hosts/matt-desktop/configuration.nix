@@ -30,6 +30,9 @@
   # Unlock the LUKS2 root with its enrolled TPM2 token; the passphrase still works.
   boot.initrd.luks.devices.cryptroot.crypttabExtraOpts = [ "tpm2-device=auto" ];
 
+  # For `just deploy-oracle desktop`; emulated builds are slow.
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+
   nix.settings.eval-cores = 0;
 
   # Fix slow shutdown
