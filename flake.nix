@@ -164,9 +164,6 @@
         magicRollback = false;
         nodes.oracle-0 = {
           hostname = "oracle-0.tailc41cf5.ts.net";
-          # Build natively on Oracle's idle ARM cores instead of under
-          # emulation; build directories are temporary and the store is GC'd.
-          remoteBuild = true;
           profiles.system.path = inputs.deploy-rs.lib.aarch64-linux.activate.nixos inputs.self.nixosConfigurations.oracle-0;
         };
         nodes.matt-desktop = {

@@ -98,11 +98,6 @@ in
     })
   ];
 
-  nix = {
-    settings.eval-cores = 1;
-    gc.options = "--delete-older-than 14d";
-  };
-
   boot = {
     loader = {
       systemd-boot.enable = true;
@@ -153,20 +148,19 @@ in
   };
   services.taildrive.shares.root = "/";
 
-  # Tailscale is the only way in. MemoryMin keeps its pages resident under
-  # memory pressure; OOMScoreAdjust keeps the kernel OOM killer off it.
-  systemd.services.tailscaled.serviceConfig = {
-    MemoryMin = "128M";
-    OOMScoreAdjust = -900;
+  # Desktop deploys build here when the Mac is away. Builds run in the
+  # daemon's cgroup, so they get only idle CPU and I/O, are reclaimed into
+  # zram above half of RAM, and are the OOM killer's first choice.
+  nix = {
+    settings.eval-cores = 1;
+    gc.options = "--delete-older-than 14d";
+    daemonCPUSchedPolicy = "idle";
+    daemonIOSchedClass = "idle";
   };
-
-  # There is no disk swap, so compressed RAM swap gives idle pages somewhere
-  # to go before the OOM killer runs. Swapping to zram is cheap, so the kernel
-  # docs recommend high swappiness and no readahead.
-  zramSwap.enable = true;
-  boot.kernel.sysctl = {
-    "vm.swappiness" = 180;
-    "vm.page-cluster" = 0;
+  systemd.services.nix-daemon.serviceConfig = {
+    CPUWeight = "idle";
+    MemoryHigh = "50%";
+    OOMScoreAdjust = 500;
   };
 
   services.caddy = {
@@ -179,8 +173,8 @@ in
   services.groundwork.publicUrl = "https://groundwork.cernohorsky.ca";
 
   # Each container gets its own 64k UID range, so its root is an unprivileged
-  # user on the host. `idmap` keeps host-side ownership of the data bind mount
-  # (UID 999 here is groundwork inside the container).
+  # user on the host. `idmap` maps the data bind mount so files keep their
+  # unshifted host UIDs.
   containers.groundwork = {
     privateUsers = "pick";
     bindMounts."/var/lib/groundwork".mountPoint = "/var/lib/groundwork:idmap";

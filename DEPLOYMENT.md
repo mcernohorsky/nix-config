@@ -5,7 +5,7 @@ Tailscale is the only management network. Oracle's public SSH port is closed.
 
 ```bash
 just update [inputs...]  # all inputs, or named ones (e.g. groundwork)
-just deploy-oracle       # builds natively on oracle-0
+just deploy-oracle       # builds on the Mac, or on oracle-0 when the Mac is away
 just deploy-desktop      # remote deploy-rs from the Mac, nixos-rebuild locally
 just deploy-mac          # local on the Mac, over SSH from the desktop
 just deploy-all

@@ -20,9 +20,9 @@ sync-check:
 update *inputs:
     nix flake update {{ inputs }}
 
-# Builds on the Mac's native Linux builder or the desktop's binfmt emulation
+# Builds on the Mac's Linux builder, or on oracle-0 when the Mac is away
 deploy-oracle:
-    nix run .#deploy-rs -- .#oracle-0 --skip-checks
+    bash scripts/deploy-oracle.sh
 
 [macos]
 deploy-desktop:

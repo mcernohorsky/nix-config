@@ -30,11 +30,16 @@ in
     };
 
     # Never restart during activation, and retry failures indefinitely instead
-    # of exhausting systemd's default five-start burst.
+    # of exhausting systemd's default five-start burst. Under memory pressure,
+    # MemoryMin keeps it resident and OOMScoreAdjust keeps the OOM killer off it.
     systemd.services.tailscaled = {
       restartIfChanged = false;
       unitConfig.StartLimitIntervalSec = 0;
-      serviceConfig.RestartSec = lib.mkForce "5s";
+      serviceConfig = {
+        RestartSec = lib.mkForce "5s";
+        MemoryMin = "128M";
+        OOMScoreAdjust = -900;
+      };
     };
 
     # Access via http://100.100.100.100:8080/<tailnet>/<host>/<share>

@@ -26,6 +26,15 @@
     };
   };
 
+  # Neither host has disk swap. zram gives idle pages a compressed place to go
+  # before the OOM killer runs; it is cheap to swap to, so the kernel docs
+  # recommend high swappiness and no readahead.
+  zramSwap.enable = true;
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 180;
+    "vm.page-cluster" = 0;
+  };
+
   time.timeZone = "America/Edmonton";
   i18n.defaultLocale = "en_CA.UTF-8";
 
