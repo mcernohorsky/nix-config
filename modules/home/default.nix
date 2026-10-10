@@ -20,6 +20,7 @@ in
     ./claude-code.nix
     ./codex-cli.nix
     ./dev-templates.nix
+    ./just.nix
     ./opencode.nix
     ./t3code.nix
     ./tailscale-policy.nix

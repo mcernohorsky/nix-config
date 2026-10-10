@@ -1,0 +1,120 @@
+{
+  "$schema": "https://t3.codes/schema/t3.json",
+  "scripts": [
+    {
+      "name": "sync",
+      "command": "direnv exec . just sync",
+      "icon": "play"
+    },
+    {
+      "name": "sync-check",
+      "command": "direnv exec . just sync-check",
+      "icon": "lint"
+    },
+    {
+      "name": "update",
+      "command": "direnv exec . just update",
+      "icon": "play"
+    },
+    {
+      "name": "deploy-oracle",
+      "command": "direnv exec . just deploy-oracle",
+      "icon": "build"
+    },
+    {
+      "name": "deploy-desktop",
+      "command": "direnv exec . just deploy-desktop",
+      "icon": "build"
+    },
+    {
+      "name": "deploy-mac",
+      "command": "direnv exec . just deploy-mac",
+      "icon": "build"
+    },
+    {
+      "name": "deploy-all",
+      "command": "direnv exec . just deploy-all",
+      "icon": "build"
+    },
+    {
+      "name": "container-status",
+      "command": "direnv exec . just container-status",
+      "icon": "play"
+    },
+    {
+      "name": "groundwork-logs",
+      "command": "direnv exec . just groundwork-logs",
+      "icon": "debug"
+    },
+    {
+      "name": "groundwork-recover",
+      "command": "direnv exec . just groundwork-recover",
+      "icon": "play"
+    },
+    {
+      "name": "t3-status",
+      "command": "direnv exec . just t3-status",
+      "icon": "play"
+    },
+    {
+      "name": "t3-update",
+      "command": "direnv exec . just t3-update",
+      "icon": "play"
+    },
+    {
+      "name": "t3-update-mac",
+      "command": "direnv exec . just t3-update-mac",
+      "icon": "play"
+    },
+    {
+      "name": "t3-update-desktop",
+      "command": "direnv exec . just t3-update-desktop",
+      "icon": "play"
+    },
+    {
+      "name": "opencode-update",
+      "command": "direnv exec . just opencode-update",
+      "icon": "play"
+    },
+    {
+      "name": "opencode-update-mac",
+      "command": "direnv exec . just opencode-update-mac",
+      "icon": "play"
+    },
+    {
+      "name": "opencode-update-desktop",
+      "command": "direnv exec . just opencode-update-desktop",
+      "icon": "play"
+    },
+    {
+      "name": "opencode-update-local",
+      "command": "direnv exec . just opencode-update-local",
+      "icon": "play"
+    },
+    {
+      "name": "providers-update",
+      "command": "direnv exec . just providers-update",
+      "icon": "play"
+    },
+    {
+      "name": "providers-update-mac",
+      "command": "direnv exec . just providers-update-mac",
+      "icon": "play"
+    },
+    {
+      "name": "providers-update-desktop",
+      "command": "direnv exec . just providers-update-desktop",
+      "icon": "play"
+    },
+    {
+      "name": "providers-update-local",
+      "command": "direnv exec . just providers-update-local",
+      "icon": "play"
+    },
+    {
+      "name": "tailscale-policy",
+      "command": "direnv exec . just tailscale-policy",
+      "icon": "play"
+    }
+  ]
+}
