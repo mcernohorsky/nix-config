@@ -123,7 +123,7 @@ upgrade_all() {
 detach_and_follow() {
   local self=$1 dir="$HOME/.t3/userdata/logs" log done_file
   mkdir -p "$dir"
-  log="$dir/upgrade-workstations.log"
+  log="$dir/t3-update.log"
   done_file="$log.status"
   rm -f "$done_file"
   : >"$log"
@@ -131,7 +131,7 @@ detach_and_follow() {
   local job=(bash -c 'bash "$1" --all >>"$2" 2>&1; echo $? >"$3"' upgrade "$self" "$log" "$done_file")
   if [ "$(uname)" = Linux ]; then
     # systemd stops a service's whole cgroup, so leave T3's unit entirely.
-    systemd-run --user --collect --quiet --unit="upgrade-workstations-$(date +%s)" \
+    systemd-run --user --collect --quiet --unit="t3-update-$(date +%s)" \
       --setenv=SSH_AUTH_SOCK="${SSH_AUTH_SOCK:-}" "${job[@]}"
   else
     # launchd kills the job's process group; a new session escapes it.

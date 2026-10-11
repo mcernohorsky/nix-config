@@ -78,8 +78,8 @@ t3-status:
     "$HOME/.local/bin/t3" service status
 
 # Update T3 (service and Mac app) plus Claude, Codex and OpenCode on both workstations
-upgrade:
-    bash scripts/upgrade-workstations.sh
+t3-update:
+    bash scripts/t3-update.sh
 
 # Prints a credential QR/link to the caller's terminal; never capture it in logs.
 t3-pair-full host:
