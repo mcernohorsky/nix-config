@@ -62,8 +62,13 @@
       "icon": "play"
     },
     {
-      "name": "t3-pair",
-      "command": "direnv exec . just t3-pair",
+      "name": "t3-pair-mac",
+      "command": "direnv exec . just t3-pair-mac",
+      "icon": "play"
+    },
+    {
+      "name": "t3-pair-desktop",
+      "command": "direnv exec . just t3-pair-desktop",
       "icon": "play"
     },
     {
