@@ -86,8 +86,21 @@ t3-pair-full host:
 
 [macos]
 t3-update-mac:
-    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" update --channel nightly --yes
-    PATH="{{ t3_path }}" "$HOME/.local/bin/t3" service install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    log="$HOME/.t3/userdata/logs/t3-update.log"
+    # `t3 update` stops the T3 server, killing scripts it launched (like this one)
+    # before `service install` runs; update in a new session and follow its log.
+    perl -MPOSIX -e 'POSIX::setsid() or die "setsid: $!"; exec @ARGV' \
+        /bin/sh -c 'export PATH="$1"; t3 update --channel nightly --yes && t3 service install' sh "{{ t3_path }}" \
+        >"$log" 2>&1 </dev/null &
+    pid=$!
+    tail -n +1 -f "$log" &
+    tail_pid=$!
+    status=0
+    wait "$pid" || status=$?
+    kill "$tail_pid"
+    exit "$status"
 
 [linux]
 t3-update-mac:
