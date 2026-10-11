@@ -62,6 +62,11 @@
       "icon": "play"
     },
     {
+      "name": "t3-pair",
+      "command": "direnv exec . just t3-pair",
+      "icon": "play"
+    },
+    {
       "name": "tailscale-policy",
       "command": "direnv exec . just tailscale-policy",
       "icon": "play"

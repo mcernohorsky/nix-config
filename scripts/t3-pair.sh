@@ -13,16 +13,5 @@ for scope in "${scopes[@]}"; do
   args+=(--scope "$scope")
 done
 
-case "${1:-}" in
-  mac)
-    if [ "$(uname -s)" = Darwin ]; then
-      exec "$HOME/.local/bin/t3" "${args[@]}"
-    fi
-    peer=(ssh matt@macbook-pro-m2.tailc41cf5.ts.net)
-    ;;
-  desktop) peer=(tailscale ssh matt@matt-desktop.tailc41cf5.ts.net) ;;
-  *) echo 'Usage: just t3-pair-full mac|desktop' >&2; exit 2 ;;
-esac
-
-printf -v remote_args ' %q' "${args[@]}"
-exec "${peer[@]}" '"$HOME/.local/bin/t3"'"$remote_args"
+# Pair with the T3 server on whichever workstation runs this.
+exec "$HOME/.local/bin/t3" "${args[@]}"

@@ -81,9 +81,10 @@ t3-status:
 t3-update:
     bash scripts/t3-update.sh
 
-# Prints a credential QR/link to the caller's terminal; never capture it in logs.
-t3-pair-full host:
-    bash scripts/t3-pair-full.sh {{ host }}
+# Pair a full-access client with this workstation's T3 server. Prints a
+# credential QR/link to the caller's terminal; never capture it in logs.
+t3-pair:
+    bash scripts/t3-pair.sh
 
 # Tailnet policy: show | diff | apply (apply prompts for YES, guarded by the live ETag)
 tailscale-policy action="diff":
