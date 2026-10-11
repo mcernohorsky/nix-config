@@ -77,73 +77,13 @@ t3-status:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" service status'
     "$HOME/.local/bin/t3" service status
 
-# Update both T3 services and repair launcher state left by older updaters
-t3-update: t3-update-mac t3-update-desktop
+# Update T3 (service and Mac app) plus Claude, Codex and OpenCode on both workstations
+upgrade:
+    bash scripts/upgrade-workstations.sh
 
 # Prints a credential QR/link to the caller's terminal; never capture it in logs.
 t3-pair-full host:
     bash scripts/t3-pair-full.sh {{ host }}
-
-[macos]
-t3-update-mac:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    log="$HOME/.t3/userdata/logs/t3-update.log"
-    # `t3 update` stops the T3 server, killing scripts it launched (like this one)
-    # before `service install` runs; update in a new session and follow its log.
-    perl -MPOSIX -e 'POSIX::setsid() or die "setsid: $!"; exec @ARGV' \
-        /bin/sh -c 'export PATH="$1"; t3 update --channel nightly --yes && t3 service install' sh "{{ t3_path }}" \
-        >"$log" 2>&1 </dev/null &
-    pid=$!
-    tail -n +1 -f "$log" &
-    tail_pid=$!
-    status=0
-    wait "$pid" || status=$?
-    kill "$tail_pid"
-    exit "$status"
-
-[linux]
-t3-update-mac:
-    ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just t3-update-mac'
-
-t3-update-desktop:
-    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/t3" update --channel nightly --yes && systemctl --user reset-failed t3code.service && "$HOME/.local/bin/t3" service install'
-
-# Update OpenCode's Bun install and stop T3's stale per-session servers
-opencode-update: opencode-update-mac opencode-update-desktop
-
-[macos]
-opencode-update-mac: opencode-update-local
-
-[linux]
-opencode-update-mac:
-    ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just opencode-update-mac'
-
-opencode-update-desktop:
-    {{ desktop_ssh }} 'cd ~/.config/nix-config && nix develop -c just opencode-update-local'
-
-opencode-update-local:
-    # Fall back to npm when OpenCode's release service is unavailable.
-    "$HOME/.bun/bin/opencode" upgrade --method bun || BUN_INSTALL="$HOME/.bun" bun install -g --trust @opencode/cli@latest
-    # T3 Code's per-session servers outlive T3 restarts as orphans of PID 1
-    -pkill -P 1 -f 'opencode serve --hostname='
-
-# Keep the writable provider installs current on both workstations.
-providers-update: providers-update-mac providers-update-desktop opencode-update
-
-[macos]
-providers-update-mac: providers-update-local
-
-[linux]
-providers-update-mac:
-    ssh matt@{{ mac_host }} 'cd ~/.config/nix-config && nix develop -c just providers-update-local'
-
-providers-update-desktop:
-    {{ desktop_ssh }} 'export PATH="{{ t3_path }}"; "$HOME/.local/bin/claude" update && BUN_INSTALL="$HOME/.bun" bun install -g @openai/codex'
-
-providers-update-local:
-    "$HOME/.local/bin/claude" update
-    BUN_INSTALL="$HOME/.bun" bun install -g @openai/codex
 
 # Tailnet policy: show | diff | apply (apply prompts for YES, guarded by the live ETag)
 tailscale-policy action="diff":

@@ -57,58 +57,8 @@
       "icon": "play"
     },
     {
-      "name": "t3-update",
-      "command": "direnv exec . just t3-update",
-      "icon": "play"
-    },
-    {
-      "name": "t3-update-mac",
-      "command": "direnv exec . just t3-update-mac",
-      "icon": "play"
-    },
-    {
-      "name": "t3-update-desktop",
-      "command": "direnv exec . just t3-update-desktop",
-      "icon": "play"
-    },
-    {
-      "name": "opencode-update",
-      "command": "direnv exec . just opencode-update",
-      "icon": "play"
-    },
-    {
-      "name": "opencode-update-mac",
-      "command": "direnv exec . just opencode-update-mac",
-      "icon": "play"
-    },
-    {
-      "name": "opencode-update-desktop",
-      "command": "direnv exec . just opencode-update-desktop",
-      "icon": "play"
-    },
-    {
-      "name": "opencode-update-local",
-      "command": "direnv exec . just opencode-update-local",
-      "icon": "play"
-    },
-    {
-      "name": "providers-update",
-      "command": "direnv exec . just providers-update",
-      "icon": "play"
-    },
-    {
-      "name": "providers-update-mac",
-      "command": "direnv exec . just providers-update-mac",
-      "icon": "play"
-    },
-    {
-      "name": "providers-update-desktop",
-      "command": "direnv exec . just providers-update-desktop",
-      "icon": "play"
-    },
-    {
-      "name": "providers-update-local",
-      "command": "direnv exec . just providers-update-local",
+      "name": "upgrade",
+      "command": "direnv exec . just upgrade",
       "icon": "play"
     },
     {
