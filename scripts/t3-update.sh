@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Update the T3 service, the Mac T3 app, and the Claude, Codex and OpenCode
-# CLIs on both workstations.
+# Update the T3 service, the Mac T3 app, and the Claude, Codex, OpenCode and
+# Muse CLIs on both workstations.
 #
 #   (no args)  detach the job below and follow its log
 #   --all      upgrade the other workstation, then this one
@@ -92,6 +92,7 @@ upgrade_host() {
   step "Claude Code" claude update
   step "Codex" bun install -g @openai/codex@latest
   step "OpenCode" upgrade_opencode
+  step "Muse Code" env MUSE_LOGIN=0 MUSE_SYNC_UPDATE=1 muse --version
   # After the CLIs, so the restarted service starts sessions on new versions.
   step "T3 service" upgrade_t3_service
   step "Stale OpenCode servers" stop_orphan_servers

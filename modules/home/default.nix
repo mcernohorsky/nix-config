@@ -8,7 +8,7 @@
 let
   mono = import ../../lib/mono-font.nix { inherit pkgs; };
 
-  # Writable, self-updating tool installs (uv Python, Claude Code,
+  # Writable, self-updating tool installs (uv Python, Claude Code, Muse Code,
   # T3 Code, and Bun globals) live outside the Nix store.
   userBinDirs = [
     "$HOME/.local/bin"
@@ -21,6 +21,7 @@ in
     ./codex-cli.nix
     ./dev-templates.nix
     ./just.nix
+    ./muse-code.nix
     ./opencode.nix
     ./t3code.nix
     ./tailscale-policy.nix

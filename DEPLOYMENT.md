@@ -97,10 +97,10 @@ systemctl start vaultwarden restic-backups-vaultwarden-r2.timer restic-backups-v
 
 ## Workstation tools
 
-Home Manager bootstraps Claude Code, Codex CLI, OpenCode, and T3 Code into
+Home Manager bootstraps Claude Code, Codex CLI, Muse Code, OpenCode, and T3 Code into
 `~/.local/bin` and `~/.bun/bin`; they update themselves afterwards. On each new host:
 
-1. Sign in once: `claude auth login`, `codex login`, `opencode auth login`.
+1. Sign in once: `claude auth login`, `codex login`, `opencode auth login`; run `muse` for its sign-in flow.
 2. Pair full-access T3 clients with `just t3-pair-mac` or `just t3-pair-desktop` from either workstation.
    Pairing links are credentials; keep them out of Git and logs.
 3. In the T3 desktop app, keep **Settings → Connections → Local environment** off and add
@@ -109,9 +109,8 @@ Home Manager bootstraps Claude Code, Codex CLI, OpenCode, and T3 Code into
 4. For push notifications only (access stays on Tailscale), run
    `t3 connect link --publish-only` (`--headless` over SSH), then `t3 service restart`.
 
-`just t3-status` checks both T3 services. `just t3-update` and `just opencode-update` update
-both workstations and restart their servers, interrupting active turns.
-`just providers-update` updates Claude Code, Codex CLI, and OpenCode on both workstations.
+`just t3-status` checks both T3 services. `just t3-update` updates T3, Claude Code,
+Codex CLI, OpenCode, and Muse Code on both workstations and restarts T3, interrupting active turns.
 
 ## Desktop BIOS reference
 

@@ -77,7 +77,7 @@ t3-status:
     ssh matt@{{ mac_host }} '"$HOME/.local/bin/t3" service status'
     "$HOME/.local/bin/t3" service status
 
-# Update T3 (service and Mac app) plus Claude, Codex and OpenCode on both workstations
+# Update T3 (service and Mac app) plus Claude, Codex, OpenCode and Muse on both workstations
 t3-update:
     bash scripts/t3-update.sh
 
