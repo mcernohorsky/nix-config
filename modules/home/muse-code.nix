@@ -80,10 +80,7 @@ let
       settings_temp="$(mktemp "$settings_dir/.settings.json.XXXXXX")"
       trap 'rm -f "$settings_temp"' EXIT
       jq --arg launcher "$HOME/.local/bin/muse-t3-contributor" '
-        .providerInstances.muse.config.binaryPath = $launcher |
-        if .providerInstances.muse.displayName == null or .providerInstances.muse.displayName == "Muse Code" then
-          .providerInstances.muse.displayName = "Muse Code (Contributor)"
-        else . end
+        .providerInstances.muse.config.binaryPath = $launcher
       ' "$settings_file" >"$settings_temp"
       if ! cmp -s "$settings_temp" "$settings_file"; then
         chmod 0600 "$settings_temp"
