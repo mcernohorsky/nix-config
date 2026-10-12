@@ -116,7 +116,6 @@ in
       "helium-browser"
       "iina"
       "imageoptim"
-      "inkscape"
       "itsycal"
       "jellyfin-media-player"
       "keka"
