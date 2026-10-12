@@ -410,22 +410,6 @@
         "type": "github"
       }
     },
-    "hex-homebrew-tap": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790656143,
-        "narHash": "sha256-QEjppA3VRImola3d7FrwC3lzLSqLF3XMqCxVbo0zh50=",
-        "owner": "anomalyco",
-        "repo": "homebrew-tap",
-        "rev": "138d28139f60d5b45c6f3adfefe5654ad90b1398",
-        "type": "github"
-      },
-      "original": {
-        "owner": "anomalyco",
-        "repo": "homebrew-tap",
-        "type": "github"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -443,38 +427,6 @@
       "original": {
         "owner": "nix-community",
         "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "homebrew-cask": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790711430,
-        "narHash": "sha256-unevdNXZIR2IiB/Ragp2b4oLD0Qw+giBYqha8sUnhZY=",
-        "owner": "homebrew",
-        "repo": "homebrew-cask",
-        "rev": "1cbe611632680035ee6dbc8e8b1d11b67e585c6e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "homebrew",
-        "repo": "homebrew-cask",
-        "type": "github"
-      }
-    },
-    "homebrew-core": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790712239,
-        "narHash": "sha256-PmFXgwzbhUYXvGpfSaMKCrba1lwoHfvGrv4gfzxSrMA=",
-        "owner": "homebrew",
-        "repo": "homebrew-core",
-        "rev": "cc1b28a4d2434edcef02a7f0c02c6bab568e5ebd",
-        "type": "github"
-      },
-      "original": {
-        "owner": "homebrew",
-        "repo": "homebrew-core",
         "type": "github"
       }
     },
@@ -704,17 +656,12 @@
         "helium": "helium",
         "helix-master": "helix-master",
         "hex": "hex",
-        "hex-homebrew-tap": "hex-homebrew-tap",
         "home-manager": "home-manager",
-        "homebrew-cask": "homebrew-cask",
-        "homebrew-core": "homebrew-core",
         "leskly-site": "leskly-site",
         "nix-homebrew": "nix-homebrew",
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-server": "nixpkgs-server",
-        "nordwand-mono": "nordwand-mono",
-        "sonora-homebrew-tap": "sonora-homebrew-tap",
-        "tinycast-homebrew-tap": "tinycast-homebrew-tap"
+        "nordwand-mono": "nordwand-mono"
       }
     },
     "rust-overlay": {
@@ -780,22 +727,6 @@
         "type": "github"
       }
     },
-    "sonora-homebrew-tap": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790687361,
-        "narHash": "sha256-pnU5KFA7TCnMR3Pckoeesfy+9gLxuTsoTeowbwcGBXY=",
-        "owner": "nolight132",
-        "repo": "homebrew-tap",
-        "rev": "7c8c48e1503bcfd5125782ff0913f28b7d7e74a4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nolight132",
-        "repo": "homebrew-tap",
-        "type": "github"
-      }
-    },
     "systems": {
       "locked": {
         "lastModified": 1681028828,
@@ -823,22 +754,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "tinycast-homebrew-tap": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1790624706,
-        "narHash": "sha256-1pIJwxx/E1g6muckpuz5Sh/tep3t+CPUcVV+W/q9Yc8=",
-        "owner": "abue-ammar",
-        "repo": "homebrew-tinycast",
-        "rev": "c05f1c2bade3fda9595146692f605f58fbe6287e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "abue-ammar",
-        "repo": "homebrew-tinycast",
         "type": "github"
       }
     },

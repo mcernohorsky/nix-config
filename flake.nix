@@ -45,26 +45,6 @@
 
     # Homebrew
     nix-homebrew.url = "github:zhaofengli-wip/nix-homebrew";
-    homebrew-core = {
-      url = "github:homebrew/homebrew-core";
-      flake = false;
-    };
-    homebrew-cask = {
-      url = "github:homebrew/homebrew-cask";
-      flake = false;
-    };
-    hex-homebrew-tap = {
-      url = "github:anomalyco/homebrew-tap";
-      flake = false;
-    };
-    tinycast-homebrew-tap = {
-      url = "github:abue-ammar/homebrew-tinycast";
-      flake = false;
-    };
-    sonora-homebrew-tap = {
-      url = "github:nolight132/homebrew-tap";
-      flake = false;
-    };
 
     # Applications
     helix-master.url = "github:helix-editor/helix";

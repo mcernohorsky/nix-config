@@ -74,19 +74,14 @@ in
   programs.bash.enable = true;
   programs.zsh.enable = true;
 
+  # Nix only declares which apps are installed. Homebrew owns its taps and app
+  # versions (brew-upgrade below), so app updates never need a deploy.
   nix-homebrew = {
     enable = true;
     enableRosetta = true;
     user = "matt";
-    mutableTaps = false;
+    mutableTaps = true;
     autoMigrate = true;
-    taps = {
-      "homebrew/homebrew-core" = inputs.homebrew-core;
-      "homebrew/homebrew-cask" = inputs.homebrew-cask;
-      "anomalyco/homebrew-tap" = inputs.hex-homebrew-tap;
-      "abue-ammar/homebrew-tinycast" = inputs.tinycast-homebrew-tap;
-      "nolight132/homebrew-tap" = inputs.sonora-homebrew-tap;
-    };
     # Third-party taps need an explicit trust entry for their casks.
     trust.casks = [
       "anomalyco/tap/hex"
@@ -97,13 +92,14 @@ in
 
   homebrew = {
     enable = true;
-    onActivation = {
-      autoUpdate = true;
-      cleanup = "zap";
-      upgrade = true;
-    };
+    # Deploys only install missing apps and zap removed ones.
+    onActivation.cleanup = "zap";
 
-    taps = builtins.attrNames config.nix-homebrew.taps;
+    taps = [
+      "anomalyco/tap"
+      "abue-ammar/tinycast"
+      "nolight132/tap"
+    ];
 
     casks = [
       "anomalyco/tap/hex"
@@ -147,6 +143,31 @@ in
       "Dropover" = 1355679052;
       "Kindle" = 302584613;
       "Klack" = 6446206067;
+    };
+  };
+
+  # Casks that update themselves (auto_updates) are left to their own updaters.
+  launchd.user.agents.brew-upgrade = {
+    path = [
+      "/opt/homebrew/bin"
+      "/usr/bin"
+      "/bin"
+    ];
+    script = ''
+      brew update
+      brew upgrade
+      # Sonora is ad-hoc signed and its cask does not clear quarantine itself.
+      xattr -dr com.apple.quarantine /Applications/Sonora.app || true
+    '';
+    serviceConfig = {
+      StartCalendarInterval = [
+        {
+          Hour = 6;
+          Minute = 0;
+        }
+      ];
+      StandardOutPath = "/tmp/brew-upgrade.log";
+      StandardErrorPath = "/tmp/brew-upgrade.log";
     };
   };
 

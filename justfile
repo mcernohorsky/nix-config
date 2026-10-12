@@ -16,7 +16,7 @@ sync:
 sync-check:
     bash scripts/sync-workstations.sh --check
 
-# Update all flake inputs, or only the named ones (e.g. `just update hex hex-homebrew-tap`)
+# Update all flake inputs, or only the named ones (e.g. `just update groundwork`)
 update *inputs:
     nix flake update {{ inputs }}
 
