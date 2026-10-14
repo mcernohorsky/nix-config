@@ -89,7 +89,7 @@ systemctl start vaultwarden restic-backups-vaultwarden-r2.timer restic-backups-v
    If that fails, run disko manually, copy `/etc/ssh/ssh_host_*` into `/mnt/etc/ssh`, and then
    `nixos-install --flake .#oracle-0`.
 4. Verify `ssh matt@oracle-0` over Tailscale, remove public SSH, then check
-   `systemctl status cloudflared-tunnel` and `curl -fsS https://groundwork.cernohorsky.ca`.
+   `systemctl status cloudflared-tunnel` and `curl -fsS https://groundwork.cernohorsky.ca/healthz`.
 
 ## Troubleshooting
 
