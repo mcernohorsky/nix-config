@@ -3,6 +3,8 @@ _: {
     useNetworkd = true;
     useDHCP = false;
 
+    # The containers' only masquerade (and the forwarding sysctls); the bridge
+    # network below must not add networkd's IPMasquerade on top.
     nat = {
       enable = true;
       internalInterfaces = [
@@ -34,7 +36,6 @@ _: {
       matchConfig.Name = "br-containers";
       networkConfig = {
         IPv4Forwarding = true;
-        IPMasquerade = "ipv4";
         DHCPServer = true;
       };
       addresses = [ { Address = "192.168.100.1/24"; } ];
