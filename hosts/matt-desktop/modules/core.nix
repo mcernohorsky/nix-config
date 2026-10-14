@@ -185,5 +185,29 @@
     '';
   };
 
-  programs.nix-ld.enable = true;
+  programs.nix-ld = {
+    enable = true;
+    # T3 Code's browser previews run a downloaded chrome-headless-shell.
+    libraries = with pkgs; [
+      alsa-lib
+      at-spi2-atk
+      at-spi2-core
+      atk
+      dbus
+      expat
+      glib
+      libgbm
+      libx11
+      libxcb
+      libxcomposite
+      libxdamage
+      libxext
+      libxfixes
+      libxkbcommon
+      libxrandr
+      nspr
+      nss
+      systemd
+    ];
+  };
 }
