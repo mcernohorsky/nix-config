@@ -105,11 +105,16 @@ in
 
   # Keep the Browser Control skill in sync with the installed CLI. Its
   # `#!/usr/bin/env node` shebang needs node on activation's minimal PATH.
+  # A failure keeps the old skill instead of truncating it and aborting activation.
   home.activation.syncBrowserControlSkill = lib.hm.dag.entryAfter [ "installOpenCode" ] ''
     if [ -x "${browserControl}" ]; then
       skill="$HOME/.config/opencode/skills/browser-control"
       run mkdir -p "$skill"
-      PATH="${pkgs.nodejs}/bin:$PATH" "${browserControl}" skill > "$skill/SKILL.md"
+      if output=$(PATH="${pkgs.nodejs}/bin:$PATH" "${browserControl}" skill); then
+        printf '%s\n' "$output" > "$skill/SKILL.md"
+      else
+        warnEcho "browser-control skill failed; keeping $skill/SKILL.md"
+      fi
     fi
   '';
 }

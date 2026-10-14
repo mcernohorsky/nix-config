@@ -7,6 +7,10 @@
 }:
 let
   mono = import ../../lib/mono-font.nix { inherit pkgs; };
+  user = {
+    name = "Matt Cernohorsky";
+    email = "matt@cernohorsky.ca";
+  };
 
   # Writable, self-updating tool installs (uv Python, Claude Code, Muse Code,
   # T3 Code, and Bun globals) live outside the Nix store.
@@ -76,6 +80,23 @@ in
     '';
   };
 
+  programs.helix = {
+    enable = true;
+    defaultEditor = true;
+    settings.editor = {
+      line-number = "relative";
+      cursor-shape = {
+        normal = "block";
+        insert = "bar";
+        select = "underline";
+      };
+      lsp.display-messages = true;
+      indent-guides.render = true;
+      soft-wrap.enable = true;
+    };
+  };
+
+  programs.ghostty.enable = true;
   programs.ghostty.settings = {
     command = lib.getExe pkgs.nushell;
     theme = "light:Gruvbox Light,dark:Gruvbox Dark Hard";
@@ -88,8 +109,7 @@ in
   programs.git = {
     enable = true;
     settings = {
-      user.name = "Matt Cernohorsky";
-      user.email = "matt@cernohorsky.ca";
+      inherit user;
       github.user = "mcernohorsky";
       init.defaultBranch = "main";
     };
@@ -98,10 +118,7 @@ in
   programs.jujutsu = {
     enable = true;
     settings = {
-      user = {
-        name = "Matt Cernohorsky";
-        email = "matt@cernohorsky.ca";
-      };
+      inherit user;
       ui = {
         default-command = "status";
         editor = "hx";

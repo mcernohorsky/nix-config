@@ -4,18 +4,12 @@ let
   mono = import ../../../lib/mono-font.nix { inherit pkgs; };
 in
 {
-  security.polkit.enable = true;
-
-  services.gnome.gnome-keyring.enable = true;
+  # COSMIC enables the keyring, but only for the `login` PAM service.
   security.pam.services.cosmic-greeter.enableGnomeKeyring = true;
 
   services.pipewire = {
-    enable = true;
-    alsa.enable = true;
     alsa.support32Bit = true;
-    pulse.enable = true;
     wireplumber = {
-      enable = true;
       extraConfig."90-studio-display-capture" = {
         "wireplumber.settings" = {
           "node.stream.default-capture-volume" = 1.0;
@@ -41,11 +35,6 @@ in
     };
   };
 
-  hardware.bluetooth = {
-    enable = true;
-    powerOnBoot = true;
-  };
-
   environment.systemPackages = with pkgs; [
     wl-clipboard
     wf-recorder
@@ -55,10 +44,7 @@ in
     pwvucontrol
   ];
 
-  programs.dconf.enable = true;
-
   fonts = {
-    enableDefaultPackages = true;
     packages = with pkgs; [
       nordwand-mono
       maple-mono.NF-unhinted

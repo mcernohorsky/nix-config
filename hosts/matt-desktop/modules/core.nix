@@ -66,25 +66,13 @@
     ];
   };
 
-  # Custom console fonts caused early-boot vconsole failures.
-  console.earlySetup = false;
-
   security.tpm2 = {
     enable = true;
     pkcs11.enable = true;
     tctiEnvironment.enable = true;
   };
 
-  security.rtkit.enable = true;
-
-  services.dbus.implementation = "broker";
-
-  services.upower.enable = true;
   services.udisks2.enable = true;
-
-  # GIO mounts, trash, and network locations for COSMIC Files and GTK apps.
-  services.gvfs.enable = true;
-
   services.smartd.enable = true;
 
   services.fwupd.enable = true;
@@ -112,9 +100,6 @@
     fileSystems = [ "/" ];
   };
 
-  # Bash stays the login shell for POSIX compatibility; terminals run nushell.
-  programs.bash.completion.enable = true;
-
   # uv places its user-managed Python executables here. Configure this at the
   # system level as well as in Home Manager so SSH and other login shells see it.
   environment.localBinInPath = true;
@@ -125,7 +110,6 @@
     unzip
     zip
     p7zip
-    xdg-utils
 
     wget
     dig

@@ -28,10 +28,10 @@ let
   caddyfile = pkgs.writeText "Caddyfile" ''
     {
       auto_https off
+      default_bind 127.0.0.1
     }
 
     (common) {
-      bind 127.0.0.1
       encode gzip
       header {
         X-Content-Type-Options "nosniff"
@@ -41,7 +41,6 @@ let
     }
 
     http://cernohorsky.ca {
-      bind 127.0.0.1
       respond "Matt's website will be here someday." 200
     }
 
@@ -56,7 +55,6 @@ let
     }
 
     http://vault.cernohorsky.ca {
-      bind 127.0.0.1
       encode gzip
       reverse_proxy 127.0.0.1:${toString config.services.vaultwarden.config.ROCKET_PORT}
     }

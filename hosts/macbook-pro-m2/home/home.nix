@@ -53,9 +53,7 @@ in
 
   programs = {
     helix = {
-      enable = true;
       package = inputs.helix-master.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      defaultEditor = true;
       settings = {
         theme = "custom";
         editor = {
@@ -64,7 +62,6 @@ in
             "nu"
             "-c"
           ];
-          line-number = "relative";
           cursorline = true;
           true-color = true;
           rulers = [ 100 ];
@@ -92,17 +89,7 @@ in
               "file-encoding"
             ];
           };
-          lsp.display-messages = true;
-          cursor-shape = {
-            normal = "block";
-            insert = "bar";
-            select = "underline";
-          };
-          indent-guides = {
-            render = true;
-            character = "┊";
-          };
-          soft-wrap.enable = true;
+          indent-guides.character = "┊";
         };
         keys = {
           normal = helixModalKeys // {
@@ -156,7 +143,6 @@ in
     '';
 
     ghostty = {
-      enable = true;
       package = null; # Homebrew cask
       settings = {
         auto-update = "off";

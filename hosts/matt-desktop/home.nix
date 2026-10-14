@@ -231,18 +231,15 @@ in
 
   home.stateVersion = "25.05";
 
-  programs.ghostty = {
-    enable = true;
-    settings = {
-      font-size = 13;
-      background-opacity = 0.9;
-      window-padding-x = 10;
-      window-padding-y = 10;
-      cursor-style = "block";
-      cursor-style-blink = false;
-      copy-on-select = true;
-      confirm-close-surface = false;
-    };
+  programs.ghostty.settings = {
+    font-size = 13;
+    background-opacity = 0.9;
+    window-padding-x = 10;
+    window-padding-y = 10;
+    cursor-style = "block";
+    cursor-style-blink = false;
+    copy-on-select = true;
+    confirm-close-surface = false;
   };
 
   programs.yazi.settings = {
@@ -303,68 +300,49 @@ in
 
   programs.carapace.enable = true;
 
-  programs.starship = {
-    enable = true;
-    enableNushellIntegration = true;
-    settings = {
-      add_newline = false;
-      format = "$directory$git_branch$git_status$nix_shell$character";
-      directory = {
-        style = "blue bold";
-        truncation_length = 3;
-        truncate_to_repo = true;
-      };
-      git_branch = {
-        style = "purple";
-        format = "[$branch]($style) ";
-      };
-      git_status = {
-        style = "red";
-      };
-      nix_shell = {
-        format = "[$symbol$state]($style) ";
-        symbol = "❄️ ";
-      };
-      character = {
-        success_symbol = "[❯](green)";
-        error_symbol = "[❯](red)";
-      };
+  programs.starship.settings = {
+    add_newline = false;
+    format = "$directory$git_branch$git_status$nix_shell$character";
+    directory = {
+      style = "blue bold";
+      truncation_length = 3;
+      truncate_to_repo = true;
+    };
+    git_branch = {
+      style = "purple";
+      format = "[$branch]($style) ";
+    };
+    git_status = {
+      style = "red";
+    };
+    nix_shell = {
+      format = "[$symbol$state]($style) ";
+      symbol = "❄️ ";
+    };
+    character = {
+      success_symbol = "[❯](green)";
+      error_symbol = "[❯](red)";
     };
   };
 
-  programs.helix = {
-    enable = true;
-    defaultEditor = true;
-    settings = {
-      theme = "gruvbox_dark_hard";
-      editor = {
-        line-number = "relative";
-        cursor-shape = {
-          insert = "bar";
-          normal = "block";
-          select = "underline";
-        };
-        lsp.display-messages = true;
-        file-picker.hidden = false;
-        statusline = {
-          left = [
-            "mode"
-            "spinner"
-            "file-name"
-          ];
-          right = [
-            "diagnostics"
-            "selections"
-            "position"
-            "file-encoding"
-          ];
-        };
-        indent-guides = {
-          render = true;
-          character = "│";
-        };
-        soft-wrap.enable = true;
+  programs.helix.settings = {
+    theme = "gruvbox_dark_hard";
+    editor = {
+      file-picker.hidden = false;
+      statusline = {
+        left = [
+          "mode"
+          "spinner"
+          "file-name"
+        ];
+        right = [
+          "diagnostics"
+          "selections"
+          "position"
+          "file-encoding"
+        ];
       };
+      indent-guides.character = "│";
     };
   };
 

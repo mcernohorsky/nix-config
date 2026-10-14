@@ -24,7 +24,7 @@ in
     "d ${repo} 0755 restic restic -"
   ];
 
-  # oracle-0 can only append, so prune here. Retention matches oracle-0's R2 job.
+  # oracle-0 can only append, so prune here.
   services.restic.backups.oracle-0-local-prune = {
     repository = repo;
     passwordFile = config.age.secrets.restic-password.path;
@@ -33,13 +33,7 @@ in
       OnCalendar = "weekly";
       Persistent = true;
     };
-    pruneOpts = [
-      "--keep-hourly 24"
-      "--keep-daily 14"
-      "--keep-weekly 8"
-      "--keep-monthly 12"
-      "--keep-yearly 2"
-    ];
+    pruneOpts = import ../../../lib/backup-retention.nix;
     checkOpts = [ "--with-cache" ];
   };
 

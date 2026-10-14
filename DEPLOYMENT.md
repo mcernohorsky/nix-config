@@ -84,8 +84,10 @@ systemctl start vaultwarden restic-backups-vaultwarden-r2.timer restic-backups-v
 
 1. Create an ARM `VM.Standard.A1.Flex` Ubuntu VPS with temporary public SSH.
 2. Put its host key (`ssh-keyscan <ip> | rg ed25519`) in `lib/keys.nix` and rekey the secrets.
-3. `nixos-anywhere --flake .#oracle-0 root@<ip>` (disko: `/dev/sda`, 512 MiB ESP and ext4 root).
-   If that fails, run disko manually and then `nixos-install --flake .#oracle-0`.
+3. `nixos-anywhere --copy-host-keys --flake .#oracle-0 root@<ip>` (disko: `/dev/sda`, 512 MiB
+   ESP and ext4 root). Oracle runs no OpenSSH to generate a host key, so agenix needs this one.
+   If that fails, run disko manually, copy `/etc/ssh/ssh_host_*` into `/mnt/etc/ssh`, and then
+   `nixos-install --flake .#oracle-0`.
 4. Verify `ssh matt@oracle-0` over Tailscale, remove public SSH, then check
    `systemctl status cloudflared-tunnel` and `curl -fsS https://groundwork.cernohorsky.ca`.
 

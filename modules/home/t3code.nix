@@ -5,6 +5,8 @@
   ...
 }:
 let
+  mergeJson = lib.getExe (import ../../lib/merge-json.nix { inherit pkgs; });
+
   bootstrap = pkgs.writeShellApplication {
     name = "bootstrap-t3code";
     runtimeInputs = [
@@ -18,32 +20,6 @@ let
       if [ ! -x "$HOME/.local/bin/t3" ]; then
         curl -fsSL https://t3.codes/install.sh | T3CODE_CHANNEL=nightly sh
       fi
-    '';
-  };
-
-  configureDesktopClient = pkgs.writeShellApplication {
-    name = "configure-t3-desktop-client";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.jq
-    ];
-    text = ''
-      settings_dir="$HOME/.t3/userdata"
-      settings="$settings_dir/desktop-settings.json"
-      mkdir -p "$settings_dir"
-      if [ -f "$settings" ] && jq -e '.localEnvironmentEnabled == false and .updateChannel == "nightly" and .updateChannelConfiguredByUser == true' "$settings" >/dev/null; then
-        exit 0
-      fi
-
-      umask 077
-      tmp=$(mktemp "$settings_dir/.desktop-settings.XXXXXX")
-      trap 'rm -f "$tmp"' EXIT
-      if [ -f "$settings" ]; then
-        jq '.localEnvironmentEnabled = false | .updateChannel = "nightly" | .updateChannelConfiguredByUser = true' "$settings" > "$tmp"
-      else
-        printf '%s\n' '{"localEnvironmentEnabled":false,"updateChannel":"nightly","updateChannelConfiguredByUser":true}' > "$tmp"
-      fi
-      mv "$tmp" "$settings"
     '';
   };
 
@@ -71,12 +47,15 @@ in
 {
   # T3 owns its service unit and runtime so it can update itself; Home
   # Manager only bootstraps it and pins the provider PATH.
-  home.activation.installT3Code = lib.hm.dag.entryAfter [
-    "installCodexCli"
-    "installClaudeCode"
-  ] ''
-    run ${lib.getExe bootstrap}
-  '';
+  home.activation.installT3Code =
+    lib.hm.dag.entryAfter
+      [
+        "installCodexCli"
+        "installClaudeCode"
+      ]
+      ''
+        run ${lib.getExe bootstrap}
+      '';
   # Install the service once; T3 maintains its unit from then on. This also
   # keeps boot-time activation, which runs before the user manager exists,
   # from calling the installer.
@@ -90,7 +69,8 @@ in
   # its embedded local server would open the same T3 database twice.
   home.activation.configureT3DesktopClient = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (
     lib.hm.dag.entryAfter [ "installT3CodeService" ] ''
-      run ${lib.getExe configureDesktopClient}
+      run ${mergeJson} "$HOME/.t3/userdata/desktop-settings.json" \
+        '.localEnvironmentEnabled = false | .updateChannel = "nightly" | .updateChannelConfiguredByUser = true'
     ''
   );
 

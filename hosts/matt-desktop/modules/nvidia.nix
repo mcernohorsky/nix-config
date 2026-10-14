@@ -16,18 +16,13 @@
   '';
   boot.loader.systemd-boot.consoleMode = "max";
 
-  hardware.graphics.enable = true;
-
   # Accept the proprietary NVIDIA license alongside the module that requires it.
   nixpkgs.config.nvidia.acceptLicense = true;
 
   # ddcutil: NVIDIA's DPMS path is unreliable under Wayland.
   hardware.i2c.enable = true;
 
-  boot.kernelModules = [
-    "i2c-dev"
-    "i2c-nvidia-gpu"
-  ];
+  boot.kernelModules = [ "i2c-nvidia-gpu" ];
 
   hardware.nvidia = {
     # Modesetting is required for Wayland

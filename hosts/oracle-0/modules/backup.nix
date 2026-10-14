@@ -17,13 +17,6 @@ let
       db = "db.sqlite3";
       owner = "vaultwarden:vaultwarden";
       minute = 0;
-      prune = [
-        "--keep-hourly 24"
-        "--keep-daily 14"
-        "--keep-weekly 8"
-        "--keep-monthly 12"
-        "--keep-yearly 2"
-      ];
     };
     # Groundwork's database must not be opened by a second program, so the
     # server writes its own copy (VACUUM INTO) when asked by `request`;
@@ -40,13 +33,6 @@ let
         "state/tenants/main/main.db"
         "state/tenants/main/main.db-wal"
         "state/tenants/main/main.db-shm"
-      ];
-      prune = [
-        "--keep-hourly 24"
-        "--keep-daily 14"
-        "--keep-weekly 8"
-        "--keep-monthly 12"
-        "--keep-yearly 2"
       ];
     };
   };
@@ -84,7 +70,7 @@ let
       ++ map (path: "${app.dir}/${path}") (app.exclude or [ ]);
       backupPrepareCommand = "systemctl start --wait ${name}-backup-prepare.service";
       pruneOpts = lib.optionals dest.prune (
-        app.prune
+        import ../../../lib/backup-retention.nix
         ++ [
           "--tag"
           name
@@ -136,11 +122,10 @@ let
     '';
   };
 
-  forEach =
-    f:
-    lib.concatMapAttrs (
-      name: app: lib.mapAttrs' (dest: d: lib.nameValuePair "${name}-${dest}" (f name app d)) destinations
-    ) apps;
+  backups = lib.concatMapAttrs (
+    name: app:
+    lib.mapAttrs' (dest: d: lib.nameValuePair "${name}-${dest}" (mkBackup name app d)) destinations
+  ) apps;
 in
 {
   age.secrets = {
@@ -148,26 +133,18 @@ in
     restic-r2-credentials.file = ../../../secrets/restic-r2-credentials.age;
   };
 
-  services.restic.backups = forEach mkBackup;
+  services.restic.backups = backups;
 
   systemd.services =
     lib.mapAttrs' (name: app: lib.nameValuePair "${name}-backup-prepare" (mkPrepare name app)) apps
     # Retry an unavailable destination instead of waiting six hours.
-    //
-      lib.mapAttrs'
-        (
-          name: _:
-          lib.nameValuePair "restic-backups-${name}" {
-            serviceConfig = {
-              Restart = "on-failure";
-              RestartSec = "15min";
-            };
-          }
-        )
-        (
-          forEach (
-            _: _: _:
-            null
-          )
-        );
+    // lib.mapAttrs' (
+      name: _:
+      lib.nameValuePair "restic-backups-${name}" {
+        serviceConfig = {
+          Restart = "on-failure";
+          RestartSec = "15min";
+        };
+      }
+    ) backups;
 }

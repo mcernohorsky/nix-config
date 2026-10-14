@@ -6,6 +6,8 @@ in
 {
   services.prometheus = {
     enable = true;
+    # Loopback only: the tailnet and the containers' bridge are trusted interfaces.
+    listenAddress = "127.0.0.1";
     port = prometheusPort;
     globalConfig.scrape_interval = "15s";
     exporters.node = {

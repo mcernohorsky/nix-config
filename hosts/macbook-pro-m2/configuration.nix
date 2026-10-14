@@ -6,6 +6,13 @@
 }:
 let
   mono = import ../../lib/mono-font.nix { inherit pkgs; };
+
+  # Third-party casks, which also need their tap and a trust entry.
+  tapCasks = [
+    "anomalyco/tap/hex"
+    "abue-ammar/tinycast/tinycast"
+    "nolight132/tap/sonora"
+  ];
 in
 {
   nixpkgs.hostPlatform = "aarch64-darwin";
@@ -82,12 +89,7 @@ in
     user = "matt";
     mutableTaps = true;
     autoMigrate = true;
-    # Third-party taps need an explicit trust entry for their casks.
-    trust.casks = [
-      "anomalyco/tap/hex"
-      "abue-ammar/tinycast/tinycast"
-      "nolight132/tap/sonora"
-    ];
+    trust.casks = tapCasks;
   };
 
   homebrew = {
@@ -95,16 +97,9 @@ in
     # Deploys only install missing apps and zap removed ones.
     onActivation.cleanup = "zap";
 
-    taps = [
-      "anomalyco/tap"
-      "abue-ammar/tinycast"
-      "nolight132/tap"
-    ];
+    taps = map dirOf tapCasks;
 
-    casks = [
-      "anomalyco/tap/hex"
-      "abue-ammar/tinycast/tinycast"
-      "nolight132/tap/sonora"
+    casks = tapCasks ++ [
       "betterdisplay"
       "bitwarden"
       "blender"

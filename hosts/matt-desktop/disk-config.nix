@@ -1,9 +1,11 @@
 let
-  # Shared by every Btrfs subvolume on the system disk.
-  mountOptions = [
-    "compress=zstd"
-    "noatime"
-  ];
+  subvolume = mountpoint: {
+    inherit mountpoint;
+    mountOptions = [
+      "compress=zstd"
+      "noatime"
+    ];
+  };
 in
 {
   disko.devices = {
@@ -30,27 +32,12 @@ in
                 name = "cryptroot";
                 content = {
                   type = "btrfs";
-                  subvolumes = {
-                    "@root" = {
-                      mountpoint = "/";
-                      inherit mountOptions;
-                    };
-                    "@home" = {
-                      mountpoint = "/home";
-                      inherit mountOptions;
-                    };
-                    "@nix" = {
-                      mountpoint = "/nix";
-                      inherit mountOptions;
-                    };
-                    "@snapshots" = {
-                      mountpoint = "/.snapshots";
-                      inherit mountOptions;
-                    };
-                    "@log" = {
-                      mountpoint = "/var/log";
-                      inherit mountOptions;
-                    };
+                  subvolumes = builtins.mapAttrs (_: subvolume) {
+                    "@root" = "/";
+                    "@home" = "/home";
+                    "@nix" = "/nix";
+                    "@snapshots" = "/.snapshots";
+                    "@log" = "/var/log";
                   };
                 };
               };

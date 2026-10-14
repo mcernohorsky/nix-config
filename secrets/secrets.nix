@@ -1,23 +1,18 @@
 let
-  keys = import ../lib/keys.nix;
-  inherit (keys) matt matt-desktop oracle-0;
-  all = [
-    matt
-    matt-desktop
-    oracle-0
-  ];
+  inherit (import ../lib/keys.nix) matt matt-desktop oracle-0;
   workstations = [
     matt
     matt-desktop
   ];
-  oracle = [
-    matt
-    oracle-0
-  ];
+  all = workstations ++ [ oracle-0 ];
 in
 {
-  "tailscale-authkey.age".publicKeys = all;
-  "tailscale-oracle-authkey.age".publicKeys = oracle; # restricted to tag:cloud
+  # Mints tag:trusted nodes, so tag:cloud (Oracle) must never read it.
+  "tailscale-authkey.age".publicKeys = workstations;
+  "tailscale-oracle-authkey.age".publicKeys = [
+    matt
+    oracle-0
+  ]; # restricted to tag:cloud
   "tailscale-policy-oauth.age".publicKeys = workstations; # policy_file API scope
   "ssh-id-ed25519.age".publicKeys = workstations; # matt's private key for desktop-to-Mac SSH
   "cloudflared-token.age".publicKeys = all;

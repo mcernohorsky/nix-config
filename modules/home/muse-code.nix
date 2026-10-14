@@ -1,5 +1,13 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
+  mergeJson = lib.getExe (import ../../lib/merge-json.nix { inherit pkgs; });
+  launcher = ".local/bin/muse-t3-contributor";
+
   t3ContributorLauncher = pkgs.writeShellScript "muse-t3-contributor" ''
     # Muse 1.4.6 serve ignores the saved Contributor preference in some clients:
     # https://github.com/meta-models/muse-code-sdk/issues/102
@@ -34,66 +42,14 @@ let
       fi
     '';
   };
-
-  configure = pkgs.writeShellApplication {
-    name = "configure-muse-code";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.jq
-    ];
-    text = ''
-      settings_dir="$HOME/.config/muse"
-      settings_file="$settings_dir/settings.json"
-      install -d -m 0700 "$settings_dir"
-      settings_temp="$(mktemp "$settings_dir/.settings.json.XXXXXX")"
-      trap 'rm -f "$settings_temp"' EXIT
-
-      # Keep subscriber Contributor mode enabled for its higher usage limits.
-      # Merge only this preference so Muse can still save other settings.
-      if [ -e "$settings_file" ]; then
-        jq -e 'type == "object"' "$settings_file" >/dev/null
-        jq '.contributor_mode_enabled = true' "$settings_file" >"$settings_temp"
-      else
-        printf '%s\n' '{"schema_version":1,"contributor_mode_enabled":true}' >"$settings_temp"
-      fi
-      if ! cmp -s "$settings_temp" "$settings_file"; then
-        chmod 0600 "$settings_temp"
-        mv -f "$settings_temp" "$settings_file"
-      fi
-    '';
-  };
-
-  configureT3 = pkgs.writeShellApplication {
-    name = "configure-t3-muse";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.jq
-    ];
-    text = ''
-      settings_dir="$HOME/.t3/userdata"
-      settings_file="$settings_dir/settings.json"
-      # Configure only an already-added Muse instance; T3 owns the rest of
-      # this writable file and watches atomic replacements for live refresh.
-      if [ ! -f "$settings_file" ] || ! jq -e '.providerInstances.muse.driver == "muse"' "$settings_file" >/dev/null; then
-        exit 0
-      fi
-      settings_temp="$(mktemp "$settings_dir/.settings.json.XXXXXX")"
-      trap 'rm -f "$settings_temp"' EXIT
-      jq --arg launcher "$HOME/.local/bin/muse-t3-contributor" '
-        .providerInstances.muse.config.binaryPath = $launcher
-      ' "$settings_file" >"$settings_temp"
-      if ! cmp -s "$settings_temp" "$settings_file"; then
-        chmod 0600 "$settings_temp"
-        mv -f "$settings_temp" "$settings_file"
-      fi
-    '';
-  };
 in
 {
-  home.file.".local/bin/muse-t3-contributor".source = t3ContributorLauncher;
+  home.file.${launcher}.source = t3ContributorLauncher;
 
+  # Keep subscriber Contributor mode enabled for its higher usage limits.
   home.activation.configureMuseCode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${lib.getExe configure}
+    run ${mergeJson} "$HOME/.config/muse/settings.json" \
+      '.schema_version //= 1 | .contributor_mode_enabled = true'
   '';
   home.activation.installMuseCode = lib.hm.dag.entryAfter [ "configureMuseCode" ] ''
     run ${lib.getExe bootstrap}
@@ -105,6 +61,11 @@ in
         "installT3CodeService"
       ]
       ''
-        run ${lib.getExe configureT3}
+        # Configure only an already-added Muse instance; T3 owns the rest.
+        run ${mergeJson} "$HOME/.t3/userdata/settings.json" ${lib.escapeShellArg ''
+          if .providerInstances.muse.driver == "muse"
+          then .providerInstances.muse.config.binaryPath = "${config.home.homeDirectory}/${launcher}"
+          end
+        ''}
       '';
 }

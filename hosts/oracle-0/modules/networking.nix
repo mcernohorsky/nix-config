@@ -2,7 +2,6 @@ _: {
   networking = {
     useNetworkd = true;
     useDHCP = false;
-    networkmanager.enable = false;
 
     nat = {
       enable = true;
@@ -15,8 +14,6 @@ _: {
   };
 
   systemd.network = {
-    enable = true;
-
     # Main interface (Oracle Cloud). DHCP supplies addressing plus
     # Oracle's metadata-service DNS, routes, and domains (all defaults).
     networks."10-main" = {

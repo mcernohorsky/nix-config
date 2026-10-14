@@ -2,6 +2,7 @@ oracle_host := "oracle-0.tailc41cf5.ts.net"
 desktop_host := "matt-desktop.tailc41cf5.ts.net"
 mac_host := "macbook-pro-m2.tailc41cf5.ts.net"
 desktop_ssh := "tailscale ssh matt@" + desktop_host
+reboot_check := 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ No reboot needed"; fi'
 # T3 snapshots PATH when it installs its service; use the same stable set here
 t3_path := "$HOME/.local/bin:$HOME/.bun/bin:/etc/profiles/per-user/matt/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
@@ -44,8 +45,6 @@ deploy-mac:
 
 [parallel]
 deploy-all: deploy-oracle deploy-desktop deploy-mac
-
-reboot_check := 'if [ "$(readlink -f /run/booted-system/kernel)" != "$(readlink -f /run/current-system/kernel)" ] || ! nvidia-smi >/dev/null 2>&1; then echo "⚠️  Kernel changed or NVIDIA is unavailable; reboot matt-desktop"; else echo "✅ No reboot needed"; fi'
 
 container-status:
     ssh matt@{{ oracle_host }} sudo machinectl list
