@@ -163,6 +163,73 @@ in
     };
   };
 
+  # Simulator devices live on x9-pro (CoreSimulatorService has Full Disk
+  # Access), but runtimes stay internal and each Xcode beta leaves the old one.
+  launchd.user.agents.simulator-prune = {
+    path = [ "/usr/bin" ];
+    script = ''
+      xcrun simctl delete unavailable
+      xcrun simctl runtime delete --outdated
+      xcrun simctl runtime delete --unusable
+    '';
+    serviceConfig = {
+      StartCalendarInterval = [
+        {
+          Weekday = 0;
+          Hour = 5;
+          Minute = 30;
+        }
+      ];
+      StandardOutPath = "/tmp/simulator-prune.log";
+      StandardErrorPath = "/tmp/simulator-prune.log";
+    };
+  };
+
+  # Determinate Nixd collects garbage, but every kept system generation is a
+  # GC root, so without pruning the store grew to 155 generations and 93 GB.
+  launchd.daemons.nix-prune-generations = {
+    path = [ "/nix/var/nix/profiles/default/bin" ];
+    script = "nix-collect-garbage --delete-older-than 14d";
+    serviceConfig = {
+      StartCalendarInterval = [
+        {
+          Weekday = 0;
+          Hour = 5;
+          Minute = 0;
+        }
+      ];
+      StandardOutPath = "/var/log/nix-prune-generations.log";
+      StandardErrorPath = "/var/log/nix-prune-generations.log";
+    };
+  };
+
+  # macOS no longer runs periodic's clean-tmps, so /tmp only empties on reboot
+  # while agent scratch builds add ~25 GB a day. Remove whole top-level
+  # entries with nothing modified for 3 days, so live checkouts and cargo
+  # targets are never left half-deleted.
+  launchd.daemons.tmp-sweep = {
+    script = ''
+      for entry in /private/tmp/* /private/tmp/.[!.]*; do
+        [ -e "$entry" ] && [ ! -S "$entry" ] || continue
+        case "''${entry##*/}" in
+          com.apple.* | launchd* | tmux-* | .X* | .ICE-unix | powerlog) continue ;;
+        esac
+        recent=$(find "$entry" \( -mtime -3 -o -ctime -3 \) -print -quit 2>/dev/null)
+        [ -n "$recent" ] || rm -rf -- "$entry"
+      done
+    '';
+    serviceConfig = {
+      StartCalendarInterval = [
+        {
+          Hour = 4;
+          Minute = 30;
+        }
+      ];
+      StandardOutPath = "/var/log/tmp-sweep.log";
+      StandardErrorPath = "/var/log/tmp-sweep.log";
+    };
+  };
+
   system.defaults = {
     CustomUserPreferences.NSGlobalDomain.NSFixedPitchFont = mono.family;
 
