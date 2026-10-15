@@ -28,8 +28,9 @@ let
       pr = "";
       sessionUrl = false;
     };
+    # DISABLE_TELEMETRY would also stop feature-flag fetching, which gates
+    # rolled-out features such as idle compaction and the advisor tool.
     env = {
-      DISABLE_TELEMETRY = "1";
       DISABLE_ERROR_REPORTING = "1";
       DISABLE_FEEDBACK_COMMAND = "1";
       CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL = "1";
@@ -52,7 +53,7 @@ let
 in
 {
   home.activation.configureClaudeCode = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${mergeJson} "$HOME/.claude/settings.json" ${lib.escapeShellArg ". * ${builtins.toJSON settings}"}
+    run ${mergeJson} "$HOME/.claude/settings.json" ${lib.escapeShellArg "del(.env.DISABLE_TELEMETRY) * ${builtins.toJSON settings}"}
     # A real file also loads in Cowork, which skips symlinked user rules.
     rule="$HOME/.claude/rules/nix-no-attribution.md"
     ${pkgs.diffutils}/bin/cmp -s ${gitRule} "$rule" || run install -D -m 0600 ${gitRule} "$rule"
