@@ -15,6 +15,7 @@
 
   # Services bundle their own assets; this is just the CLI toolkit.
   environment.systemPackages = with pkgs; [
+    blender
     ffmpeg-full
   ];
 
