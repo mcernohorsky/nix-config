@@ -27,6 +27,7 @@ in
     ./just.nix
     ./muse-code.nix
     ./opencode.nix
+    ./orchestration.nix
     ./t3code.nix
     ./tailscale-policy.nix
     ./uv-python.nix
